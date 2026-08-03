@@ -1,0 +1,42 @@
+liam-custom
+Copyright (c) 2026 QESG
+
+This product includes software developed by ROUTE06, Inc.
+
+  Liam ERD
+  https://github.com/liam-hq/liam
+  Copyright (c) 2024 ROUTE06, Inc.
+  Licensed under the Apache License, Version 2.0 (see LICENSE)
+
+This is a modified fork of Liam ERD, pinned to upstream commit 92156eac5
+(2026-06-18). Files that differ from that commit carry a notice at the top of
+the file, as required by section 4(b) of the Apache License, Version 2.0.
+
+Summary of the changes made to the original work
+------------------------------------------------
+
+1. Table positions are persisted.
+   Upstream recomputes the automatic layout on every load, so any table the
+   user dragged snapped back on refresh. Positions now resolve as
+   URL (?positions=) > browser storage > layout.json > automatic layout, and a
+   table that is not pinned still falls back to the automatic layout.
+
+2. Canvas memos.
+   Free-form notes can be pinned to the diagram, shipped with the build in
+   memos.json and edited in the browser.
+
+3. Colour coding.
+   Tables and memos can be tinted from a fixed palette taken from the existing
+   design tokens. A table's colour is stored alongside its position.
+
+4. A read-only default with an explicit edit mode.
+   Everything above is read-only unless the page is opened with ?edit=1, so a
+   shared link cannot be rearranged by accident.
+
+5. MySQL schema export.
+   Upstream can deparse a schema to PostgreSQL and YAML only. A MySQL deparser
+   was added, and the export menu can now copy the DDL to the clipboard or
+   download it as a .sql file.
+
+6. A Windows compatibility fix to an npm script in frontend/apps/app, which
+   otherwise prevented the repository's own lint task from running.

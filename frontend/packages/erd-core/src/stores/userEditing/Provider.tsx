@@ -1,11 +1,8 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 'use client'
 
-import {
-  createParser,
-  parseAsString,
-  parseAsStringEnum,
-  useQueryState,
-} from 'nuqs'
+import { createParser, parseAsString, useQueryState } from 'nuqs'
 import {
   type FC,
   type PropsWithChildren,
@@ -35,6 +32,39 @@ const parseAsCompressedStringArray = createParser({
 
     return compressed
   },
+})
+
+/**
+ * `?show=all|table|key` — short, typeable values rather than the internal
+ * ALL_FIELDS / TABLE_NAME / KEY_ONLY names.
+ */
+const SHOW_MODE_BY_PARAM: Record<string, ShowMode> = {
+  all: 'ALL_FIELDS',
+  table: 'TABLE_NAME',
+  key: 'KEY_ONLY',
+}
+
+const PARAM_BY_SHOW_MODE: Record<ShowMode, string> = {
+  ALL_FIELDS: 'all',
+  TABLE_NAME: 'table',
+  KEY_ONLY: 'key',
+}
+
+const parseAsShowMode = createParser({
+  parse: (value: string): ShowMode | null => SHOW_MODE_BY_PARAM[value] ?? null,
+  serialize: (value: ShowMode): string => PARAM_BY_SHOW_MODE[value],
+})
+
+/**
+ * Memos go in as one compressed JSON blob rather than a comma-joined list:
+ * their text is free-form and would be shredded by the array parser's split.
+ */
+const parseAsCompressedString = createParser({
+  parse: (value: string): string =>
+    decompressFromEncodedUriComponent(value) ?? '',
+
+  serialize: (value: string): string =>
+    value === '' ? '' : compressToEncodedUriComponent(value),
 })
 
 type UserEditingProviderValue = {
@@ -81,12 +111,10 @@ export const UserEditingProvider: FC<Props> = ({
   }, [])
 
   const [showMode, setShowMode] = useQueryState(
-    'showMode',
-    parseAsStringEnum<ShowMode>(['ALL_FIELDS', 'KEY_ONLY', 'TABLE_NAME'])
-      .withDefault(defaultShowMode)
-      .withOptions({
-        history: 'push',
-      }),
+    'show',
+    parseAsShowMode.withDefault(defaultShowMode).withOptions({
+      history: 'push',
+    }),
   )
 
   const [hiddenNodeIds, setHiddenNodeIds] = useQueryState(
@@ -96,14 +124,33 @@ export const UserEditingProvider: FC<Props> = ({
     }),
   )
 
-  // 'replace' rather than 'push': dragging tables around should not fill up
-  // the back button the way toggling visibility does.
+  // 'replace' rather than 'push': editing the view should not fill up the back
+  // button the way toggling visibility does.
   const [tablePositions, setTablePositions] = useQueryState(
     'positions',
     parseAsCompressedStringArray.withDefault([]).withOptions({
       history: 'replace',
     }),
   )
+
+  const [tableColors, setTableColors] = useQueryState(
+    'colors',
+    parseAsCompressedStringArray.withDefault([]).withOptions({
+      history: 'replace',
+    }),
+  )
+
+  const [memoEntries, setMemoEntries] = useQueryState(
+    'memos',
+    parseAsCompressedString.withDefault('').withOptions({
+      history: 'replace',
+    }),
+  )
+
+  // Read-only by default so a shared link cannot be messed up by accident.
+  // Accepts `?edit=1` as well as `?edit=true`.
+  const [editParam] = useQueryState('edit', parseAsString.withDefault(''))
+  const editMode = editParam === '1' || editParam === 'true'
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set())
   const [isPopstateInProgress, setIsPopstateInProgress] = useState(false)
@@ -245,6 +292,11 @@ export const UserEditingProvider: FC<Props> = ({
         toggleHiddenNodeId,
         tablePositions,
         setTablePositions,
+        tableColors,
+        setTableColors,
+        memoEntries,
+        setMemoEntries,
+        editMode,
         // Local state
         selectedNodeIds,
         updateSelectedNodeIds,

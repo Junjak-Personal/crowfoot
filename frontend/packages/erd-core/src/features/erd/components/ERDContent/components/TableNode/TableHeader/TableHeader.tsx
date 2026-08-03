@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { Table2 } from '@liam-hq/ui'
 import { Handle, Position } from '@xyflow/react'
 import clsx from 'clsx'
@@ -73,7 +75,9 @@ export const TableHeader: FC<Props> = ({ data }) => {
       className={clsx(
         styles.wrapper,
         showMode === 'TABLE_NAME' && styles.wrapperTableNameMode,
+        data.color && styles.wrapperTinted,
       )}
+      data-view-color={data.color}
     >
       {showDiff && changeStatus && (
         <div

@@ -1,3 +1,6 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
+export { mysqlSchemaDeparser } from './deparser/mysql/index.js'
 export {
   postgresqlMigrationOperationDeparser,
   postgresqlSchemaDeparser,

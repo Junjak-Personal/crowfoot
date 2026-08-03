@@ -1,11 +1,18 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import {
+  clearStoredMemos,
   clearStoredTableLayout,
+  dumpMemos,
   dumpTableLayout,
   ERDRenderer,
   ErdRendererProvider,
   getCookie,
   getCookieJson,
+  type Memo,
+  parseMemos,
   parseTableLayout,
+  setBaseMemos,
   setBaseTableLayout,
   VersionProvider,
   versionSchema,
@@ -20,6 +27,11 @@ declare global {
     /** Console helpers for producing and resetting layout.json. */
     liamLayout?: {
       dump: () => Record<string, { x: number; y: number }>
+      reset: () => void
+    }
+    /** Console helpers for producing and resetting memos.json. */
+    liamMemos?: {
+      dump: () => Memo[]
       reset: () => void
     }
   }
@@ -51,19 +63,23 @@ function loadSchemaContent() {
 }
 
 /**
- * layout.json pins table positions so everyone opening the deployed ERD sees
- * the same arrangement. It is optional: without it every table falls back to
- * the automatic ELK layout.
+ * Sidecar files that customise the deployed ERD:
+ *   layout.json  pinned table positions, so everyone sees the same arrangement
+ *   memos.json   free-form notes pinned to the canvas
+ * Both are optional — without them tables fall back to the automatic ELK
+ * layout and no memos are shown.
  */
-function loadLayoutContent() {
+function loadOptionalJson(fileName: string, fallback: unknown) {
   return ResultAsync.fromSafePromise(
     // 'no-cache' revalidates instead of trusting the browser copy; the CDN
-    // still needs its own cache headers for layout.json to update on deploy.
-    fetch('./layout.json', { cache: 'no-cache' })
-      .then(async (response) => (response.ok ? await response.json() : {}))
+    // still needs its own cache headers for these to update on deploy.
+    fetch(`./${fileName}`, { cache: 'no-cache' })
+      .then(async (response) =>
+        response.ok ? await response.json() : fallback,
+      )
       // Never let an optional file block the schema from loading.
-      .catch(() => ({})),
-  ).map(parseTableLayout)
+      .catch(() => fallback),
+  )
 }
 
 const versionData = {
@@ -102,12 +118,16 @@ function App() {
     getSidebarSettingsFromCookie()
 
   useEffect(() => {
-    // The layout has to be registered before the schema lands, otherwise the
-    // first auto-layout pass runs without the pinned positions.
-    loadLayoutContent()
-      .map((layout) => {
-        setBaseTableLayout(layout)
-        return layout
+    // Both sidecars have to be registered before the schema lands, otherwise
+    // the first auto-layout pass runs without the pinned positions.
+    ResultAsync.combine([
+      loadOptionalJson('layout.json', {}),
+      loadOptionalJson('memos.json', []),
+    ])
+      .map(([layout, memos]) => {
+        setBaseTableLayout(parseTableLayout(layout))
+        setBaseMemos(parseMemos(memos))
+        return null
       })
       .andThen(loadSchemaContent)
       .match(
@@ -120,19 +140,27 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const publish = <T,>(value: T): T => {
+      const json = JSON.stringify(value, null, 2)
+      console.info(json)
+      void navigator.clipboard?.writeText(json).catch(() => {
+        // Clipboard is unavailable outside a secure context; the console
+        // output above is still there to copy from.
+      })
+      return value
+    }
+
     window.liamLayout = {
-      dump: () => {
-        const layout = dumpTableLayout()
-        const json = JSON.stringify(layout, null, 2)
-        console.info(json)
-        void navigator.clipboard?.writeText(json).catch(() => {
-          // Clipboard is unavailable outside a secure context; the console
-          // output above is still there to copy from.
-        })
-        return layout
-      },
+      dump: () => publish(dumpTableLayout()),
       reset: () => {
         clearStoredTableLayout()
+        location.reload()
+      },
+    }
+    window.liamMemos = {
+      dump: () => publish(dumpMemos()),
+      reset: () => {
+        clearStoredMemos()
         location.reload()
       },
     }

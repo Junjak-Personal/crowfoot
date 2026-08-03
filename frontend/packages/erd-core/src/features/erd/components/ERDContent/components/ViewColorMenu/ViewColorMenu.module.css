@@ -1,0 +1,49 @@
+/*
+ * Added in liam-custom; not part of the original Liam ERD source.
+ * See the NOTICE file at the repository root.
+ */
+
+.menu {
+  position: fixed;
+  z-index: 6;
+  padding: 6px;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 20px);
+  gap: 4px;
+}
+
+.swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid var(--color-gray-500);
+  border-radius: 4px;
+}
+
+.swatch:hover {
+  border-color: var(--color-gray-50);
+}
+
+.selected {
+  border: 2px solid var(--color-gray-100);
+}
+
+/* Diagonal stroke marks the "no colour" swatch. */
+.clear {
+  background:
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 1px),
+      var(--color-gray-300) calc(50% - 1px),
+      var(--color-gray-300) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ), var(--color-gray-600);
+}

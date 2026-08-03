@@ -1,7 +1,55 @@
+/*
+ * Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+ * See the NOTICE file at the repository root for what changed.
+ */
+
 @import url('@liam-hq/ui/src/styles/globals.css');
 @import './variables.css';
 
 /* https://github.com/radix-ui/primitives/issues/2908 */
 [data-radix-popper-content-wrapper] {
   font-family: var(--main-font);
+}
+
+/*
+ * User-assigned colours for tables and memos.
+ * Declared once here as data-attribute rules so components can just use
+ * var(--view-tint); avoids per-component duplication and inline style objects
+ * (which would need a type assertion for the custom property).
+ */
+[data-view-color='green'] {
+  --view-tint: var(--color-green-milk-200);
+}
+[data-view-color='mint'] {
+  --view-tint: var(--color-green-milk-100);
+}
+[data-view-color='teal'] {
+  --view-tint: var(--color-teal-600);
+}
+[data-view-color='sky'] {
+  --view-tint: var(--color-blue-milk-100);
+}
+[data-view-color='blue'] {
+  --view-tint: var(--color-blue-milk-200);
+}
+[data-view-color='steel'] {
+  --view-tint: var(--color-gray-400);
+}
+[data-view-color='sand'] {
+  --view-tint: var(--color-yellow-milk-200);
+}
+[data-view-color='yellow'] {
+  --view-tint: var(--color-yellow-milk-100);
+}
+[data-view-color='gold'] {
+  --view-tint: var(--color-gold-300);
+}
+[data-view-color='orange'] {
+  --view-tint: var(--color-gold-600);
+}
+[data-view-color='vermilion'] {
+  --view-tint: var(--color-vermilion-900);
+}
+[data-view-color='red'] {
+  --view-tint: var(--color-red-milk-200);
 }

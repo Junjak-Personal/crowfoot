@@ -1,3 +1,8 @@
+/*
+ * Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+ * See the NOTICE file at the repository root for what changed.
+ */
+
 .wrapper {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -8,6 +13,30 @@
 
 .wrapperTableNameMode {
   border-radius: var(--border-radius-md);
+}
+
+/*
+ * User-assigned colour. Only the header band is tinted so the column list
+ * underneath keeps its normal contrast. --view-tint comes from the
+ * [data-view-color] rules in styles/globals.css.
+ *
+ * .container carries its own background and sits on top of .wrapper, so it has
+ * to be tinted too — otherwise only a thin strip around it changes colour.
+ * The tint is mixed into the dark surface so the existing light text stays
+ * readable; the raw colour would force dark text.
+ */
+.wrapperTinted,
+.wrapperTinted .container {
+  background: color-mix(
+    in srgb,
+    var(--view-tint) 30%,
+    var(--global-muted-background)
+  );
+}
+
+/* The muted default is too dim once the band is coloured. */
+.wrapperTinted .container {
+  color: var(--color-gray-100);
 }
 
 .diffBox {

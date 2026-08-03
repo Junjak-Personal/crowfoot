@@ -1,3 +1,16 @@
+> **This is a fork.**
+> The original work is [Liam ERD](https://github.com/liam-hq/liam) by ROUTE06, Inc.,
+> licensed under the Apache License, Version 2.0. This fork is pinned to upstream
+> commit `92156eac5` and does not track it.
+>
+> See [`NOTICE`](./NOTICE) for what was changed and [`LICENSE`](./LICENSE) for the
+> license. Modified files carry a notice at the top of the file; files added by
+> this fork are marked as such.
+>
+> The README below is the original project's.
+
+---
+
 <h1 align="center">
   <img src="./assets/logo-light.png#gh-light-mode-only" alt="Liam ERD" width="445">
   <img src="./assets/logo-dark.png#gh-dark-mode-only" alt="Liam ERD" width="445">

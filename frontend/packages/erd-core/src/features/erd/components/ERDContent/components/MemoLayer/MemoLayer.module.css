@@ -1,0 +1,100 @@
+/*
+ * Added in liam-custom; not part of the original Liam ERD source.
+ * See the NOTICE file at the repository root.
+ */
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4; /* above the dotted background, below the app chrome */
+  transform-origin: 0 0;
+  pointer-events: none; /* only the memos themselves are interactive */
+}
+
+.memo {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-gray-100);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: var(--color-gray-800);
+  border: 1px solid var(--color-gray-600);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+  pointer-events: auto;
+}
+
+/*
+ * The canvas is dark, so a tint mixes into the dark surface rather than
+ * replacing it. Painting the raw colour would force dark text and make memos
+ * read as buttons instead of notes. Text colour is deliberately left alone.
+ */
+.tinted {
+  background-color: color-mix(
+    in srgb,
+    var(--view-tint) 25%,
+    var(--color-gray-800)
+  );
+  border-color: var(--view-tint);
+}
+
+.editable {
+  cursor: grab;
+  border-style: dashed;
+}
+
+.editable:active {
+  cursor: grabbing;
+}
+
+.input {
+  flex: 1;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  resize: none;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* Drag handle in the bottom-right corner, edit mode only. */
+.resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(
+    to top left,
+    var(--color-gray-400) 0 2px,
+    transparent 2px 4px,
+    var(--color-gray-400) 4px 6px,
+    transparent 6px
+  );
+}
+
+.remove {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--color-gray-400);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.remove:hover {
+  color: var(--color-gray-100);
+}

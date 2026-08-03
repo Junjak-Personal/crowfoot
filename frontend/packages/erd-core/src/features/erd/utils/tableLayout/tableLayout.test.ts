@@ -1,3 +1,5 @@
+// Added in liam-custom; not part of the original Liam ERD source.
+// See the NOTICE file at the repository root.
 import type { Node } from '@xyflow/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
@@ -6,12 +8,14 @@ import {
   deserializeTableLayout,
   dumpTableLayout,
   getEffectiveTableLayout,
+  getTableColor,
   loadStoredTableLayout,
   parseTableLayout,
   rememberTablePositions,
   serializeTableLayout,
   setBaseTableLayout,
   setResolvedTableLayout,
+  setTableColor,
 } from './tableLayout'
 
 const node = (id: string, x: number, y: number): Node => ({
@@ -159,5 +163,44 @@ describe(dumpTableLayout, () => {
       users: { x: 1, y: 2 },
       posts: { x: 30, y: 40 },
     })
+  })
+})
+
+describe('table color', () => {
+  beforeEach(() => {
+    clearStoredTableLayout()
+    setBaseTableLayout({})
+    setResolvedTableLayout([])
+  })
+
+  it('keeps a valid color from layout.json', () => {
+    expect(parseTableLayout({ users: { x: 1, y: 2, color: 'teal' } })).toEqual({
+      users: { x: 1, y: 2, color: 'teal' },
+    })
+  })
+
+  it('drops an unknown color instead of trusting it', () => {
+    expect(
+      parseTableLayout({ users: { x: 1, y: 2, color: 'chartreuse' } }),
+    ).toEqual({ users: { x: 1, y: 2, color: undefined } })
+  })
+
+  it('survives dragging the table it is set on', () => {
+    setBaseTableLayout({ users: { x: 1, y: 2 } })
+    setResolvedTableLayout([node('users', 1, 2)])
+    setTableColor('users', 'gold')
+
+    rememberTablePositions([node('users', 50, 60)])
+
+    expect(getTableColor('users')).toBe('gold')
+    expect(dumpTableLayout()['users']).toEqual({ x: 50, y: 60, color: 'gold' })
+  })
+
+  it('clears back to no color', () => {
+    setResolvedTableLayout([node('users', 0, 0)])
+    setTableColor('users', 'red')
+    setTableColor('users', null)
+
+    expect(getTableColor('users')).toBeUndefined()
   })
 })

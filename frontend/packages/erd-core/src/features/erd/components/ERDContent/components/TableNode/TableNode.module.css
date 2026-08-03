@@ -1,3 +1,8 @@
+/*
+ * Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+ * See the NOTICE file at the repository root for what changed.
+ */
+
 .wrapper {
   width: auto;
   min-width: 172px;
@@ -13,6 +18,16 @@
 
 :global([data-loading='true']) .wrapper {
   opacity: 0;
+}
+
+/*
+ * User-assigned tint on the border only — the colour itself lives on the
+ * header band (TableHeader.module.css). Declared before the highlight rules on
+ * purpose: hovering or activating a table must still win, so the accent
+ * feedback is not lost on coloured tables.
+ */
+.wrapperTinted {
+  border: 1px solid var(--view-tint);
 }
 
 .wrapperHighlighted,

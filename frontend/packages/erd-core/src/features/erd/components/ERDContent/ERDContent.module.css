@@ -1,3 +1,8 @@
+/*
+ * Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+ * See the NOTICE file at the repository root for what changed.
+ */
+
 .wrapper {
   position: relative;
   width: 100%;
@@ -10,4 +15,86 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+/* Positioned with viewport coordinates from the right-click event. */
+.contextMenu {
+  position: fixed;
+  z-index: 6;
+  padding: 4px;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+}
+
+.contextMenuItem {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--color-gray-100);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 4px;
+}
+
+.contextMenuItem:hover {
+  background-color: var(--color-gray-600);
+}
+
+/* Edit mode is driven by a URL flag, so it needs to say so on the canvas. */
+.editBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-gray-100);
+  pointer-events: none;
+  background-color: var(--color-gray-700);
+  border: 1px dashed var(--color-gray-500);
+  border-radius: 6px;
+}
+
+.contextMenuRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--color-gray-50);
+  white-space: nowrap;
+}
+
+.contextMenuStep {
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--color-gray-100);
+  cursor: pointer;
+  background: var(--color-gray-600);
+  border: none;
+  border-radius: 4px;
+}
+
+.contextMenuStep:hover {
+  background: var(--color-gray-500);
+}
+
+.contextMenuNumber {
+  width: 46px;
+  padding: 3px 6px;
+  font-size: 13px;
+  color: var(--color-gray-100);
+  text-align: center;
+  background: var(--color-gray-600);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 4px;
 }

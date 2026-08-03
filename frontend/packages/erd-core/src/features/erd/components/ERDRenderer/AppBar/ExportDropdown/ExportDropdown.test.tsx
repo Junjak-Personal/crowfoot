@@ -2,19 +2,24 @@ import { aSchema, aTable } from '@liam-hq/schema'
 import { ToastProvider } from '@liam-hq/ui'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { SchemaProvider } from '../../../../../../stores'
+import { SchemaProvider, UserEditingProvider } from '../../../../../../stores'
 import { ExportDropdown } from './ExportDropdown'
 
+// UserEditingProvider is required since the dropdown reads edit mode from it
+// to decide whether to offer the layout.json / memos.json downloads.
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
-  <ToastProvider>
-    <SchemaProvider
-      current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
-    >
-      {children}
-    </SchemaProvider>
-  </ToastProvider>
+  <NuqsTestingAdapter>
+    <ToastProvider>
+      <SchemaProvider
+        current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
+      >
+        <UserEditingProvider>{children}</UserEditingProvider>
+      </SchemaProvider>
+    </ToastProvider>
+  </NuqsTestingAdapter>
 )
 
 describe('PostgreSQL export', () => {

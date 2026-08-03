@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import {
   TooltipContent,
   TooltipPortal,
@@ -28,9 +30,11 @@ export const TableNode: FC<Props> = ({ data }) => {
           <div
             className={clsx(
               styles.wrapper,
+              data.color && styles.wrapperTinted,
               data.isHighlighted && styles.wrapperHighlighted,
               data.isActiveHighlighted && styles.wrapperActive,
             )}
+            data-view-color={data.color}
             data-erd={
               (data.isHighlighted || data.isActiveHighlighted) &&
               'table-node-highlighted'

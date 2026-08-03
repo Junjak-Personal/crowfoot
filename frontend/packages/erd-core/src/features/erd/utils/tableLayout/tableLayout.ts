@@ -1,6 +1,18 @@
+// Added in liam-custom; not part of the original Liam ERD source.
+// See the NOTICE file at the repository root.
 import type { Node } from '@xyflow/react'
+import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
-export type TablePosition = { x: number; y: number }
+/**
+ * Per-table view state. Position and colour live together because they are the
+ * same kind of thing — how this table is presented — and share one sidecar
+ * file, one storage key and one dump.
+ */
+export type TablePosition = {
+  x: number
+  y: number
+  color?: ViewColorKey | undefined
+}
 export type TableLayout = Record<string, TablePosition>
 
 const STORAGE_KEY = 'liam:tableLayout'
@@ -24,25 +36,45 @@ const isTablePosition = (value: unknown): value is TablePosition => {
   return typeof value.x === 'number' && typeof value.y === 'number'
 }
 
+const readColor = (value: object): ViewColorKey | undefined => {
+  if (!('color' in value)) return undefined
+  return isViewColorKey(value.color) ? value.color : undefined
+}
+
 export const parseTableLayout = (value: unknown): TableLayout => {
   if (typeof value !== 'object' || value === null) return {}
 
   const layout: TableLayout = {}
   for (const [tableName, position] of Object.entries(value)) {
     if (isTablePosition(position)) {
-      layout[tableName] = { x: position.x, y: position.y }
+      layout[tableName] = {
+        x: position.x,
+        y: position.y,
+        color: readColor(position),
+      }
     }
   }
 
   return layout
 }
 
-const toTableLayout = (nodes: Node[]): TableLayout => {
-  const layout: TableLayout = {}
+/**
+ * Merge positions from the canvas into an existing layout, keeping whatever
+ * colour each table already had — dragging a table must not reset its colour.
+ */
+const mergeNodePositions = (
+  layout: TableLayout,
+  nodes: Node[],
+): TableLayout => {
+  const merged: TableLayout = { ...layout }
   for (const node of nodes) {
-    layout[node.id] = { x: node.position.x, y: node.position.y }
+    merged[node.id] = {
+      ...merged[node.id],
+      x: node.position.x,
+      y: node.position.y,
+    }
   }
-  return layout
+  return merged
 }
 
 export const setBaseTableLayout = (layout: TableLayout): void => {
@@ -113,7 +145,42 @@ export const deserializeTableLayout = (entries: string[]): TableLayout => {
   return layout
 }
 
-/** layout.json is the base, per-browser edits win, a shared link wins over both. */
+/**
+ * Colours ride in their own URL entry (`name:colorkey`) rather than being
+ * appended to the position entry: the position codec stays exactly as it was,
+ * and a table can be coloured without ever having been moved.
+ */
+export const serializeTableColors = (layout: TableLayout): string[] =>
+  Object.entries(layout)
+    .filter(([, entry]) => entry.color !== undefined)
+    .map(([tableName, entry]) => `${tableName}:${entry.color}`)
+
+export const deserializeTableColors = (
+  entries: string[],
+): Record<string, ViewColorKey> => {
+  const colors: Record<string, ViewColorKey> = {}
+
+  for (const entry of entries) {
+    // Split from the right; a table name may itself contain ':'.
+    const separator = entry.lastIndexOf(':')
+    if (separator <= 0) continue
+
+    const color = entry.slice(separator + 1)
+    if (!isViewColorKey(color)) continue
+
+    colors[entry.slice(0, separator)] = color
+  }
+
+  return colors
+}
+
+/**
+ * layout.json is the base, per-browser edits win, a shared link wins over both.
+ *
+ * Colours from the link are kept out of this map on purpose: an entry here
+ * pins a position, and a table that was only recoloured must not be dragged to
+ * (0, 0). Use `resolveTableColor` for the colour of a single table.
+ */
 export const getEffectiveTableLayout = (
   urlLayout: TableLayout = {},
 ): TableLayout => ({
@@ -122,30 +189,56 @@ export const getEffectiveTableLayout = (
   ...urlLayout,
 })
 
+export const resolveTableColor = (
+  tableName: string,
+  layout: TableLayout,
+  urlColors: Record<string, ViewColorKey>,
+): ViewColorKey | undefined => urlColors[tableName] ?? layout[tableName]?.color
+
 /** Tables absent from the layout keep the position they already have. */
 export const applyTableLayout = (nodes: Node[], layout: TableLayout): Node[] =>
   nodes.map((node) => {
-    const position = layout[node.id]
-    return position ? { ...node, position } : node
+    const entry = layout[node.id]
+    if (!entry) return node
+
+    return { ...node, position: { x: entry.x, y: entry.y } }
   })
 
 export const setResolvedTableLayout = (nodes: Node[]): void => {
-  resolvedLayout = toTableLayout(nodes)
+  resolvedLayout = mergeNodePositions(getEffectiveTableLayout(), nodes)
 }
 
 /**
  * Persist the tables the user just dragged, leaving the rest untouched.
- * Returns every locally moved table so the caller can mirror it into the URL.
+ * Returns every locally stored table so the caller can mirror it into the URL.
  */
 export const rememberTablePositions = (nodes: Node[]): TableLayout => {
-  const moved = toTableLayout(nodes)
-  resolvedLayout = { ...resolvedLayout, ...moved }
+  resolvedLayout = mergeNodePositions(resolvedLayout, nodes)
 
-  const stored = { ...loadStoredTableLayout(), ...moved }
+  const stored = mergeNodePositions(loadStoredTableLayout(), nodes)
   saveStoredTableLayout(stored)
 
   return stored
 }
+
+/** Colour is stored alongside the position, in the same layout entry. */
+export const setTableColor = (
+  tableName: string,
+  color: ViewColorKey | null,
+): void => {
+  const current = resolvedLayout[tableName] ??
+    getEffectiveTableLayout()[tableName] ?? { x: 0, y: 0 }
+  const next = { ...current, color: color ?? undefined }
+
+  resolvedLayout = { ...resolvedLayout, [tableName]: next }
+  saveStoredTableLayout({
+    ...loadStoredTableLayout(),
+    [tableName]: next,
+  })
+}
+
+export const getTableColor = (tableName: string): ViewColorKey | undefined =>
+  resolvedLayout[tableName]?.color
 
 /** Snapshot for committing as layout.json. */
 export const dumpTableLayout = (): TableLayout => ({ ...resolvedLayout })
