@@ -1,8 +1,12 @@
 import {
+  clearStoredTableLayout,
+  dumpTableLayout,
   ERDRenderer,
   ErdRendererProvider,
   getCookie,
   getCookieJson,
+  parseTableLayout,
+  setBaseTableLayout,
   VersionProvider,
   versionSchema,
 } from '@liam-hq/erd-core'
@@ -10,6 +14,16 @@ import { type Schema, schemaSchema } from '@liam-hq/schema'
 import { ResultAsync } from 'neverthrow'
 import { useEffect, useState } from 'react'
 import * as v from 'valibot'
+
+declare global {
+  interface Window {
+    /** Console helpers for producing and resetting layout.json. */
+    liamLayout?: {
+      dump: () => Record<string, { x: number; y: number }>
+      reset: () => void
+    }
+  }
+}
 
 const emptySchema: Schema = {
   tables: {},
@@ -34,6 +48,22 @@ function loadSchemaContent() {
     console.info(result.issues)
     return undefined
   })
+}
+
+/**
+ * layout.json pins table positions so everyone opening the deployed ERD sees
+ * the same arrangement. It is optional: without it every table falls back to
+ * the automatic ELK layout.
+ */
+function loadLayoutContent() {
+  return ResultAsync.fromSafePromise(
+    // 'no-cache' revalidates instead of trusting the browser copy; the CDN
+    // still needs its own cache headers for layout.json to update on deploy.
+    fetch('./layout.json', { cache: 'no-cache' })
+      .then(async (response) => (response.ok ? await response.json() : {}))
+      // Never let an optional file block the schema from loading.
+      .catch(() => ({})),
+  ).map(parseTableLayout)
 }
 
 const versionData = {
@@ -72,13 +102,40 @@ function App() {
     getSidebarSettingsFromCookie()
 
   useEffect(() => {
-    loadSchemaContent().match(
-      (val) => setSchema(val ?? emptySchema),
-      (error) => {
-        console.error('Error loading schema content:', error)
-        setSchema(emptySchema)
+    // The layout has to be registered before the schema lands, otherwise the
+    // first auto-layout pass runs without the pinned positions.
+    loadLayoutContent()
+      .map((layout) => {
+        setBaseTableLayout(layout)
+        return layout
+      })
+      .andThen(loadSchemaContent)
+      .match(
+        (val) => setSchema(val ?? emptySchema),
+        (error) => {
+          console.error('Error loading schema content:', error)
+          setSchema(emptySchema)
+        },
+      )
+  }, [])
+
+  useEffect(() => {
+    window.liamLayout = {
+      dump: () => {
+        const layout = dumpTableLayout()
+        const json = JSON.stringify(layout, null, 2)
+        console.info(json)
+        void navigator.clipboard?.writeText(json).catch(() => {
+          // Clipboard is unavailable outside a secure context; the console
+          // output above is still there to copy from.
+        })
+        return layout
       },
-    )
+      reset: () => {
+        clearStoredTableLayout()
+        location.reload()
+      },
+    }
   }, [])
 
   return (

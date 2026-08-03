@@ -17,7 +17,13 @@ import { repositionTableLogEvent } from '../../../gtm/utils/repositionTableLogEv
 import { MAX_ZOOM, MIN_ZOOM } from '../../../reactflow/constants'
 import { useTableSelection } from '../../hooks'
 import type { DisplayArea } from '../../types'
-import { highlightNodesAndEdges, isTableNode } from '../../utils'
+import {
+  deserializeTableLayout,
+  highlightNodesAndEdges,
+  isTableNode,
+  rememberTablePositions,
+  serializeTableLayout,
+} from '../../utils'
 import {
   NonRelatedTableGroupNode,
   RelationshipEdge,
@@ -62,7 +68,8 @@ export const ERDContentInner: FC<Props> = ({
   const {
     state: { loading },
   } = useErdContentContext()
-  const { activeTableName } = useUserEditingOrThrow()
+  const { activeTableName, tablePositions, setTablePositions } =
+    useUserEditingOrThrow()
 
   const { selectTable, deselectTable } = useTableSelection()
 
@@ -128,6 +135,16 @@ export const ERDContentInner: FC<Props> = ({
 
   const handleDragStopNode: OnNodeDrag<Node> = useCallback(
     (_event, _node, nodes) => {
+      const stored = rememberTablePositions(nodes.filter(isTableNode))
+      // Keep the link shareable: merge over whatever the incoming URL carried
+      // so positions from a shared link survive a local drag.
+      setTablePositions(
+        serializeTableLayout({
+          ...deserializeTableLayout(tablePositions),
+          ...stored,
+        }),
+      )
+
       const operationId = `id_${Date.now()}`
       for (const node of nodes) {
         const tableId = node.id
@@ -141,7 +158,7 @@ export const ERDContentInner: FC<Props> = ({
         })
       }
     },
-    [version],
+    [version, tablePositions, setTablePositions],
   )
 
   const panOnDrag = [1, 2]

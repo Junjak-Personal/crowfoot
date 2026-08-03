@@ -3,7 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserEditingOrThrow } from '../../../../../stores'
 import { useCustomReactflow } from '../../../../reactflow/hooks'
 import type { DisplayArea } from '../../../types'
-import { computeAutoLayout, highlightNodesAndEdges } from '../../../utils'
+import {
+  applyTableLayout,
+  computeAutoLayout,
+  deserializeTableLayout,
+  getEffectiveTableLayout,
+  highlightNodesAndEdges,
+  setResolvedTableLayout,
+} from '../../../utils'
 import { useErdContentContext } from '../ErdContentContext'
 import { hasNonRelatedChildNodes, updateNodesHiddenState } from '../utils'
 
@@ -13,7 +20,8 @@ type Params = {
 }
 
 export const useInitialAutoLayout = ({ nodes, displayArea }: Params) => {
-  const { activeTableName, hiddenNodeIds } = useUserEditingOrThrow()
+  const { activeTableName, hiddenNodeIds, tablePositions } =
+    useUserEditingOrThrow()
   const { getEdges, setNodes, setEdges, fitView } = useCustomReactflow()
   const {
     actions: { setLoading },
@@ -47,10 +55,21 @@ export const useInitialAutoLayout = ({ nodes, displayArea }: Params) => {
         highlightNodesAndEdges(updateNodes, getEdges(), {
           activeTableName: activeTableName ?? undefined,
         })
+      // Seed pinned positions before layout so ELK's INTERACTIVE strategy
+      // places unpinned tables around them, then re-apply so pinned tables
+      // land exactly where they were saved.
+      const tableLayout = getEffectiveTableLayout(
+        deserializeTableLayout(tablePositions),
+      )
       const { nodes: layoutedNodes, edges: layoutedEdges } =
-        await computeAutoLayout(highlightedNodes, highlightedEdges)
+        await computeAutoLayout(
+          applyTableLayout(highlightedNodes, tableLayout),
+          highlightedEdges,
+        )
+      const positionedNodes = applyTableLayout(layoutedNodes, tableLayout)
+      setResolvedTableLayout(positionedNodes)
 
-      setNodes(layoutedNodes)
+      setNodes(positionedNodes)
       setEdges(layoutedEdges)
 
       const fitViewOptions =
@@ -68,6 +87,7 @@ export const useInitialAutoLayout = ({ nodes, displayArea }: Params) => {
     activeTableName,
     displayArea,
     hiddenNodeIds,
+    tablePositions,
     nodes,
     getEdges,
     setNodes,

@@ -96,6 +96,15 @@ export const UserEditingProvider: FC<Props> = ({
     }),
   )
 
+  // 'replace' rather than 'push': dragging tables around should not fill up
+  // the back button the way toggling visibility does.
+  const [tablePositions, setTablePositions] = useQueryState(
+    'positions',
+    parseAsCompressedStringArray.withDefault([]).withOptions({
+      history: 'replace',
+    }),
+  )
+
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set())
   const [isPopstateInProgress, setIsPopstateInProgress] = useState(false)
   const [showDiff, setShowDiff] = useState(initialShowDiff)
@@ -234,6 +243,8 @@ export const UserEditingProvider: FC<Props> = ({
         hiddenNodeIds,
         setHiddenNodeIds,
         toggleHiddenNodeId,
+        tablePositions,
+        setTablePositions,
         // Local state
         selectedNodeIds,
         updateSelectedNodeIds,

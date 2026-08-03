@@ -16,6 +16,10 @@ export type UserEditingContextValue = {
   setHiddenNodeIds: (nodeIds: string[] | null) => void
   toggleHiddenNodeId: (nodeId: string) => void
 
+  /** Compact `name:x:y` entries for the tables the user has moved. */
+  tablePositions: string[]
+  setTablePositions: (positions: string[] | null) => void
+
   // Local state
   selectedNodeIds: Set<string>
   updateSelectedNodeIds: (
