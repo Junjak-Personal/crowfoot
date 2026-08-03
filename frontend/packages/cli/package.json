@@ -1,31 +1,29 @@
 {
-  "name": "@liam-hq/cli",
-  "description": "Command-line tool designed to generate a web application that displays ER diagrams. See https://liambx.com/docs/cli",
+  "name": "erdkit",
+  "description": "Command-line tool that generates a standalone web app displaying ER diagrams, with persisted table positions, canvas memos and colour coding.",
   "keywords": [
     "data-visualization",
     "entity-relationship-diagram",
     "er-diagram",
     "erd"
   ],
-  "homepage": "https://github.com/liam-hq/liam",
-  "bugs": "https://github.com/liam-hq/liam/issues",
+  "homepage": "https://github.com/Junjak-Personal/erdkit",
+  "bugs": "https://github.com/Junjak-Personal/erdkit/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/liam-hq/liam.git"
+    "url": "git+https://github.com/Junjak-Personal/erdkit.git"
   },
   "license": "Apache-2.0",
   "private": false,
-  "version": "0.7.24",
+  "version": "0.1.1",
   "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "liam": "./dist-cli/bin/cli.js"
+    "erdkit": "dist-cli/bin/cli.js"
   },
   "dependencies": {
-    "@liam-hq/erd-core": "workspace:*",
-    "@liam-hq/schema": "workspace:*",
     "@prisma/internals": "6.8.2",
     "@swc/core": "1.12.11",
     "commander": "13.1.0",
@@ -42,6 +40,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.6",
     "@liam-hq/configs": "workspace:*",
+    "@liam-hq/erd-core": "workspace:*",
+    "@liam-hq/schema": "workspace:*",
     "@rollup/plugin-commonjs": "28.0.9",
     "@rollup/plugin-node-resolve": "16.0.3",
     "@rollup/plugin-typescript": "12.3.0",
@@ -81,6 +81,8 @@
     "test": "vitest run"
   },
   "files": [
-    "dist-cli/**/*"
+    "dist-cli/**/*",
+    "LICENSE",
+    "NOTICE"
   ]
 }

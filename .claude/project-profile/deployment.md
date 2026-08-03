@@ -1,20 +1,18 @@
 # Deployment
 
 > Two distinct realities here. **Upstream CI** (17 GitHub Actions workflows) is inherited and largely
-> inert for this fork — it publishes `@liam-hq/*` to npm from `main` via changesets, which the fork
-> must **not** trigger. **The fork's actual delivery path is manual.** Do not assume a workflow run
+> inert for this fork; the two npm-publish workflows were deleted outright (see CI/CD below). **The fork's actual delivery path is manual.** Do not assume a workflow run
 > means anything shipped.
 
 ## CI/CD
 - Platform: GitHub Actions (`.github/workflows/`, 17 files, inherited)
-- Fork repo: `junhyeon-qesg/liam-custom`, working branch `feature/erd-view-customization`
+- Fork repo: `Junjak-Personal/erdkit`, working branch `feature/erd-view-customization`
 - Relevant inherited workflows:
 
 | Workflow | Purpose | Fork status |
 |---|---|---|
 | `frontend-ci.yml` | `pnpm lint` + build/test on PR; `dorny/paths-filter` gates on `frontend/**` etc. | usable |
-| `release.yml` | changesets → **publishes `@liam-hq/cli` to npm on push to `main`**. Registered as an npm Trusted Publisher (renaming the file breaks that config). | ⚠️ **must not run under the fork's name** — see Publishing below |
-| `released_package_test.yml` | smoke-tests the published tarball | dormant |
+| ~~`release.yml`~~ · ~~`released_package_test.yml`~~ | changesets auto-publish + published-tarball smoke test | **deleted** — both were bound to `@liam-hq/cli`, had no secrets under the fork, and npm Trusted Publishing is pinned to `liam-hq/liam`. Publishing is now manual: `pnpm release` at the repo root. |
 | `e2e_tests.yml` | Playwright against the Next.js app | not applicable to the fork |
 | `codeql · ghalint · dependency_review · license · stale · renovate` | inherited hygiene | inert |
 | `database-ci · check-schema-drift · agent-deep-modeling · notify_supabase_failure · discussion-comment-to-slack · figma-to-css-variables · add_assignee_to_pr · license-report-update` | upstream-product specific | inert |
@@ -26,7 +24,7 @@
 ## Environments
 | Env | Branch | URL/Config |
 |-----|--------|------------|
-| Local | any | `pnpm build --filter @liam-hq/cli` → `erd build` → serve `dist/` over HTTP (`npx serve dist/`) |
+| Local | any | `pnpm turbo build --filter=erdkit` → `erd build` → serve `dist/` over HTTP (`npx serve dist/`) |
 | carbon **stage** | manual | **https://carbon-stage.qesg.co.kr/erd/** — S3 `s3://carbon-estimate-dev/erd-stage/` behind CloudFront. Deployed by hand 2026-08-03; 86 tables / 128 FKs. |
 | carbon **dev** | — | **not configured** — CloudFront origin path is pinned to `/erd-stage`, so the dev domain shows the stage ERD |
 | Production | — | none |

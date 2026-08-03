@@ -27,7 +27,7 @@ Liam ERD 포크에 **위치 영속 · 메모 · 색상 · MySQL export · 편집
 
 | 항목 | 값 |
 |---|---|
-| 리포 | `junhyeon-qesg/liam-custom` (공개 포크) |
+| 리포 | `Junjak-Personal/erdkit` (공개 포크. 구 `junhyeon-qesg/liam-custom`) |
 | 브랜치 | `feature/erd-view-customization` |
 | 최신 기능 커밋 | **`9af3ab35e`** (push 완료) — 이후 커밋은 문서·프로필뿐 |
 | upstream pin | **`92156eac5`** (2026-06-18) — 추종하지 않음 |

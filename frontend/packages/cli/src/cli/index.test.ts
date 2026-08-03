@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { createRequire } from 'node:module'
 import type { Command } from 'commander'
 import { describe, expect, it, vi } from 'vitest'
@@ -19,8 +21,10 @@ setupMocks()
 
 describe('program', () => {
   it('should have the correct name and description', () => {
-    expect(program.name()).toBe('liam')
-    expect(program.description()).toBe('CLI tool for Liam')
+    expect(program.name()).toBe('erdkit')
+    expect(program.description()).toBe(
+      'CLI tool for building ER diagram viewers',
+    )
     const require = createRequire(import.meta.url)
     const { version: packageVersion } = require('../../package.json')
     expect(program.version()).toBe(packageVersion)

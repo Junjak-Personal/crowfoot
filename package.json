@@ -3,9 +3,6 @@
   "private": true,
   "version": "0.0.1",
   "devDependencies": {
-    "@changesets/cli": "2.29.7",
-    "@changesets/get-github-info": "0.6.0",
-    "@changesets/types": "6.1.0",
     "@turbo/gen": "2.5.8",
     "@types/node": "22.18.11",
     "@vitest/coverage-v8": "3.2.4",
@@ -39,7 +36,7 @@
     "prebuild": "pnpm create-env-files",
     "prelint": "pnpm create-env-files",
     "prepare": "lefthook install",
-    "release": "pnpm build --filter @liam-hq/cli && pnpm changeset publish",
+    "release": "pnpm turbo build --filter=erdkit && pnpm --filter=erdkit publish --access public",
     "test": "turbo test",
     "test:coverage": "vitest --coverage",
     "test:e2e": "turbo test:e2e",

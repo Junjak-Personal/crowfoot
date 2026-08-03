@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { render, Text } from 'ink'
 import Gradient from 'ink-gradient'
 import React from 'react'
@@ -18,39 +20,17 @@ const shouldDisableColors = () => {
 // The ASCII art is based on the output of `oh-my-logo`.
 // see https://github.com/shinshin86/oh-my-logo
 
-const longAsciiArt = `
- ██╗      ██╗   █████╗  ███╗   ███╗     ███████╗██████╗ ██████╗
- ██║      ██║  ██╔══██╗ ████╗ ████║     ██╔════╝██╔══██╗██╔══██╗
- ██║      ██║  ███████║ ██╔████╔██║     █████╗  ██████╔╝██║  ██║
- ██║      ██║  ██╔══██║ ██║╚██╔╝██║     ██╔══╝  ██╔══██╗██║  ██║
- ███████╗ ██║  ██║  ██║ ██║ ╚═╝ ██║     ███████╗██║  ██║██████╔╝
- ╚══════╝ ╚═╝  ╚═╝  ╚═╝ ╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝╚═════╝
-`
-
-const longAsciiArtSafeWidth = 65
-
-const shortAsciiArt = `
- ██╗      ██╗   █████╗  ███╗   ███╗
- ██║      ██║  ██╔══██╗ ████╗ ████║
- ██║      ██║  ███████║ ██╔████╔██║
- ██║      ██║  ██╔══██║ ██║╚██╔╝██║
- ███████╗ ██║  ██║  ██║ ██║ ╚═╝ ██║
- ╚══════╝ ╚═╝  ╚═╝  ╚═╝ ╚═╝     ╚═╝
-
- ███████╗██████╗ ██████╗
- ██╔════╝██╔══██╗██╔══██╗
- █████╗  ██████╔╝██║  ██║
- ██╔══╝  ██╔══██╗██║  ██║
- ███████╗██║  ██║██████╔╝
- ╚══════╝╚═╝  ╚═╝╚═════╝
+// ponytail: 45 cols fits any terminal, so the upstream long/short variant split is gone
+const asciiArt = `
+ ███████╗██████╗ ██████╗ ██╗  ██╗██╗████████╗
+ ██╔════╝██╔══██╗██╔══██╗██║ ██╔╝██║╚══██╔══╝
+ █████╗  ██████╔╝██║  ██║█████╔╝ ██║   ██║
+ ██╔══╝  ██╔══██╗██║  ██║██╔═██╗ ██║   ██║
+ ███████╗██║  ██║██████╔╝██║  ██╗██║   ██║
+ ╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝   ╚═╝
 `
 
 const Banner = () => {
-  const asciiArt =
-    (process.stdout.columns || 80) > longAsciiArtSafeWidth
-      ? longAsciiArt
-      : shortAsciiArt
-
   // If colors are disabled, render plain text
   if (shouldDisableColors()) {
     return React.createElement(Text, {}, asciiArt)

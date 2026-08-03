@@ -32,7 +32,7 @@
 - Commit style: Conventional Commits (e.g., `feat:`, `fix:`, `chore(deps): ...`).
 - Before pushing: `pnpm fmt && pnpm lint && pnpm test`.
 - PRs: clear description, linked issues, screenshots for UI changes, and note any env or migration impacts.
-- Versioning: If you change a publishable package, add a changeset: `pnpm changeset`.
+- Versioning: bump `version` in `frontend/packages/cli/package.json` by hand, then `pnpm release` (build + `npm publish`). There is no changesets/CI publish path.
 
 ## Security & Configuration
 - Environment: use `.env`/`.env.local` (created automatically by `pnpm prebuild`). Never commit secrets.

@@ -52,7 +52,7 @@ Fork-owned suites: `utils/tableLayout/tableLayout.test.ts` (19) · `utils/memo/m
   `frontend/internal-packages/e2e/globalSetup.ts`; unused by the fork.)
 - Credentials source: `VERCEL_PROTECTION_BYPASS_SECRET`, `URL`, `DEFAULT_TEST_URL` env vars — upstream only
 - Test-data seed: **not applicable.** The fork's fixture is a built artifact:
-  `pnpm build --filter @liam-hq/cli` → `node frontend/packages/cli/dist-cli/bin/cli.js erd build
+  `pnpm turbo build --filter=erdkit` → `node frontend/packages/cli/dist-cli/bin/cli.js erd build
   --format schemarb --input <relative path> --output-dir dist` → serve `dist/` over HTTP
   (`npx serve dist/`). **`file://` does not work.**
 - Target env: **local only.** Never point automated tests at `carbon-stage.qesg.co.kr`.

@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import fs from 'node:fs'
 import path from 'node:path'
 import { exit } from 'node:process'
@@ -33,21 +35,21 @@ const formatMap: Record<string, string> = {
  */
 const displayWelcomeMessage = () => {
   console.info(`
-👾  Welcome to the @liam-hq/cli setup process! 👾
+👾  Welcome to the erdkit setup process! 👾
 
 This \`init\` subcommand will guide you interactively through the setup.
 
 ${yocto.greenBright('🌟 This init command is a work in progress! 🌟')}
-We're continuously improving it. Don't forget to run \`npx @liam-hq/cli init\` after updates for the latest features.
+We're continuously improving it. Don't forget to run \`npx erdkit init\` after updates for the latest features.
 
 💡 Have feedback? Share it with us!
 Visit ${yocto.blueBright(DiscussionUrl)} to submit ideas or report issues.
 
-🌟️ ${yocto.bold('Love Liam ERD')}? Help us grow by starring our GitHub repository:
+🌟️ ${yocto.bold('Love erdkit')}? Help us grow by starring our GitHub repository:
 ${yocto.blueBright(RepositoryUrl)}
 
 ----
-Now, let's get started with setting up your Liam ERD project.
+Now, let's get started with setting up your erdkit project.
   `)
 }
 
@@ -83,7 +85,7 @@ const handlePostgresPrompts = async (): Promise<string> => {
   // If no, do not ask for path—just inform
   console.info(`
 ${yocto.yellow(
-  'Please run `pg_dump --schema-only` later to generate a dump file you can use with Liam ERD.',
+  'Please run `pg_dump --schema-only` later to generate a dump file you can use with erdkit.',
 )}
 `)
   return ''
@@ -144,7 +146,7 @@ const handleTblsViaOtherPrompts = (): string => {
   console.info(`
 ${yocto.yellow("Note: Direct support is not available yet. You'll need to use tbls as a bridge.")}
 
-To use tbls with Liam ERD:
+To use tbls with erdkit:
 
 1. Install tbls from: https://github.com/k1LoW/tbls?tab=readme-ov-file#install
 
@@ -152,7 +154,7 @@ To use tbls with Liam ERD:
 
 ${yocto.blueBright('   $ tbls out -t json -o schema.json')}
 
-For more details about using tbls with Liam ERD, see:
+For more details about using tbls with erdkit, see:
 ${yocto.blueBright(`${DocsUrl}/parser/supported-formats/tbls`)}
 
 Want direct support without using tbls? Let us know at:
@@ -196,7 +198,7 @@ const displayUnsupportedMessage = () => {
 
 Visit ${yocto.yellowBright(DbOrmDiscussionUrl)} to suggest support for your database or ORM!
 
-For more details about Liam ERD usage and advanced configurations, check out:
+For more details about erdkit usage and advanced configurations, check out:
 ${yocto.blueBright(DocsUrl)}
 `)
   exit(0)
@@ -221,7 +223,7 @@ const displayNextSteps = (
     stepNum++
     console.info(
       yocto.blueBright(
-        '   $ npx @liam-hq/cli erd build --input schema.json --format tbls',
+        '   $ npx erdkit erd build --input schema.json --format tbls',
       ),
     )
   } else if (inputFilePath) {
@@ -231,7 +233,7 @@ const displayNextSteps = (
     stepNum++
     console.info(
       yocto.blueBright(
-        `   $ npx @liam-hq/cli erd build --input ${inputFilePath} --format ${selectedFormat}`,
+        `   $ npx erdkit erd build --input ${inputFilePath} --format ${selectedFormat}`,
       ),
     )
   } else {
@@ -242,7 +244,7 @@ const displayNextSteps = (
     stepNum++
     console.info(
       yocto.blueBright(
-        '   $ npx @liam-hq/cli erd build --input <schema.sql> --format postgres',
+        '   $ npx erdkit erd build --input <schema.sql> --format postgres',
       ),
     )
   }
@@ -296,7 +298,7 @@ jobs:
       - uses: actions/checkout@v4
 ${setupSteps}
       - name: Generate ER Diagrams
-        run: npx @liam-hq/cli erd build --input ${effectivePath} --format ${selectedFormat}
+        run: npx erdkit erd build --input ${effectivePath} --format ${selectedFormat}
 
     # - Next step: Deploy ERD \`./dist\` to your preferred hosting service for easy sharing and access.
 `
@@ -390,7 +392,7 @@ initCommand.action(async () => {
 
   // Show docs link
   console.info(`
-For more details about Liam ERD usage and advanced configurations, check out:
+For more details about erdkit usage and advanced configurations, check out:
 ${yocto.blueBright(DocsUrl)}
 `)
 
@@ -402,7 +404,7 @@ ${yocto.blueBright(DocsUrl)}
 
   console.info(
     yocto.greenBright(`
-✅ Setup complete! Enjoy using Liam ERD to visualize your database schema!`),
+✅ Setup complete! Enjoy using erdkit to visualize your database schema!`),
   )
 })
 

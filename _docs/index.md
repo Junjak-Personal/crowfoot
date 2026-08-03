@@ -18,7 +18,7 @@
 | 상태 | 토픽 | 문서 | 요약 |
 |---|---|---|---|
 | planning | `carbon-erd-delivery` | [2026-08-03-carbon-erd-delivery](./active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md) | carbon ERD 배포 자동화 재개 (npx 전환 + 변경 감지). **차단: ECR 권한 + cli-distribution 선행** |
-| planning | `cli-distribution` | [2026-08-03-cli-distribution](./active/planning/2026-08-03/2026-08-03-cli-distribution.md) | CLI 개인 계정 이전 + npm 공개 배포. **다음 착수 대상** |
+| planning | `cli-distribution` | [2026-08-03-cli-distribution](./active/planning/2026-08-03/2026-08-03-cli-distribution.md) | CLI 개명(`erdkit`) · Apache-2.0 준수 · npm 배포. **1~6 완료, `npm publish` 만 남음 (본인 실행)** |
 
 ### Complete
 
@@ -45,7 +45,7 @@
 | 토픽 | 범위 |
 |---|---|
 | `erd-viewer` | 포크의 ERD 뷰어 기능 — 위치 영속, 메모, 색상, 편집모드, export. 작업 표면은 `erd-core` / `schema` |
-| `cli-distribution` | `@liam-hq/cli` 패키징 · 개명 · npm 배포 · Apache-2.0 준수. 작업 표면은 `packages/cli` |
+| `cli-distribution` | `erdkit`(구 `@liam-hq/cli`) 패키징 · 개명 · npm 배포 · Apache-2.0 준수. 작업 표면은 `packages/cli` |
 | `carbon-erd-delivery` | carbon 프로젝트의 ERD 배포 — S3/CloudFront, CI 자동화, 변경 감지 |
 
 > `project-bootstrap` 은 `/team-new` 예약어. 기능 작업에 재사용 금지.

@@ -26,9 +26,9 @@ npx <패키지명> erd build --format=tbls --input schema.json --output-dir dist
 **배포는 편의 문제가 아니라 라이선스 문제이기도 하다.** 아래 §3·§4 는 Apache-2.0 준수 조건이라
 선택이 아니다.
 
-## 현재 상태 — 코드로 확인함, 실행 검증은 아직
+## 현재 상태 — 1~6 완료, 남은 건 `npm publish` 한 줄
 
-`frontend/packages/cli` 는 **이미 자립 가능한 단일 패키지**다. 새로 만들 필요 없이 이름만 바꾸면 된다.
+`frontend/packages/cli` 는 **이미 자립 가능한 단일 패키지**였고, 실측으로 확인됐다.
 CLI 소스는 `src/` 전체가 **1,439줄**뿐이라 복제할 만한 덩치도 아니다.
 
 | 확인한 것 | 파일 | 결론 |
@@ -36,85 +36,135 @@ CLI 소스는 `src/` 전체가 **1,439줄**뿐이라 복제할 만한 덩치도 
 | rollup `external` 에 `@liam-hq/erd-core`·`@liam-hq/schema` **없음** | `frontend/packages/cli/rollup.config.js` | 번들에 인라인됨 (`cli.js` 3.5MB) |
 | `prepack` 이 `workspace:*` 의존 전부 제거 후 `postpack` 복원 | `frontend/packages/cli/scripts/pack-cli.js` | tarball 이 자립 |
 | vite `outDir = 'dist-cli/html'`, `erd build` 가 `__dirname/../html` 에서 복사 | `vite.config.ts`, `src/cli/erdCommand/buildCommand/index.ts` | 웹앱 자산도 동봉됨 |
-| `files: ["dist-cli/**/*"]` | `frontend/packages/cli/package.json` | 위 3개가 tarball 에 포함 |
+| `files` | `frontend/packages/cli/package.json` | 위 3개 + `LICENSE` + `NOTICE` 가 tarball 에 포함 |
 
-> ⚠️ **위 표는 전부 코드 리딩이다. `npm pack` 을 한 번도 돌려본 적이 없다.**
-> 첫 `npm pack` 에서 실제로 확인하기 전까지 "자립한다"고 단정하면 안 된다.
+> ✅ **`npm pack` 실측 완료 (2026-08-03).** 13파일 tarball → 빈 디렉터리에서 `npm install`
+> → `erdkit erd build --input schema.sql --format postgres` 로 `dist/` 생성까지 확인.
+> 모노레포 없이 동작한다.
 
-## 미결 — 착수 전에 정해야 함
+## 확정된 이름
 
 ```
-새 리포명   [FILL: 미정]
-npm 패키지  [FILL: 미정 — 예: @<npm-스코프>/erd-cli]
-bin 이름    [FILL: 미정]
+리포        Junjak-Personal/erdkit   (구 junhyeon-qesg/liam-custom → 오너쉽 이전 → rename)
+npm 패키지  erdkit                    (무스코프, org 생성 불필요)
+bin 이름    erdkit
+버전        0.1.0                     (upstream 0.7.24 에서 리셋)
 ```
-
-셋 다 `liam` 을 포함하면 안 된다(§2 상표 항목).
 
 ## 실행 계획
 
-### 1) 리포 이전
+### 1) ✅ 리포 이전 — 완료
 
-- 개인 계정에 새 리포 생성 후 **전체 히스토리를 그대로 push**.
-  히스토리는 Apache-2.0 파생 관계를 보여주는 근거라 유지하는 게 좋다.
-- GitHub 의 fork 관계는 리포 설정에서 못 끊는다(지원팀 요청 필요). 새 리포로 push 하면 자연히 분리된다.
+`junhyeon-qesg/liam-custom` → 오너쉽 이전 → `Junjak-Personal/erdkit` 으로 rename.
+히스토리·이슈·URL 리다이렉트 전부 유지. fork 배지는 남지만 §6 은 **이름** 문제라 rename 으로 해소된다
+(새 리포 + `push --mirror` 는 star/이슈만 잃고 얻는 게 없어 기각).
 
-### 2) 패키지 개명 — `frontend/packages/cli/package.json`
+### 2) ✅ 패키지 개명 — 완료
 
-| 필드 | 현재 | 변경 |
-|---|---|---|
-| `name` | `@liam-hq/cli` | 우리 스코프 |
-| `bin` | `{"liam": "./dist-cli/bin/cli.js"}` | 우리 이름 |
-| `version` | `0.7.24` | upstream 과 혼동되니 우리 체계로 리셋 (`0.1.0` 권장) |
-| `repository` / `homepage` / `bugs` | liam-hq | 새 리포 |
+`frontend/packages/cli/package.json`: `name`→`erdkit`, `bin`→`{"erdkit": …}`, `version`→`0.1.0`,
+`repository`/`homepage`/`bugs`→새 리포, `description` 재작성.
 
-> ⚠️ **개명은 편의가 아니라 라이선스 문제다.** Apache-2.0 **§6 은 상표권을 부여하지 않는다.**
-> "Liam" 은 ROUTE06 의 제품명이므로 `liam-*` 이름으로 배포하면 그 선을 넘는다.
-> 코드 재배포는 §4 만 지키면 자유지만, **이름은 별개다.**
+**코드까지 따라가야 하는 곳이 있었다** (package.json 만으로는 부족):
 
-### 3) 🔴 NOTICE 를 tarball 에 넣기 — 지금은 빠져 있다
+| 파일 | 왜 |
+|---|---|
+| `src/cli/index.ts` | `program.name('liam')` → `--help` 첫 줄에 그대로 노출 |
+| `src/cli/banner.ts` | init 배너가 **"LIAM ERD" ASCII 워드마크**를 렌더 — §6 상 가장 직접적인 표면. `ERDKIT` 으로 교체하며 long/short 분기 삭제(45칸이면 어떤 터미널에도 들어감) |
+| `src/cli/initCommand/index.ts` | 안내문이 `npx @liam-hq/cli …` 를 출력 — **틀린 명령**(upstream 을 받아옴) |
+| `src/cli/urls.ts` | `RepositoryUrl`/`DiscussionUrl` 이 upstream — 우리 사용자의 버그가 upstream 으로 감. `DocsUrl`(liambx.com)은 파서 문서라 정확하므로 유지 |
+| `index.html` | 생성된 ERD의 **브라우저 탭 제목이 "Liam ERD"** 였다 → `ERD`. upstream 제품 이미지 `og:image`(`liam_erd.png`, 410KB) 삭제 |
+| `README.md` | npm 랜딩 페이지. 재작성 + upstream 출처 명시 |
+| `frontend/apps/erd-sample/package.json` | `workspace:*` 참조 |
 
-- `files: ["dist-cli/**/*"]` 라서 NOTICE 가 포함되지 않는다.
-  npm 은 LICENSE 는 자동 포함하지만 **NOTICE 는 자동 포함하지 않는다.**
-- 게다가 NOTICE 는 **리포 루트**에 있어 패키지 디렉터리에서 보이지도 않는다.
-- Apache-2.0 **§4(d)** 는 파생물 배포 시 NOTICE 동반을 요구한다. **퍼블리시 전 필수.**
+### 3) ✅ LICENSE·NOTICE 를 tarball 에 넣기 — 완료
 
-```jsonc
-// frontend/packages/cli/package.json
-"files": ["dist-cli/**/*", "NOTICE"]
+> 🔴 **계획서가 NOTICE 만 짚었는데 `LICENSE` 도 같이 빠져 있었다.**
+> npm 이 LICENSE 를 자동 포함하는 건 **패키지 디렉터리 안**에 있을 때뿐이고, 둘 다 리포 루트에만 있었다.
+> 즉 npm 경로는 §4(d) 뿐 아니라 **§4(a) 도 위반 상태**였다.
+
+`scripts/pack-cli.js` 의 `pre` 가 루트에서 두 파일을 복사, `post` 가 삭제. 커밋된 사본을 두지 않아
+루트 원본과 **드리프트가 구조적으로 불가능**하다. `files` 에도 명시.
+
+### 4) ✅ upstream `release.yml` — 삭제 완료
+
+실측해보니 **불발탄이었다.** 이 포크에 워크플로 실행 이력 0건이고,
+`vars.CHANGESET_CI_TRIGGER_APP_ID` / `secrets.CHANGESET_CI_TRIGGER_APP_PRIVATE_KEY` 가 없어
+첫 스텝(`create-github-app-token`)에서 죽는다. npm Trusted Publisher 도 `liam-hq/liam` 리포에 묶여 있어
+이 포크발 OIDC 퍼블리시는 npm 이 거부한다. → 위험하진 않지만 **영원히 동작 불가라 삭제**.
+
+- `.github/workflows/release.yml`, `.github/workflows/released_package_test.yml` 삭제
+- 루트 `release` 스크립트를 changesets → `pnpm turbo build --filter=erdkit && pnpm --filter=erdkit publish --access public` 로 교체
+- ⚠️ 퍼블리시는 이제 **수동**이다. CI 자동 퍼블리시는 별도 과제.
+
+### 5) 🔲 퍼블리시 — 남은 유일한 작업
+
+**본인이 직접 실행.** 토큰을 에이전트에 넘기지 않는다 (unpublish 72시간 제한 + 이름 영구 점유).
+
+```bash
+cd frontend/packages/cli && npm publish --access public --otp=<authenticator 6자리>
 ```
 
-\+ 루트 `NOTICE` 를 패키지로 복사하는 단계를 `prepack`(`scripts/pack-cli.js`)에 추가하거나, 파일 자체를
-패키지 디렉터리에 둔다.
+> 🔴 **`bin` 값의 선행 `./` 함정 — 1차 시도에서 발견.**
+> upstream 원본 `"liam": "./dist-cli/bin/cli.js"` 를 그대로 물려받았는데, npm 11.16.0 은
+> `./` 가 붙은 bin 타깃을 무효로 보고 **publish 매니페스트에서 bin 을 통째로 제거**한다
+> (`npm warn publish "bin[erdkit]" script name … was invalid and removed`).
+> 그대로 올라갔으면 `npx erdkit` 이 동작하지 않는다.
+>
+> **로컬 `npm pack` + tarball 설치로는 절대 안 잡힌다** — 제거는 publish 시점 정규화에서만 일어난다.
+> `npm publish --dry-run` 이 유일하게 잡아내는 경로다. 실측:
+>
+> | bin 값 | 결과 |
+> |---|---|
+> | `./dist-cli/bin/cli.js` | REMOVED |
+> | `dist-cli/bin/cli.js` | ok |
+>
+> → `./` 제거로 수정. `repository.url` 도 `git+https://` 로 정규화해 경고 0건 확인.
 
-> S3 배포 경로는 이미 충족돼 있다(`dist/` 에 `LICENSE`·`NOTICE` 동반). **구멍은 npm 경로만이다.**
-
-### 4) ⚠️ upstream `release.yml` 이 살아 있다 — 개명 전 `main` 금지
-
-`.github/workflows/release.yml` 은 `main` push 시 changesets 로 **`@liam-hq/cli` 를 npm 에 퍼블리시**한다.
-npmjs.com Trusted Publisher 설정에 **이 파일명이 등록돼 있어** 파일을 rename 하면 그 설정도 같이 깨진다.
-
-- 개명 전에 `main` 을 건드리면 **남의 패키지 이름으로 발행 시도가 나간다** — §6 위반이 절차보다 먼저 터진다.
-- 개명 시 이 워크플로도 같이 손봐야 한다.
-
-### 5) 퍼블리시
-
-- **공개 npm 권장.** 개인 + 타사 프로젝트 양쪽에서 쓸 거면 인증 불필요한 공개가 압도적으로 편하다.
-  포크도 이미 공개라 새로 노출되는 것도 없다.
-- 첫 배포 전 반드시 `npm pack` 으로 tarball 내용물을 **눈으로** 확인
-  (`dist-cli/html/` 과 `NOTICE` 가 실제로 들어갔는지).
-- 임시 디렉터리에서 tarball 설치 후 `npx <bin> erd build` **실동작까지 확인**하고 publish.
-- `npm publish --access public`
+> 🔴 **0.1.0 은 깨진 채 발행됐다 — `workspace:*` 가 레지스트리 매니페스트로 샜다.**
+> `npm publish` 는 **업로드할 매니페스트를 `prepack` 실행 *전에* 읽는다.** 그래서
+> `scripts/pack-cli.js` 가 아무리 `workspace:*` 를 지워도 **tarball 만 깨끗해지고 매니페스트는 그대로**다.
+>
+> | | `@liam-hq/erd-core` |
+> |---|---|
+> | tarball 내 `package.json` | 없음 |
+> | 레지스트리 매니페스트 | **`workspace:*`** |
+>
+> 결과: `npx erdkit@0.1.0` → `EUNSUPPORTEDPROTOCOL`. **로컬 `npm pack` + tarball 설치는 전부 통과한다** —
+> 이 층은 실제 publish 후 `npx` 로만 드러난다.
+>
+> **근본 원인은 `prepack` 으로 package.json 을 런타임 조작한 것.** erd-core·schema 는 rollup 이
+> `cli.js` 에 인라인하므로 **애초에 런타임 의존이 아니다.** → `devDependencies` 로 이동해서
+> 매니페스트가 **구조적으로** 깨끗해지게 했다. 조용한 제거는 **prepack 가드(exit 1)** 로 교체 —
+> `dependencies` 에 workspace 항목이 있으면 publish 전에 터진다 (가드 발화 실측 완료).
+>
+> **0.1.0 은 deprecate 하고 0.1.1 로 재발행한다.**
 
 ## 순서
 
-1. 새 리포명 · npm 스코프 · bin 이름 결정 → 위 `[FILL: 미정]` 채우기
-2. 개인 계정에 새 리포 생성 + 전체 히스토리 push
-3. `package.json` 개명 (name / bin / version / repository) + `release.yml` 정리
-4. **NOTICE 를 `files` 에 추가** (§4(d))
-5. `npm pack` 으로 tarball 내용물 확인 — `dist-cli/html/`, `NOTICE` 존재 여부
-6. 임시 디렉터리에서 tarball 설치 후 `npx <bin> erd build` 실동작 확인
-7. `npm publish --access public`
+1. ✅ 이름 결정 — `erdkit` (리포/패키지/bin 통일)
+2. ✅ 리포 이전 + rename
+3. ✅ `package.json` 개명 + 코드 내 브랜딩 제거 + `release.yml` 삭제
+4. ✅ `LICENSE`·`NOTICE` 를 `files` + `prepack` 에 추가
+5. ✅ `npm pack` 내용물 확인 — 13파일, `dist-cli/html/`·`LICENSE`·`NOTICE` 전부 존재
+6. ✅ 빈 디렉터리에서 tarball 설치 → `erdkit erd build` 실동작 확인 (`dist/` 생성, 탭 제목 `ERD`)
+7. 🔲 `npm publish --access public` ← **본인 실행**
+
+## 검증 기록 (2026-08-03)
+
+| 검사 | 결과 |
+|---|---|
+| `pnpm turbo build --filter=erdkit` | ✅ 6 tasks |
+| `pnpm --filter erdkit test` | ✅ 23 passed |
+| `tsc --noEmit` | ✅ 0 errors |
+| `biome check .` | ✅ (기존 `fixtures/input.schema.rb` 깨진 심볼릭 링크 경고 1건 — 이번 변경과 무관) |
+| tarball → clean `npm install` → `erd build --format postgres` | ✅ `dist/{index.html,schema.json,assets,serve.json}` 생성, 테이블 2개 파싱 |
+| `erdkit --version` / `--help` | ✅ `0.1.0` / `Usage: erdkit …` |
+| `npm publish --dry-run` | ✅ 경고 0건 (`bin` 제거 경고 해소 후) |
+| `dependencies` 에 workspace 항목 | ✅ 0건 (매니페스트 안전) |
+| prepack 가드 발화 | ✅ workspace 런타임 의존 주입 시 exit 1 |
+| **`npx erdkit@0.1.1` (레지스트리 경유)** | ✅ `dist/{index.html,schema.json,assets,serve.json}` 생성. **위 두 함정 모두 이 검사로만 잡힌다** |
+| 레지스트리 매니페스트 `dependencies` | ✅ workspace 항목 0건 |
+| `erdkit@0.1.0` deprecate | ✅ `broken manifest (workspace: protocol leaked); use >=0.1.1` |
 
 ## Deferred — `--layout` / `--memos` 옵션
 
@@ -122,7 +172,7 @@ npmjs.com Trusted Publisher 설정에 **이 파일명이 등록돼 있어** 파�
 carbon 워크플로에만 있는 해킹이라 **다른 프로젝트에서 재현이 안 된다.** 범용 CLI 라면 정식 옵션이어야 한다.
 
 ```bash
-<cli> erd build --format=tbls --input schema.json \
+erdkit erd build --format=tbls --input schema.json \
       --layout layout.json --memos memos.json --output-dir dist
 ```
 
@@ -137,10 +187,11 @@ carbon 워크플로에만 있는 해킹이라 **다른 프로젝트에서 재현
 
 | 조항 | 요구 | 상태 |
 |---|---|---|
-| §4(a) | LICENSE 사본 동반 | ✅ 루트 `LICENSE`, S3 `dist/LICENSE` |
-| §4(b) | 변경한 파일에 변경 표시 | ✅ 수정 18파일 / 신규 20파일 상단에 주석 |
-| §4(d) | NOTICE 동반 | ⚠️ S3 ✅ / **npm tarball 미포함 — §3** |
-| §6 | 상표권 미부여 | ⚠️ **패키지·리포 이름에서 "liam" 제거 필요 — §2** |
+| §4(a) | LICENSE 사본 동반 | ✅ 루트 · S3 `dist/LICENSE` · **npm tarball (prepack 복사)** |
+| §4(b) | 변경한 파일에 변경 표시 | ✅ 기존 수정 18파일 / 신규 20파일 + 이번 개명으로 건드린 5파일 |
+| §4(d) | NOTICE 동반 | ✅ 루트 · S3 · **npm tarball (prepack 복사)** |
+| §6 | 상표권 미부여 | ✅ 리포·패키지·bin·CLI 이름·배너 워드마크·탭 제목·og:image 전부 제거 |
 
-`NOTICE` 에 upstream 출처(ROUTE06, Inc.)와 pin 커밋, 변경 요약 6항목이 이미 정리돼 있다.
+`NOTICE` 에 upstream 출처(ROUTE06, Inc.)와 pin 커밋, 변경 요약이 정리돼 있고
+**개명 사실을 7번 항목으로 추가**했다 (§6 상 별도 이름으로 재배포한다는 명시 + 승인 관계 부인).
 신규/수정 파일 헤더 주석의 정확한 문구는 `.claude/project-profile/structure.md` 에 있다.

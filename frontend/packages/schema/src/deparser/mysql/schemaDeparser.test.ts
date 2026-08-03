@@ -1,4 +1,4 @@
-// Added in liam-custom; not part of the original Liam ERD source.
+// Added in erdkit; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { describe, expect, it } from 'vitest'
 import type { Schema, Table } from '../../schema/index.js'

@@ -1,4 +1,4 @@
-liam-custom
+erdkit
 Copyright (c) 2026 QESG
 
 This product includes software developed by ROUTE06, Inc.
@@ -40,3 +40,9 @@ Summary of the changes made to the original work
 
 6. A Windows compatibility fix to an npm script in frontend/apps/app, which
    otherwise prevented the repository's own lint task from running.
+
+7. The command-line tool is redistributed under a different name.
+   Section 6 of the License grants no trademark rights, so the npm package,
+   its executable, this repository and the generated page title no longer
+   carry the "Liam" product name; they are published as "erdkit". No
+   endorsement by ROUTE06, Inc. is implied.

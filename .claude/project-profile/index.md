@@ -1,4 +1,4 @@
-# Project Profile — liam-custom
+# Project Profile — erdkit
 
 > Generated: 2026-08-03
 > Last updated: 2026-08-03
@@ -43,12 +43,12 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
 ## Key Conventions for Agents
 
 1. **🔴 Apache-2.0 headers are mandatory.** Every file the fork creates or modifies gets a two-line
-   header (`// Added in liam-custom…` or `// Modified from the original Liam ERD source…`) pointing at
+   header (`// Added in erdkit…` or `// Modified from the original Liam ERD source…`) pointing at
    `NOTICE`. §4(b) requires it. When the nature of a change shifts, update `NOTICE`'s change summary.
    Exact text: `structure.md` → "Apache-2.0 file-header convention".
-2. **🔴 Never publish or rename toward `liam-*`.** §6 grants no trademark rights, and `release.yml` is
-   wired to npm Trusted Publishing for `@liam-hq/cli`. Do not push to `main` in a way that triggers it.
-   `NOTICE` is **not** in the CLI's `files` yet — that gap must close before any publish.
+2. **🔴 Never name anything `liam-*`.** §6 grants no trademark rights. The CLI ships as `erdkit`
+   (package, bin, repo, banner, generated page title). `prepack` copies the root `LICENSE` and
+   `NOTICE` into the tarball — do not remove that, it is what satisfies §4(a) and §4(d).
 3. **Stay on the fork's work surface**: `packages/erd-core`, `packages/schema`, `packages/cli`.
    `frontend/apps/app` (Next.js + Supabase) is upstream and out of scope — if a task reaches it, stop
    and re-scan rather than assuming this profile applies.
