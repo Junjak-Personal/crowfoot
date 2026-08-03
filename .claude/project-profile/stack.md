@@ -74,7 +74,8 @@
 - `frontend/packages/cli` is already a **self-contained publishable package**: rollup does *not* mark
   `@liam-hq/erd-core` / `@liam-hq/schema` external (they are inlined), and `scripts/pack-cli.js`
   strips `workspace:*` deps on `prepack` and restores on `postpack`.
-- ⚠️ **Blockers before any publish** (Apache-2.0 compliance, see `docs/fork/HANDOFF.md` §6):
+- ⚠️ **Blockers before any publish** (Apache-2.0 compliance; plan:
+  `_docs/active/planning/2026-08-03/2026-08-03-cli-distribution.md`):
   1. `files: ["dist-cli/**/*"]` does **not** include `NOTICE` → violates §4(d). Must be added.
   2. Package/bin name still `@liam-hq/cli` / `liam` → §6 grants no trademark rights. Must be renamed.
   3. `npm pack` has **never been run** — the self-contained claim is code-reading, **unverified**.

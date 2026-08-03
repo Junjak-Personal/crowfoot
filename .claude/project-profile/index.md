@@ -14,7 +14,8 @@ MySQL DDL export. Its first consumer is the carbon project's ERD at
 https://carbon-stage.qesg.co.kr/erd/. The next milestone is renaming and publishing the CLI to npm so
 it can be used as `npx <pkg> erd build …` from any project.
 
-Fork-only context lives in **`docs/fork/HANDOFF.md`**; the rest of `docs/` is upstream documentation.
+Fork-only project docs live in **`_docs/`** (start at `_docs/index.md`); `docs/` is upstream
+documentation and is not ours. To pick the work back up, read `_docs/handoff/2026-08-03-erd-viewer-handoff.md`.
 
 ## Quick Summary
 - **Stack**: TypeScript 5.9.3 + React 19 + Vite/Rollup (static SPA) — pnpm/Turborepo monorepo
@@ -65,7 +66,7 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
 9. **Validate external data with Valibot; return `neverthrow` Results instead of throwing.**
 10. **Exact versions only** (`save-exact=true`) — never write `^` or `~` into a `package.json`.
 
-## Known gotchas (all hit for real — see `docs/fork/HANDOFF.md` §5)
+## Known gotchas (all hit for real)
 - `erd build --input <absolute path>` is parsed as a URL → `fetch failed`. **Relative paths only.**
 - `dist/schema.json` (deploy this) ≠ the input `schema.json` (don't) — same name, different files.
 - Windows: the lefthook pre-commit hook needs a **full** `pnpm install`, not a filtered one. Watch `core.autocrlf`.
@@ -73,10 +74,15 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
   Liam exit 1 with `ZodError: unrecognized_keys ["id"]`.
 
 ## Open items (not started)
-- `--layout` / `--memos` CLI options — `layout.json`/`memos.json` are currently `cp`'d into `dist/`
-  by a carbon-only script, so the feature is not reproducible in other projects.
-- npm publish path is **entirely unverified** (`npm pack` never run).
-- No E2E coverage of any fork feature; unit tests only.
+
+Tracked as plans in `_docs/` — see `_docs/index.md` for the current status of each.
+
+- **npm publish** (`_docs/active/planning/2026-08-03/2026-08-03-cli-distribution.md`) — rename off
+  `liam-*`, add `NOTICE` to the tarball, verify with `npm pack`. The path is **entirely unverified**;
+  `npm pack` has never been run. Includes deferred `--layout` / `--memos` CLI options.
+- **carbon delivery automation** (`_docs/active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md`)
+  — blocked on ECR permissions and on the publish above.
+- **No E2E coverage of any fork feature**; unit tests only. Not yet planned.
 
 ## Agent Loading Guide
 - **All agents**: read this `index.md` (REQUIRED)

@@ -21,8 +21,9 @@ liam-custom/
 │       ├── configs/        @liam-hq/configs    shared biome/tsconfig/eslint presets
 │       ├── e2e/            @liam-hq/e2e        Playwright — targets the Next.js app (upstream)
 │       ├── storybook/  schema-bench/  neverthrow/  figma-to-css-variables/
-├── docs/
-│   └── fork/HANDOFF.md     ★ fork-only handoff. `docs/` otherwise is upstream docs — do not mix.
+├── _docs/                  ★ fork's project docs — plans, specs, handoff. Start at `_docs/index.md`.
+├── _note/                  human-owned scratch notes — agent READ-ONLY
+├── docs/                   upstream documentation — not ours, do not mix fork docs in here
 ├── .github/workflows/      upstream CI (17 workflows) — mostly inert for the fork
 ├── NOTICE                  ★ Apache-2.0 §4(d) attribution + change summary — keep in sync
 ├── LICENSE                 Apache-2.0
