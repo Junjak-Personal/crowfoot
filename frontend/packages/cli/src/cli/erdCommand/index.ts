@@ -2,6 +2,7 @@ import { supportedFormatSchema } from '@liam-hq/schema/parser'
 import { Command } from 'commander'
 import { actionRunner } from '../actionRunner.js'
 import { buildCommand } from './buildCommand/index.js'
+import { fromLinkCommand } from './fromLinkCommand/index.js'
 
 const defaultDistDir = 'dist'
 
@@ -20,12 +21,27 @@ erdCommand
   )
   .option(
     '--output-dir <path>',
-    `Output directory for generated files (default: "${defaultDistDir}")`,
+    'Output directory for generated files',
     defaultDistDir,
   )
   .action(
     actionRunner((options) =>
       buildCommand(options.input, options.outputDir, options.format),
+    ),
+  )
+
+erdCommand
+  .command('from-link')
+  .description('Write layout.json / memos.json from a shared ?edit=1 link')
+  .option('--input <url>', 'The shared ERD URL (quote it — it contains &)')
+  .option(
+    '--output-dir <path>',
+    'Output directory for generated files',
+    defaultDistDir,
+  )
+  .action(
+    actionRunner((options) =>
+      fromLinkCommand(options.input, options.outputDir),
     ),
   )
 

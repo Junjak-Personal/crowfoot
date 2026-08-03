@@ -166,6 +166,26 @@ cd frontend/packages/cli && npm publish --access public --otp=<authenticator 6�
 | 레지스트리 매니페스트 `dependencies` | ✅ workspace 항목 0건 |
 | `erdkit@0.1.0` deprecate | ✅ `broken manifest (workspace: protocol leaked); use >=0.1.1` |
 
+## 0.1.2 — `erd from-link` 추가
+
+공유 링크(`?edit=1&positions=…&memos=…`)를 `layout.json` / `memos.json` 으로 되돌리는 서브커맨드.
+
+```bash
+erdkit erd from-link --input '<URL>' --output-dir dist
+```
+
+- 디코딩은 `node:zlib`. **erd-core 를 import 하지 않는다** — CLI bin 은 erd-core 를 전혀 안 쓰는데
+  여기서 끌어오면 뷰어의 React 트리가 `cli.js`(이미 3.5MB)에 딸려온다. 파싱 규칙(오른쪽부터 `:` 분리)만
+  `deserializeTableLayout` 과 맞춰 두고 주석으로 연결해 뒀다.
+- 팔레트 검증은 **안 한다.** 뷰어가 로드 시 모르는 색 키를 버리므로, CLI 에 키 목록을 복제하면 드리프트만 생긴다.
+- **링크에 없는 파라미터는 파일을 안 쓴다.** `{}` 로 멀쩡한 `layout.json` 을 덮어쓰는 사고를 막는다.
+
+> 🟠 **앱 쪽 결함 발견(별건, 미수정)** — Export 메뉴의 `memos.json` 다운로드는 URL 의 메모를 놓친다.
+> `memo.ts` 의 `dumpMemos()` 가 `getEffectiveMemos()` 를 **인자 없이** 부른다 (`ErdContent.tsx:211` 은
+> `deserializeMemos(memoEntries)` 를 넘겨서 화면엔 제대로 뜬다). 공유 링크를 열고 Export 하면
+> **화면과 다른 파일이 조용히 받아진다.** URL 의 `colors=` 도 같은 이유로 빠진다.
+> `from-link` 는 이 경로를 우회하지만 근본 수정은 아니다.
+
 ## Deferred — `--layout` / `--memos` 옵션
 
 지금 `layout.json`·`memos.json` 은 **빌드 후 `cp` 로 `dist/` 에 밀어넣고 있다.**

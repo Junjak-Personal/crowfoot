@@ -22,6 +22,21 @@ npx serve dist/
 
 Parser and format details are documented upstream at https://liambx.com/docs/cli.
 
+### Committing an arranged layout
+
+Open the built ERD with `?edit=1`, drag tables around, add memos, then copy the
+URL — it carries the arrangement. Turn that link back into the sidecar files the
+viewer loads:
+
+```bash
+npx erdkit erd from-link --input '<the ?edit=1 URL>' --output-dir dist
+```
+
+Quote the URL; it contains `&`. Only the files the link actually carries are
+written, so a link with no memos will not blow away an existing `memos.json`.
+`layout.json` and `memos.json` load from the same directory as `schema.json`,
+so keep them next to it (or commit them to whatever your deploy copies in).
+
 ## Development
 
 ```bash
