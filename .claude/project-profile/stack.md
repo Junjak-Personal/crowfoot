@@ -1,0 +1,80 @@
+# Tech Stack
+
+> **This repo is a fork.** `liam-custom` = a modified fork of [Liam ERD](https://github.com/liam-hq/liam)
+> (ROUTE06, Inc., Apache-2.0), **pinned to upstream `92156eac5` (2026-06-18)** and NOT tracking upstream.
+> Most of the monorepo is inherited upstream code the fork does not touch. See `structure.md` → "Fork work surface".
+
+## Runtime
+- Language: TypeScript 5.9.3 (React 19.1.1)
+- Runtime: Node 22.21.0 (`.node-version`)
+- Package manager: **pnpm 10.18.3** (`packageManager` field in root `package.json`)
+- Detection: `pnpm-lock.yaml` present + explicit `packageManager` field (authoritative)
+- Monorepo orchestrator: **Turborepo 2.5.8** (`turbo.json`, concurrency 15)
+- Workspaces (`pnpm-workspace.yaml`): `frontend/apps/*`, `frontend/packages/*`, `frontend/packages/__mocks__/*`, `frontend/internal-packages/*`
+- `.npmrc`: `save-exact=true` — **all dependency versions are pinned exact, no `^`/`~`**. Keep it that way.
+- `pnpm-workspace.yaml` sets `minimumReleaseAge: 2880` (2 days) — brand-new releases are blocked unless allowlisted.
+
+## Framework
+- Framework: **none at the fork's work surface** — the shipped artifact is a Vite-built static SPA emitted by the CLI.
+  (Upstream also ships a Next.js 15 app at `frontend/apps/app`; the fork does not touch it.)
+- Canvas / rendering: `@xyflow/react` 12.8.6 (React Flow) + `elkjs` 0.10.0 (auto-layout)
+- UI library: `@liam-hq/ui` (workspace-internal, Radix UI primitives + `lucide-react`)
+- CSS: **CSS Modules** + `typed-css-modules` (`tcm`) generating `*.module.css.d.ts`
+- Validation: **Valibot** 1.1.0 (runtime validation of external data)
+- URL state: `nuqs` 2.4.3
+- Errors: `neverthrow` 8.2.0 (Result type)
+- Pattern matching: `ts-pattern` 5.7.1
+
+## Key Dependencies (fork work surface only)
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `@xyflow/react` | 12.8.6 | ERD canvas — nodes, edges, viewport |
+| `elkjs` | 0.10.0 | Auto-layout (`nodePlacement/layering: INTERACTIVE` — seeded coords are honored as hints) |
+| `nuqs` | 2.4.3 | Query-param-backed state (`?positions=`, `?colors=`, `?memos=`, `?edit=`, `?show=`) |
+| `valibot` | 1.1.0 | Runtime schema validation |
+| `neverthrow` | 8.2.0 | Result-typed error handling |
+| `pako` | 2.1.0 | Deflate for the compressed URL params |
+| `commander` | 13.1.0 | CLI arg parsing |
+| `ink` / `inquirer` | 6.0.1 / 12.6.3 | CLI TUI + prompts |
+| `@prisma/internals` | 6.8.2 | Prisma schema parsing |
+| `lucide-react` | 0.511.0 | Icons (via `@liam-hq/ui`) |
+| `rollup` | 4.52.5 | Bundles the CLI (`dist-cli/bin/cli.js`, ~3.5MB — erd-core/schema inlined, NOT external) |
+| `vite` | 6.4.1 | Builds the viewer SPA into `dist-cli/html` |
+
+## Build (pnpm)
+- Install: `pnpm install --frozen-lockfile`
+- Dev (all): `pnpm dev` · single package: `pnpm --filter @liam-hq/cli dev`
+- Build (all): `pnpm build` · single: `pnpm build --filter @liam-hq/cli`
+- Test: `pnpm test` (turbo fan-out) · single: `pnpm --filter @liam-hq/erd-core test`
+- Format: `pnpm fmt` · Lint: `pnpm lint`
+- CSS type gen: `pnpm gen:css` (per-package `tcm src`) — **required after adding/changing any `.module.css`**
+- Worktree deps fast-path (**family A · copy-based, node_modules**):
+  `pnpm install --frozen-lockfile --prefer-offline`
+  Hard-links from the pnpm content-addressable store; store and worktree must be on the **same filesystem** (both under `C:\` here) or pnpm falls back to copying. No re-download.
+- Audit: `pnpm audit`
+
+## Build & Verify — AUTHORITATIVE commands (vacuity-checked 2026-08-03 @ `d2fb6638c`)
+
+> Use THESE, never a convenience alias. All three were run and confirmed to exercise real sources.
+
+- **Type-check (authoritative, per package)**: `pnpm --filter <pkg> exec tsc --noEmit`
+  - Vacuity-checked: **yes** — each package's `tsconfig.json` has `"include": ["src/**/*"]` extending
+    `@liam-hq/configs/tsconfig/base.json`; it compiles real sources. There is **no root `tsconfig.json`**,
+    so a root-level `tsc --noEmit` is meaningless — always filter to a package.
+  - Pre-existing error baseline: **0** (`@liam-hq/erd-core` exit 0, `@liam-hq/cli` exit 0). Gate on net-new vs 0.
+- **Lint (authoritative)**: `pnpm lint` → `turbo lint` + `syncpack lint` + `knip --treat-config-hints-as-errors`
+  - Per-package: `biome check .` (+ `eslint .`, **disabled in `@liam-hq/cli`** — its `lint:eslint` is a no-op `echo`)
+  - Baseline: **0**
+  - CSS: `pnpm lint:stylelint` (`--max-warnings 0`)
+- **Test (authoritative)**: `pnpm --filter <pkg> test` (vitest)
+  - Confirmed collects: `@liam-hq/schema` **562 tests / 37 files**, `@liam-hq/erd-core` **195 passed + 4 todo / 29 files**. Both green.
+  - Root `vitest.config.ts` defines projects across the workspace; `pnpm test:coverage` runs v8 coverage into `./coverage`.
+
+## Publishing (fork milestone — NOT yet done)
+- `frontend/packages/cli` is already a **self-contained publishable package**: rollup does *not* mark
+  `@liam-hq/erd-core` / `@liam-hq/schema` external (they are inlined), and `scripts/pack-cli.js`
+  strips `workspace:*` deps on `prepack` and restores on `postpack`.
+- ⚠️ **Blockers before any publish** (Apache-2.0 compliance, see `docs/fork/HANDOFF.md` §6):
+  1. `files: ["dist-cli/**/*"]` does **not** include `NOTICE` → violates §4(d). Must be added.
+  2. Package/bin name still `@liam-hq/cli` / `liam` → §6 grants no trademark rights. Must be renamed.
+  3. `npm pack` has **never been run** — the self-contained claim is code-reading, **unverified**.
