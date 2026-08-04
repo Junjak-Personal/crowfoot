@@ -22,8 +22,18 @@ export const MIN_MEMO_HEIGHT = 60
 
 export const DEFAULT_MEMO_FONT_SIZE = 13
 export const MIN_MEMO_FONT_SIZE = 10
-export const MAX_MEMO_FONT_SIZE = 28
-const FONT_SIZE_STEP = 2
+export const MAX_MEMO_FONT_SIZE = 96
+
+/**
+ * The step grows with the font. 2px is a sensible nudge at body size and an
+ * invisible one at heading size, and the range is now wide enough that a fixed
+ * step would take forty clicks to cross.
+ */
+const fontSizeStep = (fontSize: number): number => {
+  if (fontSize < 24) return 2
+  if (fontSize < 48) return 4
+  return 8
+}
 
 /** Keeps a typed-in size inside the supported range. */
 export const clampMemoFontSize = (value: number): number => {
@@ -35,11 +45,17 @@ export const clampMemoFontSize = (value: number): number => {
   )
 }
 
-/** Bumps a memo's font size, clamped to the supported range. */
-export const stepMemoFontSize = (memo: Memo, direction: 1 | -1): number =>
-  clampMemoFontSize(
-    (memo.fontSize ?? DEFAULT_MEMO_FONT_SIZE) + direction * FONT_SIZE_STEP,
-  )
+/**
+ * Bumps a memo's font size, clamped to the supported range. Stepping down reads
+ * the band just below the current size so that `+` and `−` undo each other
+ * across a band boundary instead of drifting.
+ */
+export const stepMemoFontSize = (memo: Memo, direction: 1 | -1): number => {
+  const current = memo.fontSize ?? DEFAULT_MEMO_FONT_SIZE
+  const step = fontSizeStep(direction === 1 ? current : current - 1)
+
+  return clampMemoFontSize(current + direction * step)
+}
 
 /** Memos shipped with the build (memos.json), set by the host app. */
 let baseMemos: Memo[] = []
@@ -176,3 +192,65 @@ export const createMemo = (id: string, x: number, y: number): Memo => ({
   width: DEFAULT_MEMO_WIDTH,
   height: DEFAULT_MEMO_HEIGHT,
 })
+
+/** How far a duplicate lands from its original, so it reads as a new memo. */
+export const MEMO_DUPLICATE_OFFSET = 24
+
+export const duplicateMemo = (memo: Memo, id: string): Memo => ({
+  ...memo,
+  id,
+  x: memo.x + MEMO_DUPLICATE_OFFSET,
+  y: memo.y + MEMO_DUPLICATE_OFFSET,
+})
+
+/**
+ * Copies centred as a group on a point, the way `createMemo` centres a new one.
+ * Relative offsets are kept, so a pasted cluster holds its shape.
+ */
+export const placeMemos = (
+  memos: Memo[],
+  newId: () => string,
+  x: number,
+  y: number,
+): Memo[] => {
+  if (memos.length === 0) return []
+
+  const left = Math.min(...memos.map((memo) => memo.x))
+  const top = Math.min(...memos.map((memo) => memo.y))
+  const right = Math.max(...memos.map((memo) => memo.x + memo.width))
+  const bottom = Math.max(...memos.map((memo) => memo.y + memo.height))
+
+  const dx = x - (left + right) / 2
+  const dy = y - (top + bottom) / 2
+
+  return memos.map((memo) => ({
+    ...memo,
+    id: newId(),
+    x: memo.x + dx,
+    y: memo.y + dy,
+  }))
+}
+
+/**
+ * Memos travel through the OS clipboard as JSON under a marker key. The marker
+ * is what keeps a paste of ordinary text from being turned into a memo, and it
+ * lets memos copied in one ERD tab be pasted into another.
+ */
+const CLIPBOARD_KEY = 'erdkit.memo'
+
+export const serializeMemosToClipboard = (memos: Memo[]): string =>
+  JSON.stringify({ [CLIPBOARD_KEY]: memos })
+
+export const parseMemosFromClipboard = (text: string): Memo[] => {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return []
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) return []
+  if (!(CLIPBOARD_KEY in parsed)) return []
+
+  return parseMemos(parsed[CLIPBOARD_KEY])
+}

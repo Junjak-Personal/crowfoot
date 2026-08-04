@@ -41,3 +41,13 @@
   border: 2px solid var(--primary-accent);
   box-shadow: 0px 0px 20px 0px rgba(29, 237, 131, 0.4);
 }
+
+/*
+ * Part of a multi-selection, which React Flow marks on the node wrapper it
+ * owns. An outline rather than a border so it stacks with the tint and
+ * highlight rules above instead of fighting them for the border.
+ */
+:global(.react-flow__node.selected) .wrapper {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}

@@ -3,19 +3,11 @@
  * See the NOTICE file at the repository root.
  */
 
-.layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 4; /* above the dotted background, below the app chrome */
-  transform-origin: 0 0;
-  pointer-events: none; /* only the memos themselves are interactive */
-}
-
 .memo {
-  position: absolute;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
   padding: 8px 10px;
   overflow: hidden;
   font-size: 13px;
@@ -27,7 +19,6 @@
   border: 1px solid var(--color-gray-600);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
-  pointer-events: auto;
 }
 
 /*
@@ -53,6 +44,15 @@
   cursor: grabbing;
 }
 
+/*
+ * React Flow marks the selection on the wrapper it owns. An outline rather
+ * than a border so a tinted memo keeps its colour band and nothing reflows.
+ */
+:global(.react-flow__node.selected) .memo {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
 .input {
   flex: 1;
   width: 100%;
@@ -63,23 +63,6 @@
   background: transparent;
   border: none;
   outline: none;
-}
-
-/* Drag handle in the bottom-right corner, edit mode only. */
-.resize {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 14px;
-  height: 14px;
-  cursor: nwse-resize;
-  background: linear-gradient(
-    to top left,
-    var(--color-gray-400) 0 2px,
-    transparent 2px 4px,
-    var(--color-gray-400) 4px 6px,
-    transparent 6px
-  );
 }
 
 .remove {

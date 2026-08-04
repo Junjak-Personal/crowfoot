@@ -29,9 +29,7 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => (
 it('renders options with descriptions', async () => {
   render(<CommandPaletteCommandOptions />, { wrapper })
 
-  expect(
-    screen.getByRole('option', { name: 'Copy Link ⌘ C' }),
-  ).toBeInTheDocument()
+  expect(screen.getByRole('option', { name: 'Copy Link' })).toBeInTheDocument()
   expect(
     screen.getByRole('option', { name: 'Zoom to Fit ⇧ 1' }),
   ).toBeInTheDocument()

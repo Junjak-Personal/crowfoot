@@ -84,7 +84,7 @@ describe('input mode and filters', () => {
 
       // command options
       expect(
-        screen.getByRole('option', { name: 'Copy Link ⌘ C' }),
+        screen.getByRole('option', { name: 'Copy Link' }),
       ).toBeInTheDocument()
       expect(
         screen.getByRole('option', { name: 'Show All Fields ⇧ 2' }),
@@ -101,7 +101,7 @@ describe('input mode and filters', () => {
       // options with "p"
       expect(screen.getByRole('option', { name: 'posts' })).toBeInTheDocument()
       expect(
-        screen.getByRole('option', { name: 'Copy Link ⌘ C' }),
+        screen.getByRole('option', { name: 'Copy Link' }),
       ).toBeInTheDocument()
 
       // options without "p"
@@ -143,7 +143,7 @@ describe('input mode and filters', () => {
 
       // command options
       expect(
-        screen.getByRole('option', { name: 'Copy Link ⌘ C' }),
+        screen.getByRole('option', { name: 'Copy Link' }),
       ).toBeInTheDocument()
       expect(
         screen.getByRole('option', { name: 'Zoom to Fit ⇧ 1' }),
@@ -162,7 +162,7 @@ describe('input mode and filters', () => {
 
       // options with "p"
       expect(
-        screen.getByRole('option', { name: 'Copy Link ⌘ C' }),
+        screen.getByRole('option', { name: 'Copy Link' }),
       ).toBeInTheDocument()
 
       // options with "p" but not table options
@@ -274,7 +274,7 @@ describe('preview', () => {
       const previewContainer = screen.getByTestId('CommandPalettePreview')
 
       // renders the "Copy Link" preview when the "Copy Link" option is selected
-      await user.hover(screen.getByRole('option', { name: 'Copy Link ⌘ C' }))
+      await user.hover(screen.getByRole('option', { name: 'Copy Link' }))
       expect(
         within(previewContainer).getByLabelText(
           'Demonstration of the copy link command execution result',

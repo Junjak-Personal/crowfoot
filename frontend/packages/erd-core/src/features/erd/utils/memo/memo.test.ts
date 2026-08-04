@@ -8,13 +8,18 @@ import {
   DEFAULT_MEMO_HEIGHT,
   DEFAULT_MEMO_WIDTH,
   dumpMemos,
+  duplicateMemo,
   getEffectiveMemos,
   loadStoredMemos,
   MAX_MEMO_FONT_SIZE,
+  MEMO_DUPLICATE_OFFSET,
   type Memo,
   MIN_MEMO_FONT_SIZE,
   parseMemos,
+  parseMemosFromClipboard,
+  placeMemos,
   saveStoredMemos,
+  serializeMemosToClipboard,
   setBaseMemos,
   stepMemoFontSize,
 } from './memo'
@@ -123,12 +128,106 @@ describe(createMemo, () => {
   })
 })
 
+describe(duplicateMemo, () => {
+  const original: Memo = { ...memo('a'), color: 'gold', fontSize: 40 }
+
+  it('offsets the copy so it does not hide behind the original', () => {
+    const copy = duplicateMemo(original, 'b')
+
+    expect(copy.x).toBe(original.x + MEMO_DUPLICATE_OFFSET)
+    expect(copy.y).toBe(original.y + MEMO_DUPLICATE_OFFSET)
+  })
+
+  it('carries over everything but the id', () => {
+    expect(duplicateMemo(original, 'b')).toEqual({
+      ...original,
+      id: 'b',
+      x: original.x + MEMO_DUPLICATE_OFFSET,
+      y: original.y + MEMO_DUPLICATE_OFFSET,
+    })
+  })
+})
+
+describe(placeMemos, () => {
+  const ids = () => {
+    let n = 0
+    return () => `new-${n++}`
+  }
+
+  it('centres a lone copy on the paste point, as a new memo is centred', () => {
+    const placed = placeMemos([memo('a')], ids(), 500, 300)[0]
+
+    expect(placed?.x).toBe(500 - DEFAULT_MEMO_WIDTH / 2)
+    expect(placed?.y).toBe(300 - DEFAULT_MEMO_HEIGHT / 2)
+    expect(placed?.id).toBe('new-0')
+  })
+
+  it('centres a group on the point without changing its shape', () => {
+    const left: Memo = { ...memo('a'), x: 0, y: 0 }
+    const right: Memo = { ...memo('b'), x: 400, y: 100 }
+
+    const [first, second] = placeMemos([left, right], ids(), 0, 0)
+
+    // The gap between the two is what has to survive a paste.
+    expect((second?.x ?? 0) - (first?.x ?? 0)).toBe(400)
+    expect((second?.y ?? 0) - (first?.y ?? 0)).toBe(100)
+
+    // ...centred on the point: the group's bounding box straddles it.
+    const width = 400 + DEFAULT_MEMO_WIDTH
+    expect(first?.x).toBe(-width / 2)
+  })
+
+  it('returns nothing for an empty paste', () => {
+    expect(placeMemos([], ids(), 0, 0)).toEqual([])
+  })
+})
+
+describe('clipboard round trip', () => {
+  it('restores memos copied in another tab', () => {
+    const originals: Memo[] = [
+      { ...memo('a', 'copied'), color: 'teal' },
+      memo('b', 'and another'),
+    ]
+
+    expect(
+      parseMemosFromClipboard(serializeMemosToClipboard(originals)),
+    ).toEqual(originals)
+  })
+
+  it('refuses text that is not a memo, so an ordinary paste is left alone', () => {
+    expect(parseMemosFromClipboard('just some text')).toEqual([])
+    expect(parseMemosFromClipboard('{"x":1}')).toEqual([])
+    // Well-formed JSON under the wrong key is still not ours.
+    expect(
+      parseMemosFromClipboard('{"memo":[{"id":"a","text":"","x":0,"y":0}]}'),
+    ).toEqual([])
+  })
+
+  it('drops malformed entries out of a marked payload', () => {
+    expect(parseMemosFromClipboard('{"erdkit.memo":[{"id":"a"}]}')).toEqual([])
+  })
+})
+
 describe(stepMemoFontSize, () => {
   const base = memo('a')
 
   it('starts from the default when no size is set', () => {
     expect(stepMemoFontSize(base, 1)).toBe(DEFAULT_MEMO_FONT_SIZE + 2)
     expect(stepMemoFontSize(base, -1)).toBe(DEFAULT_MEMO_FONT_SIZE - 2)
+  })
+
+  it('takes bigger steps as the font grows', () => {
+    expect(stepMemoFontSize({ ...base, fontSize: 20 }, 1)).toBe(22)
+    expect(stepMemoFontSize({ ...base, fontSize: 30 }, 1)).toBe(34)
+    expect(stepMemoFontSize({ ...base, fontSize: 60 }, 1)).toBe(68)
+  })
+
+  it('undoes itself across a band boundary', () => {
+    for (const size of [24, 48]) {
+      const down = stepMemoFontSize({ ...base, fontSize: size }, -1)
+
+      expect(stepMemoFontSize({ ...base, fontSize: down }, 1)).toBe(size)
+    }
   })
 
   it('clamps at both ends', () => {

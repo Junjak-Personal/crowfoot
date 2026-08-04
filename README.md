@@ -166,7 +166,8 @@ All asset paths are relative, so the build can be mounted at a sub-path
 | | |
 |---|---|
 | **Persisted table positions** | Dragged tables stay put across reloads. Resolution order is `?positions=` → browser storage → `layout.json` → automatic layout. Tables not pinned anywhere still get the automatic layout, so adding a table to the schema does not break an existing arrangement. |
-| **Canvas memos** | Free-form notes pinned to the diagram. In edit mode, `Ctrl`/`Cmd` + right-click the canvas to add one; memos can be moved, resized, recoloured and have their font size changed. Shipped with the build in `memos.json`. |
+| **Canvas memos** | Free-form notes pinned to the diagram. In edit mode, `Ctrl`/`Cmd` + right-click the canvas to add one; memos can be moved, resized, recoloured, duplicated, copy-pasted (including into another tab) and have their font size changed. Shipped with the build in `memos.json`. |
+| **Multi-select** | In edit mode, drag a box across the canvas or `Ctrl`/`Cmd`/`Shift` + click to select several tables and memos at once, then move, tint or delete them together. |
 | **Colour coding** | Tables and memos can be tinted from a fixed 12-colour palette taken from the existing design tokens: `green`, `mint`, `teal`, `sky`, `blue`, `steel`, `sand`, `yellow`, `gold`, `orange`, `vermilion`, `red`. |
 | **Read-only by default** | Positions, memos and colours are locked unless the page is opened with `?edit=1`, so a shared link cannot be rearranged by accident. |
 | **MySQL export** | Upstream exports PostgreSQL and YAML only; MySQL DDL was added, and the export menu can copy to the clipboard or download a `.sql` file. |
@@ -244,7 +245,8 @@ still does what you expect.
 | Keys | Action |
 |---|---|
 | `⌘K` / `Ctrl+K` | Command palette |
-| `⌘C` / `Ctrl+C` | Copy the current link (falls back to normal copy when text is selected) |
+| `⌘C` / `Ctrl+C` | Copy the selected memos *(edit mode only)* |
+| `⌘V` / `Ctrl+V` | Paste them at the cursor *(edit mode only)* |
 | `⇧1` | Zoom to fit |
 | `⇧2` | Show all fields |
 | `⇧3` | Show table names only |

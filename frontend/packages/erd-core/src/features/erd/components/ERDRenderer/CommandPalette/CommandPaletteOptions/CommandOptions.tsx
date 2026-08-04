@@ -38,8 +38,6 @@ export const CommandPaletteCommandOptions: FC = () => {
       >
         <Copy className={styles.itemIcon} />
         <span className={styles.itemText}>Copy Link</span>
-        <span className={styles.keyIcon}>⌘</span>
-        <span className={styles.keyIcon}>C</span>
       </Command.Item>
       <Command.Item
         value={getSuggestionText({ type: 'command', name: 'Zoom to Fit' })}

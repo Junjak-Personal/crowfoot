@@ -87,7 +87,7 @@ src/
 - Types: `src/features/<feature>/types.ts` or colocated with the module
 
 ## Naming Conventions
-- Directories (components): `PascalCase/` (`MemoLayer/`, `ViewColorMenu/`, `TableNode/`)
+- Directories (components): `PascalCase/` (`MemoNode/`, `ViewColorMenu/`, `TableNode/`)
 - Directories (utils/features/stores): `camelCase/` (`tableLayout/`, `viewColor/`, `userEditing/`)
 - Component files: `PascalCase.tsx` + `PascalCase.module.css` (+ generated `PascalCase.module.css.d.ts`)
 - Util files: `camelCase.ts`

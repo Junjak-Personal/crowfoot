@@ -80,10 +80,17 @@ ComponentName/
 └── index.ts                   // export { ComponentName } from './ComponentName'
 ```
 
-### Canvas overlays (memos, colour menu)
-`MemoLayer` and `ViewColorMenu` render inside the React Flow canvas under
+### Canvas elements (memos, colour menu)
+`MemoNode` and `ViewColorMenu` live under
 `features/erd/components/ERDContent/components/`. Interactions gate on `editMode` from the
 `userEditing` store — see `state-management.md`.
+
+Memos are **React Flow nodes** (`nodeTypes.memo`), not an overlay, so selection,
+multi-selection, dragging and `NodeResizer` come from React Flow. Anything that adds a
+non-table node has to keep it out of two places: the ELK pass
+(`computeAutoLayout` skips `node.type === 'memo'`) and the saved table positions
+(`tableLayout.ts` filters to `type === 'table'`). Storage and `?memos=` are mirrors of the
+node state, refreshed by `useMemoNodes().commitMemos`.
 
 ### Storybook
 `frontend/internal-packages/storybook` (Storybook 9.1.15, `@storybook/nextjs`). Upstream-maintained;

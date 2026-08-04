@@ -179,6 +179,8 @@ dist/
 | Double-click | Zoom in |
 | Click a table | Open the detail panel (reflected in `?active=`) |
 | Drag a table | Move it *(edit mode only)* |
+| Left drag | Draw a selection box over tables and memos *(edit mode only)* |
+| `Ctrl`/`Cmd`/`Shift` + click | Add to or remove from the selection *(edit mode only)* |
 
 The left sidebar lists every table and lets you hide or show them individually.
 Hidden state lands in `?hidden=`, so it travels with the link.
@@ -202,7 +204,8 @@ Three levels of detail, from the toolbar or the URL.
 | Keys | Action |
 |---|---|
 | `⌘K` / `Ctrl+K` | Command palette |
-| `⌘C` / `Ctrl+C` | Copy the current link (falls back to normal copy when text is selected) |
+| `⌘C` / `Ctrl+C` | Copy the selected memos *(edit mode only)* |
+| `⌘V` / `Ctrl+V` | Paste the copied memos at the cursor *(edit mode only)* |
 | `⇧1` | Zoom to fit |
 | `⇧2` | Show all fields |
 | `⇧3` | Show table names only |
@@ -211,8 +214,9 @@ Three levels of detail, from the toolbar or the URL.
 | `⇧A` | Show all tables |
 | `⇧H` | Hide all tables |
 
-> `⌘C` puts the current URL on the clipboard. Positions, colours and memos all
-> ride in that URL, so **that single copy is the share**.
+> Sharing is the **Copy Link** button, top right. Positions, colours and memos all
+> ride in that URL, so **that single copy is the share**. It has no keyboard
+> shortcut — `⌘C` belongs to the canvas selection.
 
 ### Export menu
 
@@ -244,7 +248,7 @@ be dragged and memos cannot be created. That default is what keeps a shared link
 from being rearranged by accident.
 
 In edit mode a badge appears at the top of the canvas:
-`Edit mode · Ctrl/Cmd + right-click to add a memo or set a colour`
+`Edit mode · drag to select · Ctrl/Cmd + right-click for the menu`
 
 `editMode` is never stored, only derived from the URL. Drop the parameter and the
 diagram is read-only again immediately.
@@ -253,6 +257,18 @@ diagram is read-only again immediately.
 
 Tables are draggable in edit mode only. Dropping one writes to browser storage and
 to `?positions=` at the same time.
+
+To move **several at once**, drag a selection box across empty canvas with the left
+button, or add items one at a time with `Ctrl`/`Cmd`/`Shift` + click. A box that
+merely clips a table still selects it. Dragging any item in the selection moves
+the whole set, and the whole set is saved together.
+
+Tables and memos are caught by **the same selection box**. A mixed selection drags
+as one, with table positions saved to `?positions=` and memos to `?memos=`.
+
+> The selection box takes over the left button in edit mode only. In read-only the
+> left button stays inert. Panning is the scroll wheel or a middle/right drag in
+> both modes.
 
 ### Context menu
 
@@ -263,13 +279,44 @@ to `?positions=` at the same time.
 |---|---|
 | Empty canvas | `Add memo here` — creates a memo at the clicked point |
 | A table | Colour palette |
-| A memo | Colour palette, font size (`−` / number input / `+`), `Delete memo` |
+| A memo | Colour palette, font size (`−` / number input / `+`), `Duplicate memo`, `Delete memo` |
+
+The menu applies to **the whole selection**. Right-clicking something already in the
+selection keeps that selection; right-clicking something outside it narrows the
+selection to that one thing — the same rule a left click follows. So selecting five
+tables and picking a colour from any one of them tints all five.
 
 ### Memos
 
+A memo is the **same kind of canvas element as a table**: selecting, multi-selecting,
+dragging and resizing behave identically.
+
 - In edit mode the memo body becomes a textarea you can type into directly.
-- Drag the bottom-right handle to resize. Minimum `100 × 60`, default `220 × 120`.
-- Font size ranges from `10` to `28`, defaults to `13`, and the buttons step by 2.
+- Selecting a memo reveals resize handles on its corners. Minimum `100 × 60`,
+  default `220 × 120`.
+- Font size ranges from `10` to `96` and defaults to `13`. The step scales with the
+  size — 2 below 24, 4 below 48, 8 above that.
+- Colour, font size, duplicate and delete all apply to **every selected memo**.
+
+### Copying and pasting memos
+
+Three routes, all producing a **full copy under a new id** that keeps the colour,
+font size and box size of the original.
+
+| Route | Result |
+|---|---|
+| Context menu `Duplicate memo` | Every selected memo copied 24px down and right of its original |
+| `⌘C` then `⌘V` | Pasted centred on the cursor; copying several **keeps their spacing** |
+| `⌘V` in another tab | Pastes into any other tab showing the viewer |
+
+Clicking a memo selects it and draws a green ring; click empty canvas to deselect.
+With the caret inside a memo body, `⌘C`/`⌘V` behave as ordinary text copy and paste.
+
+A copy or paste raises a toast — `Memo copied`, `3 memos pasted`. Pressing `⌘C`
+with no toast at all means nothing was selected.
+
+Memos travel through the OS clipboard as JSON under a marker, so pasting ordinary
+text is ignored rather than turned into a memo.
 
 ### Colour palette
 
@@ -319,7 +366,7 @@ Browser storage keys:
 
 ```bash
 # 1. Open with ?edit=1 and arrange tables, colours and memos
-# 2. Press ⌘C to copy the link
+# 2. Copy the link with the Copy Link button, top right
 # 3. Turn the link back into files
 npx erdkit erd from-link --input '<the copied URL>' --output-dir dist
 # 4. Commit dist/layout.json and dist/memos.json to source control
@@ -395,7 +442,7 @@ An array of memo objects.
 | `width` | number | | `220` | Minimum `100` |
 | `height` | number | | `120` | Minimum `60` |
 | `color` | string | | (none) | Palette key |
-| `fontSize` | number | | `13` | Clamped to `10`–`28` |
+| `fontSize` | number | | `13` | Clamped to `10`–`96` |
 
 Entries missing a required field or with the wrong type are skipped silently. Even
 a badly broken sidecar still leaves the ERD itself working — loading a sidecar
@@ -492,12 +539,24 @@ The URL has no `?edit=1`. Read-only is the default.
 Hold `Ctrl` (`Cmd` on macOS) as well — a plain right-click is the pan gesture. The
 menu never opens outside edit mode, modifier or not.
 
+**`⌘C` does nothing (no toast appears)**
+No memo is selected. Click the memo once, check for the green ring, then press it
+again. A selection of tables only counts as none — tables are not copied. If you
+meant to copy the link, that is the **Copy Link** button, top right.
+
+**`⌘V` does nothing**
+Either `?edit=1` is missing, or the clipboard holds something this viewer did not
+copy. Ordinary text is ignored on purpose.
+
+**Left drag draws a box instead of panning**
+That is edit mode working as intended. Pan with the scroll wheel or a middle/right drag.
+
 **The arrangement only persists in my browser**
 It is still in browser storage. See [Three ways to pin an arrangement](#three-ways-to-pin-an-arrangement).
 
 **`from-link` fails with "carries no positions, colors or memos"**
 The link has no edits in it. Open with `?edit=1`, actually move or add something,
-then copy the URL again with `⌘C`.
+then copy the URL again with the **Copy Link** button.
 
 **`from-link` only picks up part of the URL**
 The shell cut the command at `&`. Wrap the whole URL in single quotes.

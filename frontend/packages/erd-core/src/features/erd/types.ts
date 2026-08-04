@@ -21,4 +21,17 @@ export type TableNodeData = {
 
 export type TableNodeType = Node<TableNodeData, 'table'>
 
+/**
+ * Memos are React Flow nodes so that selecting, multi-selecting, dragging and
+ * resizing them is React Flow's job rather than ours. Position and size live on
+ * the node itself; only the note's own attributes go in `data`.
+ */
+type MemoNodeData = {
+  text: string
+  color?: ViewColorKey | undefined
+  fontSize?: number | undefined
+}
+
+export type MemoNodeType = Node<MemoNodeData, 'memo'>
+
 export type DisplayArea = 'main' | 'relatedTables'

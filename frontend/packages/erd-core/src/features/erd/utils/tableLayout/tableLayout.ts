@@ -204,8 +204,19 @@ export const applyTableLayout = (nodes: Node[], layout: TableLayout): Node[] =>
     return { ...node, position: { x: entry.x, y: entry.y } }
   })
 
+/**
+ * Memos are React Flow nodes too, so everything that writes a layout has to
+ * say "tables only" — otherwise a memo id would end up in layout.json as if it
+ * were a table, and stay there.
+ */
+const tableNodesOnly = (nodes: Node[]): Node[] =>
+  nodes.filter((node) => node.type === 'table')
+
 export const setResolvedTableLayout = (nodes: Node[]): void => {
-  resolvedLayout = mergeNodePositions(getEffectiveTableLayout(), nodes)
+  resolvedLayout = mergeNodePositions(
+    getEffectiveTableLayout(),
+    tableNodesOnly(nodes),
+  )
 }
 
 /**
@@ -213,9 +224,10 @@ export const setResolvedTableLayout = (nodes: Node[]): void => {
  * Returns every locally stored table so the caller can mirror it into the URL.
  */
 export const rememberTablePositions = (nodes: Node[]): TableLayout => {
-  resolvedLayout = mergeNodePositions(resolvedLayout, nodes)
+  const tables = tableNodesOnly(nodes)
+  resolvedLayout = mergeNodePositions(resolvedLayout, tables)
 
-  const stored = mergeNodePositions(loadStoredTableLayout(), nodes)
+  const stored = mergeNodePositions(loadStoredTableLayout(), tables)
   saveStoredTableLayout(stored)
 
   return stored
