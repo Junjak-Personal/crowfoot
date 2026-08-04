@@ -7,7 +7,12 @@
 > license. Modified files carry a notice at the top of the file; files added by
 > this fork are marked as such.
 >
-> The README below is the original project's.
+> The command-line tool is redistributed under a different name,
+> [`erdkit`](https://www.npmjs.com/package/erdkit), because section 6 of the
+> License grants no trademark rights. No endorsement by ROUTE06, Inc. is implied.
+>
+> Two usage sections follow: [the original Liam ERD](#using-liam-erd-upstream) and
+> [this fork](#using-erdkit-this-fork).
 
 ---
 
@@ -49,9 +54,15 @@ Liam ERD generates beautiful, interactive ER diagrams from your database. Whethe
 - **High Performance**: Optimized for both small and large projects, easily handling 100+ tables.
 - **Fully Open-Source**: Contribute to the project and shape Liam ERD to fit your needs.
 
-## Quick Start
+---
 
-### For Public Repositories
+# Using Liam ERD (upstream)
+
+The original tool, published as [`@liam-hq/cli`](https://www.npmjs.com/package/@liam-hq/cli)
+and hosted at [liambx.com](https://liambx.com). Full documentation lives at
+**<https://liambx.com/docs>**; this section is a summary of it.
+
+## Public repositories — no install
 
 Insert `liambx.com/erd/p/` into your schema file's URL:
 
@@ -61,24 +72,219 @@ Insert `liambx.com/erd/p/` into your schema file's URL:
                   👾^^^^^^^^^^^^^^^^👾
 ```
 
-### For Private Repositories
+Example: <https://liambx.com/erd/p/github.com/docusealco/docuseal/blob/master/db/schema.rb>
 
-Run the interactive setup:
+## Private repositories — the CLI
+
+Run the interactive setup, which walks you through picking a format and writes
+the command you need:
 
 ```bash
 npx @liam-hq/cli init
 ```
 
-<img src="./assets/jack.gif" alt="Jack" width="40"> **If you find this project helpful, please give it a star! ⭐**  
-Your support helps us reach a wider audience and continue development.
+Or build directly:
+
+```bash
+npx @liam-hq/cli erd build --input db/schema.rb --format schemarb --output-dir dist
+npx serve dist/
+```
+
+The output is a static Vite app. It **cannot** be opened over `file://` — serve
+the directory over HTTP.
+
+### `erd build` options
+
+| Option | Description |
+|---|---|
+| `--input <path\|url>` | Schema file to read. Accepts a local path (glob patterns supported) or a URL. |
+| `--format <format>` | Overrides format auto-detection. |
+| `--output-dir <path>` | Output directory. Defaults to `dist`. |
+
+A remote schema works the same way:
+
+```bash
+npx @liam-hq/cli erd build \
+  --input https://raw.githubusercontent.com/user/repo/main/schema.sql \
+  --format postgres
+```
+
+### Supported formats
+
+| Source | `--format` | Typical files |
+|---|---|---|
+| PostgreSQL | `postgres` | `.sql` |
+| Ruby on Rails | `schemarb` | `schema.rb`, `Schemafile` |
+| Prisma | `prisma` | `schema.prisma` |
+| Drizzle | `drizzle` | schema `.ts` files |
+| tbls | `tbls` | `schema.json` |
+| Liam JSON | `liam` | `schema.json` produced by Liam |
+
+MySQL, SQLite and BigQuery have no direct parser. The documented workaround is to
+export via [tbls](https://github.com/k1LoW/tbls) (or `pg_dump` to PostgreSQL) and
+feed the result in. See [Supported Formats](https://liambx.com/docs/parser/supported-formats).
+
+## UI features
+
+- [Browsing your schema](https://liambx.com/docs/ui-features) — pan, zoom, filter and highlight.
+- [Command palette](https://liambx.com/docs/ui-features) — `⌘K` to search tables with a live preview.
+- [Sharing & query parameters](https://liambx.com/docs/ui-features) — almost every UI setting is reflected in the URL, so a link reproduces the view.
+
+Reference documentation: [UI Features](https://liambx.com/docs/ui-features) ·
+[Web](https://liambx.com/docs/web) · [CLI](https://liambx.com/docs/cli) ·
+[Parser](https://liambx.com/docs/parser)
+
+---
+
+# Using erdkit (this fork)
+
+[`erdkit`](https://www.npmjs.com/package/erdkit) is the CLI of this fork. It builds
+the same kind of standalone ERD app, plus persisted table positions, canvas memos,
+colour coding, an explicit edit mode and MySQL export.
+
+## Build and serve
+
+```bash
+npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx serve dist/
+```
+
+Options are the same as upstream (`--input`, `--format`, `--output-dir`), and
+`--format` accepts `postgres`, `schemarb`, `prisma`, `drizzle`, `tbls`, `liam`.
+The interactive setup is `npx erdkit init`.
+
+As upstream, the output is a static SPA: `file://` will not work, serve it over HTTP.
+All asset paths are relative, so the build can be mounted at a sub-path
+(`/erd/`, say) without rebuilding.
+
+## What this fork adds
+
+| | |
+|---|---|
+| **Persisted table positions** | Dragged tables stay put across reloads. Resolution order is `?positions=` → browser storage → `layout.json` → automatic layout. Tables not pinned anywhere still get the automatic layout, so adding a table to the schema does not break an existing arrangement. |
+| **Canvas memos** | Free-form notes pinned to the diagram. Right-click the canvas to add one; memos can be moved, resized, recoloured and have their font size changed. Shipped with the build in `memos.json`. |
+| **Colour coding** | Tables and memos can be tinted from a fixed 12-colour palette taken from the existing design tokens: `green`, `mint`, `teal`, `sky`, `blue`, `steel`, `sand`, `yellow`, `gold`, `orange`, `vermilion`, `red`. |
+| **Read-only by default** | Positions, memos and colours are locked unless the page is opened with `?edit=1`, so a shared link cannot be rearranged by accident. |
+| **MySQL export** | Upstream exports PostgreSQL and YAML only; MySQL DDL was added, and the export menu can copy to the clipboard or download a `.sql` file. |
+| **Short `?show=` values** | `all` / `table` / `key` instead of the internal `ALL_FIELDS` / `TABLE_NAME` / `KEY_ONLY`. |
+
+## Edit mode
+
+```
+https://your-host/erd/?edit=1
+```
+
+`?edit=1` (or `?edit=true`) is what unlocks dragging tables, adding and editing
+memos, and the colour menus. It is derived from the URL and never stored, so
+closing the tab or dropping the parameter returns the diagram to read-only.
+
+## Committing an arranged layout
+
+The arrangement you make in edit mode lives in the URL, which makes it shareable
+but not permanent. To turn a link into the sidecar files the viewer loads on every
+visit, copy the URL and run:
+
+```bash
+npx erdkit erd from-link --input '<the ?edit=1 URL>' --output-dir dist
+```
+
+Quote the URL — it contains `&`. Only the files the link actually carries are
+written, so a link with no memos will not blow away an existing `memos.json`.
+
+`layout.json` and `memos.json` are loaded from the same directory as `schema.json`,
+so keep them next to it and commit them to whatever your deploy copies in — a
+rebuild overwrites the directory otherwise.
+
+| File | Contents | Missing means |
+|---|---|---|
+| `schema.json` | The parsed schema. Written by `erd build`. | Nothing renders. |
+| `layout.json` | `{"table_name": {"x": 0, "y": 0, "color": "teal"}}` | Automatic layout for every table. |
+| `memos.json` | The canvas memos. | No memos. |
+
+In edit mode the Export menu also offers **Download layout.json** and
+**Download memos.json**, which is the same output without going through a URL.
+The browser console exposes `liamLayout.dump()` / `liamLayout.reset()` and
+`liamMemos.dump()` / `liamMemos.reset()` for the same purpose.
+
+## Query parameters
+
+| Parameter | Values | Description |
+|---|---|---|
+| `show` | `all` \| `table` \| `key` | Level of detail. Defaults to `all`. |
+| `active` | table name | Opens that table's detail panel. |
+| `hidden` | compressed list | Table names hidden from the diagram. |
+| `positions` | compressed `name:x:y` list | Table positions. Wins over `layout.json`. |
+| `colors` | compressed `name:colorkey` list | Table tints. |
+| `memos` | compressed JSON | The memos, verbatim. |
+| `edit` | `1` \| `true` | Enables editing. Absent means read-only. |
+
+`positions`, `colors` and `memos` are deflate-compressed and URL-safe base64
+encoded, so they survive CDN query-string handling intact. Navigation
+parameters (`active`, `show`, `hidden`) push history entries; editing
+parameters (`positions`, `colors`, `memos`) replace them, so the back button
+still does what you expect.
+
+## Export menu
+
+| Item | Output |
+|---|---|
+| Copy MySQL | MySQL DDL to the clipboard |
+| Download MySQL (.sql) | `schema.mysql.sql` |
+| Copy PostgreSQL | PostgreSQL DDL to the clipboard |
+| Copy YAML | Schema as YAML |
+| Download layout.json | Current positions and colours *(edit mode only)* |
+| Download memos.json | Current memos *(edit mode only)* |
+
+## Keyboard shortcuts
+
+| Keys | Action |
+|---|---|
+| `⌘K` / `Ctrl+K` | Command palette |
+| `⌘C` / `Ctrl+C` | Copy the current link (falls back to normal copy when text is selected) |
+| `⇧1` | Zoom to fit |
+| `⇧2` | Show all fields |
+| `⇧3` | Show table names only |
+| `⇧4` | Show keys only |
+| `⇧T` | Tidy up — re-run the automatic layout |
+| `⇧A` | Show all tables |
+| `⇧H` | Hide all tables |
+
+## Development
+
+```bash
+pnpm install
+pnpm dev                       # all dev servers
+pnpm build                     # all packages
+pnpm lint                      # lint and format
+pnpm test                      # tests
+```
+
+Working on the CLI and viewer specifically:
+
+```bash
+cd frontend/packages/cli
+pnpm run build                 # executable at dist-cli/bin/cli.js
+pnpm run test
+pnpm dev                       # builds the CLI against fixtures/ and serves the viewer
+node ./dist-cli/bin/cli.js erd build --input ./fixtures/input.schema.rb --format schemarb
+```
+
+The fork's work surface is three packages: `frontend/packages/erd-core` (the
+viewer), `frontend/packages/schema` (parsers and deparsers) and
+`frontend/packages/cli` (the `erdkit` command). See [`CLAUDE.md`](./CLAUDE.md)
+for the monorepo layout and conventions.
+
+---
 
 ## Documentation
 
-Check out the full documentation on [the website](https://liambx.com/docs).
+Upstream documentation is at [liambx.com/docs](https://liambx.com/docs). What this
+fork changes is listed in [`NOTICE`](./NOTICE) and documented under `_docs/`.
 
 ## Roadmap
 
-See what we're working on and what's coming next on [our roadmap](https://github.com/orgs/liam-hq/projects/1/views/1).
+Upstream's roadmap is on [their project board](https://github.com/orgs/liam-hq/projects/1/views/1).
+This fork is pinned to `92156eac5` and does not track upstream.
 
 ## Contributing
 
