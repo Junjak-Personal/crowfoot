@@ -142,6 +142,10 @@ Reference documentation: [UI Features](https://liambx.com/docs/ui-features) ·
 the same kind of standalone ERD app, plus persisted table positions, canvas memos,
 colour coding, an explicit edit mode and MySQL export.
 
+> Full reference: **[docs/usage.md](./docs/usage.md)** (한국어) ·
+> **[docs/usage_en.md](./docs/usage_en.md)** (English) — every command and option,
+> the sidecar file schemas, deployment and troubleshooting. The section below is a summary.
+
 ## Build and serve
 
 ```bash
@@ -162,7 +166,7 @@ All asset paths are relative, so the build can be mounted at a sub-path
 | | |
 |---|---|
 | **Persisted table positions** | Dragged tables stay put across reloads. Resolution order is `?positions=` → browser storage → `layout.json` → automatic layout. Tables not pinned anywhere still get the automatic layout, so adding a table to the schema does not break an existing arrangement. |
-| **Canvas memos** | Free-form notes pinned to the diagram. Right-click the canvas to add one; memos can be moved, resized, recoloured and have their font size changed. Shipped with the build in `memos.json`. |
+| **Canvas memos** | Free-form notes pinned to the diagram. In edit mode, `Ctrl`/`Cmd` + right-click the canvas to add one; memos can be moved, resized, recoloured and have their font size changed. Shipped with the build in `memos.json`. |
 | **Colour coding** | Tables and memos can be tinted from a fixed 12-colour palette taken from the existing design tokens: `green`, `mint`, `teal`, `sky`, `blue`, `steel`, `sand`, `yellow`, `gold`, `orange`, `vermilion`, `red`. |
 | **Read-only by default** | Positions, memos and colours are locked unless the page is opened with `?edit=1`, so a shared link cannot be rearranged by accident. |
 | **MySQL export** | Upstream exports PostgreSQL and YAML only; MySQL DDL was added, and the export menu can copy to the clipboard or download a `.sql` file. |
@@ -278,8 +282,11 @@ for the monorepo layout and conventions.
 
 ## Documentation
 
-Upstream documentation is at [liambx.com/docs](https://liambx.com/docs). What this
-fork changes is listed in [`NOTICE`](./NOTICE) and documented under `_docs/`.
+- **[docs/usage.md](./docs/usage.md)** — erdkit 사용 가이드 (한국어)
+- **[docs/usage_en.md](./docs/usage_en.md)** — erdkit usage guide (English)
+- [liambx.com/docs](https://liambx.com/docs) — upstream Liam ERD documentation
+
+What this fork changes is listed in [`NOTICE`](./NOTICE) and documented under `_docs/`.
 
 ## Roadmap
 
