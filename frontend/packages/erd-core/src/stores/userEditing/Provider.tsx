@@ -77,7 +77,7 @@ type Props = PropsWithChildren & UserEditingProviderValue
 export const UserEditingProvider: FC<Props> = ({
   children,
   showDiff: initialShowDiff = false,
-  defaultShowMode = 'TABLE_NAME',
+  defaultShowMode = 'ALL_FIELDS',
 }) => {
   const [activeTableName, _setActiveTableName] = useQueryState(
     'active',
