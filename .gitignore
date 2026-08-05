@@ -15,5 +15,8 @@ coverage/
 # Claude local settings
 .claude/settings.local.json
 
+# Claude per-session work state — machine-local, never shared
+.claude/session-state/
+
 # Lefthook local config
 lefthook-local.yml
