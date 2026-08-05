@@ -23,7 +23,10 @@ erdkit/
 │       ├── storybook/  schema-bench/  neverthrow/  figma-to-css-variables/
 ├── _docs/                  ★ fork's project docs — plans, specs, handoff. Start at `_docs/index.md`.
 ├── _note/                  human-owned scratch notes — agent READ-ONLY
-├── docs/                   upstream documentation — not ours, do not mix fork docs in here
+├── docs/                   upstream documentation — do NOT add fork docs here.
+│                           Two exceptions the fork owns and may edit: `usage.md` and
+│                           `usage_en.md` (added by `7beeae237`, absent from upstream
+│                           `92156eac5`). Everything else in `docs/` is upstream's.
 ├── .github/workflows/      upstream CI (17 workflows) — mostly inert for the fork
 ├── NOTICE                  ★ Apache-2.0 §4(d) attribution + change summary — keep in sync
 ├── LICENSE                 Apache-2.0

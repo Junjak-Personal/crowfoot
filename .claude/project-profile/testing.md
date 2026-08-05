@@ -22,19 +22,35 @@ design issues"). **Test observable behaviour, not implementation.**
 - Coverage: `pnpm test:coverage` (v8 → `./coverage`, `text|json|html`)
 - E2E: `pnpm test:e2e` (turbo) or `pnpm --filter @liam-hq/e2e test:e2e`
 
-## Verified baseline (run 2026-08-03 @ `d2fb6638c`)
+## Verified baseline (run 2026-08-05 @ `ba9d82927`)
 | Package | Files | Result |
 |---|---|---|
 | `@liam-hq/schema` | 37 | **562 passed** |
-| `@liam-hq/erd-core` | 29 | **195 passed, 4 todo** |
+| `@liam-hq/erd-core` | 33 | **281 passed, 4 todo** |
+| `erdkit` | 5 | **27 passed, 4 FAILED** — see below |
 
-Fork-owned suites: `utils/tableLayout/tableLayout.test.ts` (19) · `utils/memo/memo.test.ts` (15) ·
-`deparser/mysql/schemaDeparser.test.ts` · `AppBar/ExportDropdown/ExportDropdown.test.tsx` (8, 4 skipped).
+**`erdkit` is NOT green, and never has been on Windows.** All 4 failures are in
+`src/cli/erdCommand/runPreprocess.test.ts`, which feeds `os.tmpdir()` (an absolute Windows path)
+into `getInputContent`, where it is parsed as a URL. Treat 27/4 as the baseline and gate on
+net-new; do not chase these.
+
+**`pnpm lint:stylelint` is NOT clean either** — ~77 findings repo-wide, mostly upstream
+`frontend/apps/app/*` plus the fork's own `--view-tint` custom property in `MemoNode` /
+`TableNode` / `TableHeader` / `TableGroupNode` module CSS, which `value-no-unknown-custom-properties`
+does not recognise. `pnpm lint` (turbo + syncpack + knip) **is** exit 0 — that is the gate.
+
+Fork-owned suites: `utils/group/group.test.ts` (55) · `utils/tableLayout/tableLayout.test.ts` (19) ·
+`utils/memo/memo.test.ts` (25) · `components/ERDContent/ErdContent.test.tsx` (5) ·
+`components/.../TableGroupNode/TableGroupNode.test.tsx` (7) ·
+`components/.../LeftPane/LeftPane.test.tsx` (6) · `hooks/useGroupNodes/useGroupNodes.test.tsx` (3) ·
+`deparser/mysql/schemaDeparser.test.ts` · `AppBar/ExportDropdown/ExportDropdown.test.tsx`.
 
 ## Patterns
 - File naming: `*.test.ts` / `*.test.tsx`, **colocated** with the subject — no `__tests__/` in
   erd-core or cli (`schema/src/parser/__tests__/` and `__snapshots__/` are the upstream exception)
-- `globals: true` — `describe`/`it`/`expect` are ambient, do not import them
+- `globals: true` is configured, **but every fork-owned suite imports explicitly anyway** —
+  `import { beforeEach, describe, expect, it } from 'vitest'`. Follow the code, not the config:
+  match the surrounding suites and write the named imports.
 - Test data: **builder factories** exported from `@liam-hq/schema` — `aSchema`, `aTable`, `aColumn`,
   `anIndex`, `aPrimaryKeyConstraint`, `aForeignKeyConstraint`, `aUniqueConstraint`. Use these; do not
   hand-roll schema literals.

@@ -19,6 +19,7 @@
 |---|---|---|---|
 | planning | `carbon-erd-delivery` | [2026-08-03-carbon-erd-delivery](./active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md) | carbon ERD 배포 자동화 재개 (npx 전환 + 변경 감지). **차단: ECR 권한 + cli-distribution 선행** |
 | planning | `cli-distribution` | [2026-08-03-cli-distribution](./active/planning/2026-08-03/2026-08-03-cli-distribution.md) | CLI 개명(`erdkit`) · Apache-2.0 준수 · npm 배포. **1~6 완료, `npm publish` 만 남음 (본인 실행)** |
+| planning | `erd-viewer` | [2026-08-05-erd-viewer-backlog](./active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md) | 그룹화 이후 남은 9건 — 노드타입 감사 · `liam:*` 개명 · E2E · tbls 시드 등. **착수 시 항목별 plan 승격** |
 
 ### Complete
 

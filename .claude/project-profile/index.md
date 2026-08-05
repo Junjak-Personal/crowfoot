@@ -14,8 +14,10 @@ MySQL DDL export. Its first consumer is the carbon project's ERD at
 https://carbon-stage.qesg.co.kr/erd/. The next milestone is renaming and publishing the CLI to npm so
 it can be used as `npx <pkg> erd build …` from any project.
 
-Fork-only project docs live in **`_docs/`** (start at `_docs/index.md`); `docs/` is upstream
-documentation and is not ours. To pick the work back up, read `_docs/handoff/2026-08-03-erd-viewer-handoff.md`.
+Fork-only project docs live in **`_docs/`** (start at `_docs/index.md`). `docs/` is upstream's and
+takes no new fork docs — **except `docs/usage.md` and `docs/usage_en.md`, which the fork created
+and owns** (`7beeae237`; absent from upstream `92156eac5`). Keep those two current; leave the rest
+of `docs/` alone. To pick the work back up, read `_docs/handoff/2026-08-03-erd-viewer-handoff.md`.
 
 ## Quick Summary
 - **Stack**: TypeScript 5.9.3 + React 19 + Vite/Rollup (static SPA) — pnpm/Turborepo monorepo
@@ -82,7 +84,8 @@ Tracked as plans in `_docs/` — see `_docs/index.md` for the current status of 
   `npm pack` has never been run. Includes deferred `--layout` / `--memos` CLI options.
 - **carbon delivery automation** (`_docs/active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md`)
   — blocked on ECR permissions and on the publish above.
-- **No E2E coverage of any fork feature**; unit tests only. Not yet planned.
+- **No E2E coverage of any fork feature**; unit tests only. Now tracked, with eight other items,
+  in `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md`.
 
 ## Agent Loading Guide
 - **All agents**: read this `index.md` (REQUIRED)
