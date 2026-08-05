@@ -19,7 +19,9 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-      # npm provenance signs the tarball with this workflow's OIDC identity.
+      # The whole authentication story. npm exchanges this workflow's OIDC
+      # identity for a short-lived publish token (trusted publishing) and signs
+      # the provenance statement with it. There is no npm token anywhere.
       id-token: write
 
     steps:
@@ -29,13 +31,11 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      # Writes the ~/.npmrc that `npm publish` reads NODE_AUTH_TOKEN from.
-      # pnpm-setup's own setup-node call has no registry-url, so without this
-      # the token is present but never used and the publish 401s.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .node-version
-          registry-url: https://registry.npmjs.org
+      # Node 22.21 ships npm 10.9, which predates trusted publishing and would
+      # fall back to looking for a token. 11.5.1 is the first version that
+      # performs the OIDC exchange.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@^11.5.1
 
       # A tag that disagrees with package.json means someone tagged without
       # bumping (or bumped without tagging). Fail here, before the registry
@@ -63,11 +63,10 @@ jobs:
       # restore a stale erdkit bundle from cache and publish the old code.
       - run: pnpm exec turbo build --filter=erdkit --force
 
-      # ERDKITDEPLOY, not the conventional NPM_TOKEN, because that is the name
-      # the repository secret was created under. GitHub stores secret names
-      # upper-cased, so this must be spelled the way `gh secret list` shows it.
+      # No --provenance flag: trusted publishing generates the attestation on
+      # its own, and no token env either — a token would take precedence over
+      # the OIDC exchange. A classic Publish token got us EOTP here, because
+      # the account has 2FA on write actions and CI has no authenticator.
       - name: Publish to npm
         working-directory: frontend/packages/cli
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.ERDKITDEPLOY }}
-        run: npm publish --provenance --access public
+        run: npm publish --access public
