@@ -22,11 +22,11 @@ design issues"). **Test observable behaviour, not implementation.**
 - Coverage: `pnpm test:coverage` (v8 → `./coverage`, `text|json|html`)
 - E2E: `pnpm test:e2e` (turbo) or `pnpm --filter @liam-hq/e2e test:e2e`
 
-## Verified baseline (run 2026-08-05 @ `ba9d82927`)
+## Verified baseline (run 2026-08-05 @ `erdkit 0.4.1`, storage-key rename)
 | Package | Files | Result |
 |---|---|---|
 | `@liam-hq/schema` | 37 | **562 passed** |
-| `@liam-hq/erd-core` | 33 | **281 passed, 4 todo** |
+| `@liam-hq/erd-core` | 35 | **297 passed, 4 todo** |
 | `erdkit` | 5 | **27 passed, 4 FAILED** — see below |
 
 **`erdkit` is NOT green, and never has been on Windows.** All 4 failures are in

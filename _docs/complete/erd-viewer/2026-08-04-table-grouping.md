@@ -244,7 +244,11 @@ throw 는 **`match` 의 에러 분기조차 실행되지 않는** unhandled reje
 
 ---
 
-## 후속 과제 (미착수)
+## 후속 과제 (이 작업을 마쳤을 때 기준)
+
+> 이 목록은 **2026-08-04 당시의 기록**이다. 살아 있는 상태는
+> `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md` 가 갖는다.
+> 아래 1(개명)·2(노드타입 감사)는 2026-08-05 에 완료됐고, 3(프로필 부정확)도 수정됐다.
 
 1. **`liam:*` → `erdkit:*` 개명** — `localStorage` 키 3개(`liam:memos`, `liam:tableLayout`,
    `liam:groups`)와 콘솔 헬퍼 3개(`window.liamLayout/liamMemos/liamGroups`)를 한 번에.
