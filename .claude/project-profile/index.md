@@ -56,7 +56,8 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
    and re-scan rather than assuming this profile applies.
 4. **Verify with the authoritative commands, per package.** There is **no root `tsconfig.json`**, so
    root `tsc --noEmit` is vacuous. Use `pnpm --filter <pkg> exec tsc --noEmit`. Baseline is **0 errors,
-   0 lint findings, 562 + 195 tests green** — gate on net-new against that.
+   0 lint findings, `schema` 562 + `erd-core` 297 green, `erdkit` 27 passed / 4 failed (Windows,
+   pre-existing)** — gate on net-new against that, never on absolutes. See `testing.md`.
 5. **Named exports only, `const` arrow functions, `handle*` for event handlers.** No default exports.
    No backward-compat shims — update all call sites together.
 6. **CSS Modules + `pnpm gen:css`.** Adding a class without regenerating `*.module.css.d.ts` breaks
@@ -84,7 +85,7 @@ Tracked as plans in `_docs/` — see `_docs/index.md` for the current status of 
   `npm pack` has never been run. Includes deferred `--layout` / `--memos` CLI options.
 - **carbon delivery automation** (`_docs/active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md`)
   — blocked on ECR permissions and on the publish above.
-- **No E2E coverage of any fork feature**; unit tests only. Now tracked, with eight other items,
+- **No E2E coverage of any fork feature**; unit tests only. Now tracked, with six other items,
   in `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md`.
 
 ## Agent Loading Guide

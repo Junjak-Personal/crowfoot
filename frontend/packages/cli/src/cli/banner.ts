@@ -1,6 +1,6 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
-import { render, Text } from 'ink'
+import { Box, render, Text } from 'ink'
 import Gradient from 'ink-gradient'
 import React from 'react'
 
@@ -30,18 +30,27 @@ const asciiArt = `
  ╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝   ╚═╝
 `
 
-const Banner = () => {
-  // If colors are disabled, render plain text
-  if (shouldDisableColors()) {
-    return React.createElement(Text, {}, asciiArt)
-  }
+// Kept to the 45 columns of the art above so it never wraps. The full
+// attribution and the list of changes live in NOTICE, as section 4(d) asks.
+const attribution = ' A fork of Liam ERD (Apache-2.0, ROUTE06, Inc.)'
 
-  // Otherwise, render with gradient
-  return React.createElement(Gradient, {
-    colors: ourColors,
-    // biome-ignore lint/correctness/noChildrenProp: TypeScript requires explicit children prop for this component
-    children: React.createElement(Text, {}, asciiArt),
-  })
+const Banner = () => {
+  const art = shouldDisableColors()
+    ? // If colors are disabled, render plain text
+      React.createElement(Text, {}, asciiArt)
+    : // Otherwise, render with gradient
+      React.createElement(Gradient, {
+        colors: ourColors,
+        // biome-ignore lint/correctness/noChildrenProp: TypeScript requires explicit children prop for this component
+        children: React.createElement(Text, {}, asciiArt),
+      })
+
+  return React.createElement(
+    Box,
+    { flexDirection: 'column' },
+    art,
+    React.createElement(Text, { dimColor: true }, attribution),
+  )
 }
 
 export const generateBanner = (): Promise<void> => {

@@ -12,7 +12,10 @@ const { version } = require('../../package.json')
 
 program
   .name('erdkit')
-  .description('CLI tool for building ER diagram viewers')
+  .description(
+    'CLI tool for building ER diagram viewers.\n' +
+      'A fork of Liam ERD (Apache-2.0, ROUTE06, Inc.) — https://github.com/liam-hq/liam',
+  )
   .version(version)
 program.addCommand(erdCommand)
 program.addCommand(initCommand)

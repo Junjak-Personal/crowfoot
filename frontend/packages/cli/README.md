@@ -3,9 +3,11 @@
 Command-line tool that generates a standalone web app displaying ER diagrams.
 
 A fork of [Liam ERD](https://github.com/liam-hq/liam) (Apache-2.0, ROUTE06, Inc.)
-adding persisted table positions, canvas memos, colour coding, a read-only
-default with an explicit edit mode, and MySQL schema export. See `NOTICE` for the
-full list of changes.
+adding persisted table positions, canvas memos, table grouping, colour coding,
+canvas multi-selection, a read-only default with an explicit edit mode, and
+MySQL schema export. Section 6 of the License grants no trademark rights, so
+this fork is published under its own name; it is not endorsed by ROUTE06, Inc.
+See `NOTICE` for the full list of changes.
 
 ## Usage
 

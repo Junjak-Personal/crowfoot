@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import type { Table } from '@liam-hq/schema'
 import { type FC, useCallback, useEffect, useRef } from 'react'
 import { useVersionOrThrow } from '../../../../../../../providers'
@@ -8,7 +10,7 @@ import {
 import { openRelatedTablesLogEvent } from '../../../../../../gtm/utils'
 import { useCustomReactflow } from '../../../../../../reactflow/hooks'
 import { computeAutoLayout, convertSchemaToNodes } from '../../../../../utils'
-import { updateNodesHiddenState } from '../../../utils'
+import { tableIdsToHide, updateNodesHiddenState } from '../../../utils'
 import { Columns } from './Columns'
 import { Comment } from './Comment'
 import { Constraints } from './Constraints'
@@ -41,9 +43,7 @@ export const TableDetail: FC<Props> = ({ table }) => {
   const handleOpenMainPane = useCallback(async () => {
     const visibleNodeIds: string[] = nodes.map((node) => node.id)
     const mainPaneNodes = getNodes()
-    const hiddenNodeIds = mainPaneNodes
-      .filter((node) => !visibleNodeIds.includes(node.id))
-      .map((node) => node.id)
+    const hiddenNodeIds = tableIdsToHide(mainPaneNodes, visibleNodeIds)
     const updatedNodes = updateNodesHiddenState({
       nodes: mainPaneNodes,
       hiddenNodeIds,

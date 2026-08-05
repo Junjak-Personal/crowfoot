@@ -22,7 +22,7 @@ import { ERDContent } from './ErdContent'
  * The context-menu group actions (`Group selected tables`, `Remove from
  * group`, rename, ungroup, colour) live entirely inside ErdContent.tsx and
  * had zero coverage before this file. Assertions read back through
- * `loadStoredGroups()` — `commitGroups` mirrors to `liam:groups`
+ * `loadStoredGroups()` — `commitGroups` mirrors to `erdkit:groups`
  * synchronously (see useGroupNodes.ts) — rather than through rendered DOM,
  * because the derived group box depends on React Flow's async
  * ResizeObserver-driven `measured` size, which this test does not need.

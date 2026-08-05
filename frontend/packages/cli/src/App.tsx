@@ -30,17 +30,17 @@ import * as v from 'valibot'
 declare global {
   interface Window {
     /** Console helpers for producing and resetting layout.json. */
-    liamLayout?: {
+    erdkitLayout?: {
       dump: () => Record<string, { x: number; y: number }>
       reset: () => void
     }
     /** Console helpers for producing and resetting memos.json. */
-    liamMemos?: {
+    erdkitMemos?: {
       dump: () => Memo[]
       reset: () => void
     }
     /** Console helpers for producing and resetting groups.json. */
-    liamGroups?: {
+    erdkitGroups?: {
       dump: () => Group[]
       reset: () => void
     }
@@ -163,21 +163,21 @@ function App() {
       return value
     }
 
-    window.liamLayout = {
+    window.erdkitLayout = {
       dump: () => publish(dumpTableLayout()),
       reset: () => {
         clearStoredTableLayout()
         location.reload()
       },
     }
-    window.liamMemos = {
+    window.erdkitMemos = {
       dump: () => publish(dumpMemos()),
       reset: () => {
         clearStoredMemos()
         location.reload()
       },
     }
-    window.liamGroups = {
+    window.erdkitGroups = {
       dump: () => publish(dumpGroups()),
       reset: () => {
         clearStoredGroups()

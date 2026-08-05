@@ -1,6 +1,7 @@
 // Added in erdkit; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { TableNodeType } from '../../types'
+import { readStoredItem, removeStoredItem } from '../storage'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 /**
@@ -15,7 +16,9 @@ export type Group = {
   color?: ViewColorKey | undefined
 }
 
-const STORAGE_KEY = 'liam:groups'
+const STORAGE_KEY = 'erdkit:groups'
+/** Read once, then migrated away — see `readStoredItem`. */
+const LEGACY_STORAGE_KEY = 'liam:groups'
 
 /** Groups shipped with the build (groups.json), set by the host app. */
 let baseGroups: Group[] = []
@@ -125,7 +128,7 @@ export const loadStoredGroups = (): Group[] | null => {
   if (typeof localStorage === 'undefined') return null
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
     if (!raw) return null
     return parseGroups(JSON.parse(raw))
   } catch {
@@ -144,10 +147,8 @@ export const saveStoredGroups = (groups: Group[]): void => {
 }
 
 export const clearStoredGroups = (): void => {
-  if (typeof localStorage === 'undefined') return
-
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
   } catch {
     // Best-effort reset only.
   }

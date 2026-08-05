@@ -1,6 +1,7 @@
 // Added in erdkit; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { Node } from '@xyflow/react'
+import { readStoredItem, removeStoredItem } from '../storage'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 /**
@@ -15,7 +16,9 @@ export type TablePosition = {
 }
 export type TableLayout = Record<string, TablePosition>
 
-const STORAGE_KEY = 'liam:tableLayout'
+const STORAGE_KEY = 'erdkit:tableLayout'
+/** Read once, then migrated away — see `readStoredItem`. */
+const LEGACY_STORAGE_KEY = 'liam:tableLayout'
 
 /**
  * Canonical layout shipped with the build (layout.json), set by the host app.
@@ -85,7 +88,7 @@ export const loadStoredTableLayout = (): TableLayout => {
   if (typeof localStorage === 'undefined') return {}
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
     if (!raw) return {}
     return parseTableLayout(JSON.parse(raw))
   } catch {
@@ -105,10 +108,8 @@ const saveStoredTableLayout = (layout: TableLayout): void => {
 }
 
 export const clearStoredTableLayout = (): void => {
-  if (typeof localStorage === 'undefined') return
-
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
   } catch {
     // Nothing to do; the caller only asked for a best-effort reset.
   }
