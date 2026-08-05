@@ -32,7 +32,9 @@ erdCommand
 
 erdCommand
   .command('from-link')
-  .description('Write layout.json / memos.json from a shared ?edit=1 link')
+  .description(
+    'Write layout.json / memos.json / groups.json from a shared ?edit=1 link',
+  )
   .option('--input <url>', 'The shared ERD URL (quote it — it contains &)')
   .option(
     '--output-dir <path>',

@@ -30,6 +30,17 @@ export type UserEditingContextValue = {
   memoEntries: string
   setMemoEntries: (memos: string | null) => void
 
+  /** Compressed JSON of every group, so a link reproduces them exactly. */
+  groupEntries: string
+  setGroupEntries: (groups: string | null) => void
+
+  /**
+   * Group view (boxes + labels on the canvas, sections in the sidebar) vs
+   * single view (today's flat list, every table once) — `?showgroups=`.
+   */
+  showGroups: boolean
+  setShowGroups: (showGroups: boolean | null) => void
+
   /** `?edit=1` — memos can be created, edited and moved only in this mode. */
   editMode: boolean
 

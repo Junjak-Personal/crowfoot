@@ -8,6 +8,8 @@ const POSITIONS = 'eJxLtEqyMrTSNdIpyEnMzLMyNLAyMgAAO0gFeQ' // a:b:1:-2,plain:10:
 const COLORS = 'eJwryEnMzLMqSU3M0cnPy6lMzs_JL7LKL0rMS08FAJUjCrg' // plain:teal,onlycolor:orange
 const MEMOS =
   'eJwFwbENgDAQBMFeNr7EQHStIDJb_AdkL2GE6J2Z_SU75mqIGrMwkYiJm3jwIu7sFXgVMfKMwtt3_NZhEF4' // [{id:m1,…}]
+const GROUPS =
+  'eJyLrlbKTFGyUko3VNJRykvMTVWyUipIrMxNzSspVtJRKklMykn1S8xNLVayilbKL0pJLQIJw1XE1sYCALojFeo' // [{id:g1,name:payments,tableNames:[orders,payments]}]
 
 const link = (query: string) => `https://erd.example/?edit=1&${query}`
 
@@ -43,14 +45,36 @@ describe('parseLink', () => {
     ])
   })
 
+  // groups.json is written raw, same as memos — the CLI is not a
+  // sanitization boundary, the viewer's parseGroups re-validates on load.
+  it('decodes groups as the list groups.json expects', () => {
+    const { groups } = parseLink(link(`groups=${GROUPS}`))
+
+    expect(groups).toEqual([
+      { id: 'g1', name: 'payments', tableNames: ['orders', 'payments'] },
+    ])
+  })
+
+  it('rejects a `groups` value that is not a list', () => {
+    const OBJECT = 'eJyrrgUAAXUA-Q' // {}
+    expect(() => parseLink(link(`groups=${OBJECT}`))).toThrowError(
+      /`groups` is not a list/,
+    )
+  })
+
   // An absent param must stay null: the caller writes only the files the link
   // carries, so `{}` never overwrites a good layout.json.
   it('reports an absent param as null rather than empty', () => {
     expect(parseLink(link(`positions=${POSITIONS}`))).toEqual({
       layout: { 'a:b': { x: 1, y: -2 }, plain: { x: 10, y: 20 } },
       memos: null,
+      groups: null,
     })
-    expect(parseLink(link('show=all'))).toEqual({ layout: null, memos: null })
+    expect(parseLink(link('show=all'))).toEqual({
+      layout: null,
+      memos: null,
+      groups: null,
+    })
   })
 
   it('rejects a value that is not a URL', () => {

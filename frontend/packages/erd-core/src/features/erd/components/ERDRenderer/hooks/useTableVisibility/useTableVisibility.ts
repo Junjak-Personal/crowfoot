@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { useNodes } from '@xyflow/react'
 import { useCallback, useMemo } from 'react'
 import { useUserEditingOrThrow } from '../../../../../../stores'
@@ -47,7 +49,10 @@ export const useTableVisibility = () => {
 
   const hideAllNodes = useCallback(() => {
     resetSelectedNodeIds()
-    updateVisibility(nodes.map((node) => node.id))
+    // Scoped to table nodes only (F4): unfiltered, this pushed memo and
+    // group node ids into `?hidden=` too, which also disagreed with this
+    // control's own `aria-label="Hide All Tables"`.
+    updateVisibility(nodes.filter(isTableNode).map((node) => node.id))
   }, [nodes, resetSelectedNodeIds, updateVisibility])
 
   return { visibilityStatus, showAllNodes, hideAllNodes }

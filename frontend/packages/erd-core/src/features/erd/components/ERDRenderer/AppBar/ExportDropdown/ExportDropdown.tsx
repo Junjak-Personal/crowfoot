@@ -23,7 +23,7 @@ import {
   useSchemaOrThrow,
   useUserEditingOrThrow,
 } from '../../../../../../stores'
-import { dumpMemos, dumpTableLayout } from '../../../../utils'
+import { dumpGroups, dumpMemos, dumpTableLayout } from '../../../../utils'
 
 export const ExportDropdown: FC = () => {
   const toast = useToast()
@@ -184,6 +184,13 @@ export const ExportDropdown: FC = () => {
       'application/json',
     )
 
+  const downloadGroups = () =>
+    download(
+      'groups.json',
+      `${JSON.stringify(dumpGroups(), null, 2)}\n`,
+      'application/json',
+    )
+
   return (
     <DropdownMenuRoot>
       <DropdownMenuTrigger asChild>
@@ -231,6 +238,12 @@ export const ExportDropdown: FC = () => {
                 onSelect={downloadMemos}
               >
                 Download memos.json
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                leftIcon={<Download size={16} />}
+                onSelect={downloadGroups}
+              >
+                Download groups.json
               </DropdownMenuItem>
             </>
           )}

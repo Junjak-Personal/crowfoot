@@ -34,4 +34,21 @@ type MemoNodeData = {
 
 export type MemoNodeType = Node<MemoNodeData, 'memo'>
 
+/**
+ * The box's geometry (position/size) is always derived at render time from
+ * its members' bounding box (utils/group/groupNode.ts) — nothing here
+ * describes where it sits, only what it is. `tableNames` rides along so a
+ * context-menu edit (rename, recolour, ungroup) can turn a node straight
+ * back into a full `Group` via `nodeToGroup`, the same way `MemoNodeData`
+ * round-trips into a `Memo`.
+ */
+type TableGroupNodeData = {
+  groupId: string
+  name: string
+  tableNames: string[]
+  color?: ViewColorKey | undefined
+}
+
+export type TableGroupNodeType = Node<TableGroupNodeData, 'tableGroup'>
+
 export type DisplayArea = 'main' | 'relatedTables'

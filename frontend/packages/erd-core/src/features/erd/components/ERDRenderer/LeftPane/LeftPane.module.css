@@ -1,3 +1,8 @@
+/*
+ * Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+ * See the NOTICE file at the repository root for what changed.
+ */
+
 .groupLabel {
   display: grid;
   grid-auto-flow: column;
@@ -142,4 +147,45 @@
   .groupLabel .visibleCount {
     display: none;
   }
+}
+
+/*
+ * Group-view sidebar section label (UI/UX ruling 6). A 6px dot, not a left
+ * border — the pane already fights for horizontal space (see the container
+ * query above) — and not the lucide Dot glyph, which is a separator icon in
+ * this set, not a swatch.
+ */
+.sectionLabel {
+  display: flex;
+  gap: var(--spacing-1);
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  font-family: var(--code-font);
+  font-size: var(--font-size-1);
+  font-weight: 500;
+  color: var(--overlay-70);
+}
+
+/*
+ * "Ungrouped" gets no dot at all (ruling 7) and a more muted label than a
+ * named group — this is what separates "not a group" from a named group
+ * that simply has no colour (which still gets a dot, gray via the fallback
+ * on .sectionDot below).
+ */
+.sectionLabelUngrouped {
+  color: var(--overlay-40);
+}
+
+.sectionDot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  background-color: var(--view-tint, var(--color-gray-500));
+  border-radius: var(--border-radius-full);
+}
+
+.sectionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

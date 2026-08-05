@@ -49,7 +49,15 @@ Summary of the changes made to the original work
 7. A Windows compatibility fix to an npm script in frontend/apps/app, which
    otherwise prevented the repository's own lint task from running.
 
-8. The command-line tool is redistributed under a different name.
+8. Table grouping.
+   Tables can be gathered into human-authored, named groups, drawn as a
+   dashed, tinted border box with a label on the canvas. A table may belong
+   to more than one group. Groups are shipped with the build in groups.json,
+   editable in the browser via the canvas context menu, and can be toggled
+   off (single view) without losing the underlying data. The left sidebar
+   optionally sections the table list by group to match.
+
+9. The command-line tool is redistributed under a different name.
    Section 6 of the License grants no trademark rights, so the npm package,
    its executable, this repository and the generated page title no longer
    carry the "Liam" product name; they are published as "erdkit". No

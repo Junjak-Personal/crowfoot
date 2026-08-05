@@ -205,9 +205,11 @@ export const applyTableLayout = (nodes: Node[], layout: TableLayout): Node[] =>
   })
 
 /**
- * Memos are React Flow nodes too, so everything that writes a layout has to
- * say "tables only" — otherwise a memo id would end up in layout.json as if it
- * were a table, and stay there.
+ * Memos and group boxes are React Flow nodes too, so everything that writes a
+ * layout has to say "tables only" — otherwise a memo or group id would end up
+ * in layout.json as if it were a table, and stay there. Filtering on
+ * `type === 'table'` already excludes group nodes (`type: 'tableGroup'`)
+ * automatically; no separate check is needed here.
  */
 const tableNodesOnly = (nodes: Node[]): Node[] =>
   nodes.filter((node) => node.type === 'table')

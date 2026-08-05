@@ -2,7 +2,12 @@
 // See the NOTICE file at the repository root for what changed.
 'use client'
 
-import { createParser, parseAsString, useQueryState } from 'nuqs'
+import {
+  createParser,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from 'nuqs'
 import {
   type FC,
   type PropsWithChildren,
@@ -145,6 +150,31 @@ export const UserEditingProvider: FC<Props> = ({
     parseAsCompressedString.withDefault('').withOptions({
       history: 'replace',
     }),
+  )
+
+  const [groupEntries, setGroupEntries] = useQueryState(
+    'groups',
+    parseAsCompressedString.withDefault('').withOptions({
+      history: 'replace',
+    }),
+  )
+
+  // A view/navigation action, same family as `?show=` and `?hidden=` — not
+  // editing, so it gets 'push' rather than 'replace'. The vocabulary is
+  // `on|off` rather than a boolean so it reads like `?show=all|table|key`;
+  // the context only ever exposes the resolved boolean below.
+  const [showGroupsParam, setShowGroupsParam] = useQueryState(
+    'showgroups',
+    parseAsStringLiteral(['on', 'off']).withDefault('on').withOptions({
+      history: 'push',
+    }),
+  )
+
+  const showGroups = showGroupsParam === 'on'
+
+  const setShowGroups: (showGroups: boolean | null) => void = useCallback(
+    (value) => setShowGroupsParam(value === null ? null : value ? 'on' : 'off'),
+    [setShowGroupsParam],
   )
 
   // Read-only by default so a shared link cannot be messed up by accident.
@@ -296,6 +326,10 @@ export const UserEditingProvider: FC<Props> = ({
         setTableColors,
         memoEntries,
         setMemoEntries,
+        groupEntries,
+        setGroupEntries,
+        showGroups,
+        setShowGroups,
         editMode,
         // Local state
         selectedNodeIds,

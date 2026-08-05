@@ -8,10 +8,12 @@ export const computeAutoLayout = async (nodes: Node[], edges: Edge[]) => {
   const untouchedNodes: Node[] = []
   const visibleNodes: Node[] = []
   for (const node of nodes) {
-    // Memos sit wherever the user put them. Handing them to ELK would let the
-    // automatic layout rearrange notes that were placed by hand, so they are
-    // split out here the same way hidden nodes are.
-    if (node.hidden || node.type === 'memo') {
+    // Memos sit wherever the user put them, and group boxes are derived from
+    // their members rather than laid out themselves. Handing either to ELK
+    // would let the automatic layout rearrange notes placed by hand, or
+    // recompute a geometry that isn't real, so both are split out here the
+    // same way hidden nodes are.
+    if (node.hidden || node.type === 'memo' || node.type === 'tableGroup') {
       untouchedNodes.push(node)
     } else {
       visibleNodes.push(node)

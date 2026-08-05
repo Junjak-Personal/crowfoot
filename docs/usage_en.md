@@ -53,7 +53,7 @@ erdkit [command]
 
 Commands:
   erd build       Generate the ERD web app from a schema file
-  erd from-link   Recover layout.json / memos.json from a shared link
+  erd from-link   Recover layout.json / memos.json / groups.json from a shared link
   init            Guide you interactively through the setup
 
 Options:
@@ -120,8 +120,9 @@ PostgreSQL and pass `--format postgres`.
 
 ### `erdkit erd from-link`
 
-Turns an arrangement made in edit mode back into `layout.json` / `memos.json`.
-This is the central command of [Persisting a layout](#persisting-a-layout).
+Turns an arrangement made in edit mode back into `layout.json` / `memos.json` /
+`groups.json`. This is the central command of
+[Persisting a layout](#persisting-a-layout).
 
 | Option | Default | Description |
 |---|---|---|
@@ -136,9 +137,12 @@ Behaviour:
 
 - Only the files the link **actually carries** are written. A link with no memos
   will not blow away an existing `memos.json`.
-- If the link carries none of `positions` / `colors` / `memos`, nothing is written
-  and the command exits with an error.
+- If the link carries none of `positions` / `colors` / `memos` / `groups`, nothing
+  is written and the command exits with an error.
 - Colour keys are not validated here — the viewer drops unknown keys on load.
+- `groups` is written just as raw, unvalidated — the CLI is not a sanitization
+  boundary. Real validation happens in the viewer's `parseGroups` on load.
+  `?showgroups=` is a pure view preference, so `from-link` never reads it.
 
 ### `erdkit init`
 
@@ -155,11 +159,12 @@ dist/
 ├── assets/             JS and CSS (all paths are relative)
 ├── schema.json         Written by erd build — the parsed schema
 ├── layout.json         (optional) pinned table positions and colours
-└── memos.json          (optional) canvas memos
+├── memos.json          (optional) canvas memos
+└── groups.json         (optional) table groups
 ```
 
-- `layout.json` and `memos.json` are **optional**. Without them you get the
-  automatic layout and no memos.
+- `layout.json`, `memos.json` and `groups.json` are **optional**. Without them you
+  get the automatic layout and no memos or groups.
 - All three load from the **same directory as `index.html`**. Anywhere else and
   they are not read.
 - `erd build` overwrites the output directory, so keep the sidecars in source
@@ -214,9 +219,9 @@ Three levels of detail, from the toolbar or the URL.
 | `⇧A` | Show all tables |
 | `⇧H` | Hide all tables |
 
-> Sharing is the **Copy Link** button, top right. Positions, colours and memos all
-> ride in that URL, so **that single copy is the share**. It has no keyboard
-> shortcut — `⌘C` belongs to the canvas selection.
+> Sharing is the **Copy Link** button, top right. Positions, colours, memos and
+> groups all ride in that URL, so **that single copy is the share**. It has no
+> keyboard shortcut — `⌘C` belongs to the canvas selection.
 
 ### Export menu
 
@@ -230,6 +235,7 @@ The `Export` dropdown, top right.
 | Copy YAML | Schema as YAML |
 | Download layout.json | Current positions and colours *(edit mode only)* |
 | Download memos.json | Current memos *(edit mode only)* |
+| Download groups.json | Current groups *(edit mode only)* |
 
 MySQL export is added by this fork; upstream offers PostgreSQL and YAML only.
 
@@ -334,6 +340,43 @@ Twelve fixed colours, all lifted from the existing `@liam-hq/ui` design tokens.
 `layout.json`, `memos.json` and `?colors=` store the **key**, not the colour value.
 Keys outside this list are silently dropped on load.
 
+### Groups
+
+A group is a human-authored set of tables, drawn as a dashed, labelled box on the
+canvas. Never inferred from foreign keys — always explicit. **A table can belong to
+several groups at once** (multi-membership). Overlapping domains — payments and
+settlement sharing a table, for example — are represented as-is, and overlapping
+boxes and labels are treated as a normal state, not an edge case.
+
+- **Creating one** — select two or more tables, then `Ctrl`/`Cmd` + right-click →
+  `Group selected tables`.
+- **Clicking the group header** — selects every member table so they can be moved
+  together. The header sits as a label just outside the box's top-left corner.
+- **Right-clicking the group header** — colour palette, rename, `Ungroup` (removes
+  the grouping only; the tables themselves are untouched).
+- **Right-clicking a table already in a group** — `Remove from "name"` drops that
+  table from that one group only; its other memberships are unaffected.
+
+#### Single view vs group view
+
+The toolbar toggle button (or `?showgroups=on|off`) switches the canvas and the
+sidebar **together**.
+
+| | Single view (`showgroups=off`) | Group view (`showgroups=on`, default) |
+|---|---|---|
+| Canvas | No boxes or labels | Boxes and labels drawn |
+| Left sidebar | Flat alphabetical list, one row per table | Sectioned by group, "Ungrouped" always last |
+| A table in N groups | Listed **once** | Listed **N times** — once per group |
+
+With no groups defined (or every defined group's members all gone), the sidebar in
+both modes is **byte-identical** — group view shows no stray "Ungrouped" header
+either.
+
+If a table appearing several times in the sidebar is confusing, **single view is
+the escape hatch**: one toggle click returns today's flat list. The sidebar's
+`(n/m visible)` count is based on the actual table count in both modes, so a
+duplicated row is never counted twice.
+
 ---
 
 ## Persisting a layout
@@ -345,6 +388,11 @@ Keys outside this list are silently dropped on load.
 ```
 
 Memos follow the same shape: `?memos=` > browser storage > `memos.json` > none.
+So do groups: `?groups=` > browser storage > `groups.json` > none.
+
+`?showgroups=` (single view vs group view) is a separate view preference, outside
+this resolution order — it never changes the group data itself, only how it is
+displayed.
 
 The important part is that **a table pinned nowhere falls back to the automatic
 layout**. Adding a table to the schema therefore does not break an existing
@@ -356,6 +404,7 @@ Browser storage keys:
 |---|---|
 | `liam:tableLayout` | Tables moved or tinted in this browser |
 | `liam:memos` | This browser's working copy of the memos |
+| `liam:groups` | This browser's working copy of the groups |
 
 > Browser storage stays **in your browser only**. To show the arrangement to
 > anyone else, share the link or pin it into the sidecar files below.
@@ -365,17 +414,17 @@ Browser storage keys:
 **A. Link → files (recommended)**
 
 ```bash
-# 1. Open with ?edit=1 and arrange tables, colours and memos
+# 1. Open with ?edit=1 and arrange tables, colours, memos and groups
 # 2. Copy the link with the Copy Link button, top right
 # 3. Turn the link back into files
 npx erdkit erd from-link --input '<the copied URL>' --output-dir dist
-# 4. Commit dist/layout.json and dist/memos.json to source control
+# 4. Commit dist/layout.json, dist/memos.json and dist/groups.json to source control
 ```
 
 **B. Download from the Export menu**
 
-In edit mode: `Export` → `Download layout.json` / `Download memos.json`. Same
-output, without going through a URL.
+In edit mode: `Export` → `Download layout.json` / `Download memos.json` /
+`Download groups.json`. Same output, without going through a URL.
 
 **C. Browser console**
 
@@ -384,6 +433,8 @@ liamLayout.dump()    // print the current layout and copy it to the clipboard
 liamLayout.reset()   // clear this browser's layout edits and reload
 liamMemos.dump()     // same for memos
 liamMemos.reset()
+liamGroups.dump()    // same for groups
+liamGroups.reset()
 ```
 
 `dump()` prints and copies. Outside a secure context the clipboard is unavailable,
@@ -448,6 +499,30 @@ Entries missing a required field or with the wrong type are skipped silently. Ev
 a badly broken sidecar still leaves the ERD itself working — loading a sidecar
 never blocks the schema from loading.
 
+### `groups.json`
+
+An array of group objects.
+
+```json
+[
+  { "id": "payment", "name": "Payments", "tableNames": ["orders", "payments"], "color": "gold" },
+  { "id": "shipping", "name": "Shipping", "tableNames": ["shipments"] }
+]
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Must not be empty. New groups use `crypto.randomUUID()`. A duplicate `id` keeps whichever entry appeared first. |
+| `name` | string | ✅ | Group name. May be empty. |
+| `tableNames` | string[] | ✅ | Member table names. **The same table name may appear in more than one entry (a different group)** — this is how a table's membership in several groups at once is represented. An empty array drops the whole entry. Duplicate names within one entry are merged into one. |
+| `color` | string | | Palette key. Values outside the list are ignored. |
+
+Entries missing a required field or with the wrong type are skipped silently. A
+table name that no longer exists in the schema, or one that is hidden
+(`?hidden=`), is excluded when the box is drawn; a group left with zero visible
+members is simply **not drawn — it is not removed from the file**, and reappears
+if the schema changes back.
+
 ---
 
 ## Query parameters
@@ -462,24 +537,30 @@ Almost every piece of UI state is reflected in the URL, so one link reproduces t
 | `positions` | compressed `name:x:y` list | Table positions. Wins over `layout.json`. | replace |
 | `colors` | compressed `name:colorkey` list | Table tints. | replace |
 | `memos` | compressed JSON | The memos, verbatim. | replace |
+| `groups` | compressed JSON | The groups, verbatim. | replace |
+| `showgroups` | `on` \| `off` | Single view vs group view — applies to both the canvas boxes/labels and the sidebar sectioning. Defaults to `on`. | push |
 | `edit` | `1` \| `true` | Enables editing. Absent means read-only. | — |
 
 ### Encoding
 
-`positions`, `colors` and `memos` are **deflate-compressed and URL-safe base64
-encoded** (`+`→`-`, `/`→`_`, `=` stripped). Not human-readable, but in exchange:
+`positions`, `colors`, `memos` and `groups` are **deflate-compressed and URL-safe
+base64 encoded** (`+`→`-`, `/`→`_`, `=` stripped). Not human-readable, but in exchange:
 
 - They survive query-string reassembly by a CDN such as CloudFront intact.
 - `positions` encodes **only the tables that were actually moved**. Everything else
   is reproduced from `layout.json` and the deterministic auto-layout, so links stay short.
-- `memos` alone is a single JSON blob rather than a list — memo text is free-form
-  and would be shredded by a list parser's `split(',')`.
+- `memos` and `groups` are each a single JSON blob rather than a list — memo text
+  and group names are both free-form and would be shredded by a list parser's
+  `split(',')`.
+- `showgroups` is a **view mode**, not group data, so it rides uncompressed as
+  `on`/`off`.
 
 ### History behaviour
 
 `push` adds a back-button entry, `replace` does not. Navigation (`active`, `show`,
-`hidden`) should be reversible with the back button; editing (`positions`, `colors`,
-`memos`) must not fill the history stack on every drag, so the two are split deliberately.
+`hidden`, `showgroups`) should be reversible with the back button; editing
+(`positions`, `colors`, `memos`, `groups`) must not fill the history stack on every
+drag, so the two are split deliberately.
 
 ---
 
@@ -502,9 +583,10 @@ relative**, so mounting the build at a sub-path such as `/erd/` needs **no rebui
 
 ### Cache headers
 
-The viewer requests `layout.json` / `memos.json` with `cache: 'no-cache'`, which
-revalidates the browser copy. **CDN caching is a separate matter**: to have a deploy
-show up immediately, give those two files a short TTL or invalidate them.
+The viewer requests `layout.json` / `memos.json` / `groups.json` with
+`cache: 'no-cache'`, which revalidates the browser copy. **CDN caching is a
+separate matter**: to have a deploy show up immediately, give those three files a
+short TTL or invalidate them.
 
 `assets/` filenames are content-hashed, so they are safe to cache for a long time.
 
@@ -532,6 +614,11 @@ Check that `layout.json` sits in the same directory as `schema.json`. A rerun of
 **Memos do not appear**
 Check where `memos.json` is. Any entry missing `id`, `text`, `x` or `y` is dropped silently.
 
+**Group boxes do not appear**
+Check whether `?showgroups=off` is set (`?showgroups=on` is the default). If it is
+on, check where `groups.json` is, or whether every member table is hidden
+(`?hidden=`) — a group with zero visible members is not drawn.
+
 **Cannot drag tables or create memos**
 The URL has no `?edit=1`. Read-only is the default.
 
@@ -554,7 +641,7 @@ That is edit mode working as intended. Pan with the scroll wheel or a middle/rig
 **The arrangement only persists in my browser**
 It is still in browser storage. See [Three ways to pin an arrangement](#three-ways-to-pin-an-arrangement).
 
-**`from-link` fails with "carries no positions, colors or memos"**
+**`from-link` fails with "carries no positions, colors, memos or groups"**
 The link has no edits in it. Open with `?edit=1`, actually move or add something,
 then copy the URL again with the **Copy Link** button.
 
@@ -568,11 +655,12 @@ The key is outside the [twelve-colour palette](#colour-palette) and is dropped o
 The extension was not enough to detect the format. Pass `--format` explicitly.
 
 **The deploy still shows the old arrangement**
-CDN cache. Invalidate `layout.json` / `memos.json`.
+CDN cache. Invalidate `layout.json` / `memos.json` / `groups.json`.
 
 **How do I reset?**
-`liamLayout.reset()` / `liamMemos.reset()` in the browser console. That clears only
-this browser's edits and returns to whatever `layout.json` / `memos.json` say.
+`liamLayout.reset()` / `liamMemos.reset()` / `liamGroups.reset()` in the browser
+console. That clears only this browser's edits and returns to whatever
+`layout.json` / `memos.json` / `groups.json` say.
 
 ---
 
@@ -587,4 +675,4 @@ To use the upstream tool rather than this fork:
   [Web](https://liambx.com/docs/web) · [CLI](https://liambx.com/docs/cli) ·
   [Parser](https://liambx.com/docs/parser)
 
-Upstream has no position persistence, memos, colours, edit mode or MySQL export.
+Upstream has no position persistence, memos, groups, colours, edit mode or MySQL export.

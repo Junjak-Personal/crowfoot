@@ -1,0 +1,68 @@
+/*
+ * Added in erdkit; not part of the original Liam ERD source.
+ * See the NOTICE file at the repository root.
+ */
+
+.box {
+  position: absolute;
+  box-sizing: border-box;
+  /*
+   * RISK-2: React Flow puts `pointer-events: all` inline on the node
+   * wrapper (it registers onNodeClick), and that is inherited. Without this,
+   * clicking empty canvas anywhere inside the box would hit the group node
+   * instead of the pane, silently breaking onPaneClick -> deselectTable()
+   * and the pane context menu.
+   */
+  pointer-events: none;
+  background-color: transparent;
+  border: 1px dashed var(--color-gray-500);
+}
+
+/*
+ * A backdrop, not a surface — the untinted default above stays fully
+ * transparent (unlike MemoNode, which fills with --color-gray-800) so it
+ * never occludes a table regardless of colour. 8% keeps two overlapping
+ * groups (a first-class state under multi-group membership) at ~15% and
+ * three at ~22%, still under MemoNode's single-layer 25%.
+ */
+.tinted {
+  background-color: color-mix(in srgb, var(--view-tint) 8%, transparent);
+  border-color: var(--view-tint);
+}
+
+/* Sits outside the box's own top-left corner, never inside it. */
+.header {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  /* WCAG 2.5.5: a 44x44 hit area even though the visible chip (.chip) is
+     smaller — this padding is what supplies the extra room. */
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--spacing-1);
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/*
+ * The opaque chip (UI/UX ruling 3): overlapping headers stay legible
+ * because the last-painted one is a solid pill, not transparent text.
+ */
+.chip {
+  display: inline-block;
+  max-width: 220px;
+  padding: var(--spacing-1) var(--spacing-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-gray-100);
+  white-space: nowrap;
+  background-color: var(--color-gray-800);
+  border: 1px solid var(--view-tint, var(--color-gray-500));
+  border-radius: var(--border-radius-full);
+}

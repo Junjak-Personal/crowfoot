@@ -1,7 +1,10 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import * as ToolbarPrimitive from '@radix-ui/react-toolbar'
 import type { FC, ReactNode } from 'react'
 import styles from './DesktopToolbar.module.css'
 import { FitviewButton } from './FitviewButton'
+import { GroupToggleButton } from './GroupToggleButton'
 import { ShowModeMenu } from './ShowModeMenu'
 import { TidyUpButton } from './TidyUpButton'
 import { ZoomControls } from './ZoomControls'
@@ -22,6 +25,7 @@ export const DesktopToolbar: FC<Props> = ({ customActions }) => {
       <div className={styles.buttons}>
         <FitviewButton />
         <TidyUpButton />
+        <GroupToggleButton />
         {customActions}
       </div>
       <ToolbarPrimitive.Separator className={styles.separator} />

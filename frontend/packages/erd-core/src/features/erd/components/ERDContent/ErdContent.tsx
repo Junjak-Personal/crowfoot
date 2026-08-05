@@ -29,20 +29,26 @@ import { useUserEditingOrThrow } from '../../../../stores'
 import { selectTableLogEvent } from '../../../gtm/utils'
 import { repositionTableLogEvent } from '../../../gtm/utils/repositionTableLogEvent'
 import { MAX_ZOOM, MIN_ZOOM } from '../../../reactflow/constants'
-import { useMemoNodes, useTableSelection } from '../../hooks'
+import { useGroupNodes, useMemoNodes, useTableSelection } from '../../hooks'
 import type { DisplayArea, MemoNodeType } from '../../types'
 import {
   clampMemoFontSize,
   createMemo,
   DEFAULT_MEMO_FONT_SIZE,
+  deserializeGroups,
   deserializeMemos,
   deserializeTableColors,
   deserializeTableLayout,
   duplicateMemo,
+  type Group,
+  getEffectiveGroups,
   getEffectiveMemos,
   getTableColor,
+  groupsFromNodes,
+  groupToNode,
   highlightNodesAndEdges,
   isMemoNode,
+  isTableGroupNode,
   isTableNode,
   MAX_MEMO_FONT_SIZE,
   MIN_MEMO_FONT_SIZE,
@@ -56,6 +62,7 @@ import {
   serializeTableLayout,
   setTableColor,
   stepMemoFontSize,
+  tableGroupNodesFrom,
   type ViewColorKey,
 } from '../../utils'
 import {
@@ -63,6 +70,7 @@ import {
   NonRelatedTableGroupNode,
   RelationshipEdge,
   Spinner,
+  TableGroupNode,
   TableNode,
   ViewColorMenu,
 } from './components'
@@ -73,6 +81,7 @@ import { useInitialAutoLayout, useQueryParamsChanged } from './hooks'
 const nodeTypes = {
   table: TableNode,
   nonRelatedTableGroup: NonRelatedTableGroupNode,
+  tableGroup: TableGroupNode,
   memo: MemoNode,
 }
 
@@ -91,12 +100,113 @@ type CanvasMenuTarget =
   | { kind: 'pane' }
   | { kind: 'table'; tableName: string }
   | { kind: 'memo'; memoId: string }
+  | { kind: 'tableGroup'; groupId: string }
 
 type CanvasMenu = CanvasMenuTarget & { x: number; y: number }
 
 /** "Memo copied" / "3 memos pasted" — the count only earns a plural. */
 const memoCountLabel = (count: number, verb: 'copied' | 'pasted') =>
   count === 1 ? `Memo ${verb}` : `${count} memos ${verb}`
+
+/**
+ * Which colour the open menu should show as selected. Kept out of the
+ * component body (directive: decompose rather than extend inline) so a
+ * third menu kind is one more branch here, not one more nested ternary in
+ * ERDContentInner's own render.
+ */
+const resolveMenuColor = (
+  menu: CanvasMenu | null,
+  context: {
+    getTableColor: (tableName: string) => ViewColorKey | undefined
+    selectedMemo: MemoNodeType | undefined
+    menuGroup: Group | undefined
+  },
+): ViewColorKey | undefined => {
+  if (menu?.kind === 'table') return context.getTableColor(menu.tableName)
+  if (menu?.kind === 'memo') return context.selectedMemo?.data.color
+  if (menu?.kind === 'tableGroup') return context.menuGroup?.color
+  return undefined
+}
+
+type TableGroupMenuItemsProps = {
+  groups: Group[]
+  canGroup: boolean
+  onGroupSelected: () => void
+  onRemoveFromGroup: (groupId: string) => void
+}
+
+/** The grouping rows injected into the table right-click menu. */
+const TableGroupMenuItems: FC<TableGroupMenuItemsProps> = ({
+  groups,
+  canGroup,
+  onGroupSelected,
+  onRemoveFromGroup,
+}) => (
+  <>
+    {canGroup && (
+      <button
+        type="button"
+        className={styles.contextMenuItem}
+        onClick={onGroupSelected}
+      >
+        Group selected tables
+      </button>
+    )}
+    {groups.map((group) => (
+      <button
+        key={group.id}
+        type="button"
+        className={styles.contextMenuItem}
+        onClick={() => onRemoveFromGroup(group.id)}
+      >
+        {group.name
+          ? `Remove from "${group.name}"`
+          : 'Remove from unnamed group'}
+      </button>
+    ))}
+  </>
+)
+
+type GroupHeaderMenuProps = {
+  x: number
+  y: number
+  selectedColor: ViewColorKey | undefined
+  name: string
+  onSelectColor: (color: ViewColorKey | null) => void
+  onRename: (name: string) => void
+  onUngroup: () => void
+}
+
+/** Right-click menu for a group header: colour palette, rename, ungroup. */
+const GroupHeaderMenu: FC<GroupHeaderMenuProps> = ({
+  x,
+  y,
+  selectedColor,
+  name,
+  onSelectColor,
+  onRename,
+  onUngroup,
+}) => (
+  <ViewColorMenu x={x} y={y} selected={selectedColor} onSelect={onSelectColor}>
+    <div className={styles.contextMenuRow}>
+      <span>Name</span>
+      <input
+        type="text"
+        className={styles.contextMenuText}
+        aria-label="Group name"
+        value={name}
+        onChange={(event) => onRename(event.target.value)}
+      />
+    </div>
+    <button
+      type="button"
+      className={styles.contextMenuItem}
+      onClick={onUngroup}
+    >
+      Ungroup
+    </button>
+  </ViewColorMenu>
+)
 
 export const ERDContentInner: FC<Props> = ({
   nodes: _nodes,
@@ -110,6 +220,7 @@ export const ERDContentInner: FC<Props> = ({
     tableColors,
     setTableColors,
     memoEntries,
+    groupEntries,
     editMode,
   } = useUserEditingOrThrow()
 
@@ -123,9 +234,14 @@ export const ERDContentInner: FC<Props> = ({
           )
         : _nodes
 
-    // Memos join the node list up front so React Flow owns their selection and
-    // position from the first render, the same as it does for tables.
+    // Group boxes join first — their negative z-index means DOM order should
+    // agree — then tables, then memos. Memos and groups join up front so
+    // React Flow owns their selection and position from the first render,
+    // the same as it does for tables.
     return [
+      ...tableGroupNodesFrom(
+        getEffectiveGroups(deserializeGroups(groupEntries)),
+      ),
       ...tableNodes,
       ...memoNodesFrom(getEffectiveMemos(deserializeMemos(memoEntries))),
     ]
@@ -142,6 +258,7 @@ export const ERDContentInner: FC<Props> = ({
 
   const { selectTable, deselectTable } = useTableSelection()
   const { commitMemos, selectedMemos } = useMemoNodes()
+  const { commitGroups } = useGroupNodes()
 
   useInitialAutoLayout({
     nodes,
@@ -454,6 +571,13 @@ export const ERDContentInner: FC<Props> = ({
         return
       }
 
+      if (node && isTableGroupNode(node)) {
+        // No claimSelection: the box is `selectable: false`, so there is no
+        // selection to claim (RISK-2).
+        openMenu(event, { kind: 'tableGroup', groupId: node.data.groupId })
+        return
+      }
+
       openMenu(event, { kind: 'pane' })
     },
     [getNodes, claimSelection, openMenu],
@@ -487,48 +611,155 @@ export const ERDContentInner: FC<Props> = ({
     [getNodes],
   )
 
+  const applyTableColor = useCallback(
+    (color: ViewColorKey | null) => {
+      const tableNames = selectedIdsOf('table')
+      const tinted = new Set(tableNames)
+
+      // Mirror into the link, keeping colours the link already carried.
+      const urlColors = deserializeTableColors(tableColors)
+      for (const tableName of tableNames) {
+        setTableColor(tableName, color)
+        if (color === null) {
+          delete urlColors[tableName]
+        } else {
+          urlColors[tableName] = color
+        }
+      }
+
+      setNodes((current) =>
+        current.map((node) =>
+          tinted.has(node.id)
+            ? { ...node, data: { ...node.data, color: color ?? undefined } }
+            : node,
+        ),
+      )
+      setTableColors(
+        Object.entries(urlColors).map(([name, key]) => `${name}:${key}`),
+      )
+    },
+    [selectedIdsOf, tableColors, setTableColors, setNodes],
+  )
+
+  const applyMemoColor = useCallback(
+    (color: ViewColorKey | null) => {
+      const memoIds = new Set(selectedIdsOf('memo'))
+      commitMemos((current) =>
+        current.map((node) =>
+          memoIds.has(node.id)
+            ? { ...node, data: { ...node.data, color: color ?? undefined } }
+            : node,
+        ),
+      )
+    },
+    [selectedIdsOf, commitMemos],
+  )
+
+  const applyGroupColor = useCallback(
+    (color: ViewColorKey | null, groupId: string) => {
+      commitGroups((current) =>
+        current.map((node) =>
+          isTableGroupNode(node) && node.data.groupId === groupId
+            ? { ...node, data: { ...node.data, color: color ?? undefined } }
+            : node,
+        ),
+      )
+    },
+    [commitGroups],
+  )
+
   const handleSelectColor = useCallback(
     (color: ViewColorKey | null) => {
       if (menu?.kind === 'table') {
-        const tableNames = selectedIdsOf('table')
-        const tinted = new Set(tableNames)
-
-        // Mirror into the link, keeping colours the link already carried.
-        const urlColors = deserializeTableColors(tableColors)
-        for (const tableName of tableNames) {
-          setTableColor(tableName, color)
-          if (color === null) {
-            delete urlColors[tableName]
-          } else {
-            urlColors[tableName] = color
-          }
-        }
-
-        setNodes((current) =>
-          current.map((node) =>
-            tinted.has(node.id)
-              ? { ...node, data: { ...node.data, color: color ?? undefined } }
-              : node,
-          ),
-        )
-        setTableColors(
-          Object.entries(urlColors).map(([name, key]) => `${name}:${key}`),
-        )
+        applyTableColor(color)
       } else if (menu?.kind === 'memo') {
-        const memoIds = new Set(selectedIdsOf('memo'))
-        commitMemos((current) =>
-          current.map((node) =>
-            memoIds.has(node.id)
-              ? { ...node, data: { ...node.data, color: color ?? undefined } }
-              : node,
-          ),
-        )
+        applyMemoColor(color)
+      } else if (menu?.kind === 'tableGroup') {
+        applyGroupColor(color, menu.groupId)
       }
 
       setMenu(null)
     },
-    [menu, selectedIdsOf, commitMemos, setNodes, tableColors, setTableColors],
+    [menu, applyTableColor, applyMemoColor, applyGroupColor],
   )
+
+  /** Turns the current multi-selection into a new group (F9, a pure append —
+   * existing group memberships of the selected tables are never touched). */
+  const handleGroupSelected = useCallback(() => {
+    const tableNames = selectedIdsOf('table')
+    if (tableNames.length < 2) return
+
+    commitGroups((current) => [
+      ...current,
+      groupToNode({ id: crypto.randomUUID(), name: '', tableNames }),
+    ])
+    setMenu(null)
+  }, [selectedIdsOf, commitGroups])
+
+  /**
+   * Removes the right-clicked table from one group only — other memberships
+   * of the same table are untouched (multi-group membership). A group left
+   * with zero members is dropped entirely: an empty `tableNames` is not
+   * representable in groups.json (parseGroups drops it), so keeping the
+   * node here would make the canvas and a reloaded `?groups=` disagree.
+   */
+  const handleRemoveFromGroup = useCallback(
+    (groupId: string) => {
+      if (menu?.kind !== 'table') return
+      const { tableName } = menu
+
+      commitGroups((current) =>
+        current
+          .map((node) =>
+            isTableGroupNode(node) && node.data.groupId === groupId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    tableNames: node.data.tableNames.filter(
+                      (name) => name !== tableName,
+                    ),
+                  },
+                }
+              : node,
+          )
+          .filter(
+            (node) =>
+              !isTableGroupNode(node) || node.data.tableNames.length > 0,
+          ),
+      )
+      setMenu(null)
+    },
+    [menu, commitGroups],
+  )
+
+  const handleRenameGroup = useCallback(
+    (name: string) => {
+      if (menu?.kind !== 'tableGroup') return
+      const { groupId } = menu
+
+      commitGroups((current) =>
+        current.map((node) =>
+          isTableGroupNode(node) && node.data.groupId === groupId
+            ? { ...node, data: { ...node.data, name } }
+            : node,
+        ),
+      )
+    },
+    [menu, commitGroups],
+  )
+
+  const handleUngroup = useCallback(() => {
+    if (menu?.kind !== 'tableGroup') return
+    const { groupId } = menu
+
+    commitGroups((current) =>
+      current.filter(
+        (node) => !(isTableGroupNode(node) && node.data.groupId === groupId),
+      ),
+    )
+    setMenu(null)
+  }, [menu, commitGroups])
 
   const handleDuplicateMemos = useCallback(() => {
     if (menu?.kind !== 'memo') return
@@ -628,10 +859,27 @@ export const ERDContentInner: FC<Props> = ({
     return () => window.removeEventListener('click', dismiss)
   }, [menu])
 
-  const selectedColor =
+  const groups = groupsFromNodes(nodes)
+
+  const menuGroup =
+    menu?.kind === 'tableGroup'
+      ? groups.find((group) => group.id === menu.groupId)
+      : undefined
+
+  const menuTableGroups =
     menu?.kind === 'table'
-      ? getTableColor(menu.tableName)
-      : selectedMemo?.data.color
+      ? groups.filter((group) => group.tableNames.includes(menu.tableName))
+      : []
+
+  const selectedTableCount = nodes.filter(
+    (node) => node.selected && node.type === 'table',
+  ).length
+
+  const selectedColor = resolveMenuColor(menu, {
+    getTableColor,
+    selectedMemo,
+    menuGroup,
+  })
 
   const panOnDrag = [1, 2]
 
@@ -731,7 +979,26 @@ export const ERDContentInner: FC<Props> = ({
               </button>
             </>
           )}
+          {menu.kind === 'table' && (
+            <TableGroupMenuItems
+              groups={menuTableGroups}
+              canGroup={selectedTableCount >= 2}
+              onGroupSelected={handleGroupSelected}
+              onRemoveFromGroup={handleRemoveFromGroup}
+            />
+          )}
         </ViewColorMenu>
+      )}
+      {menu?.kind === 'tableGroup' && (
+        <GroupHeaderMenu
+          x={menu.x}
+          y={menu.y}
+          selectedColor={selectedColor}
+          name={menuGroup?.name ?? ''}
+          onSelectColor={handleSelectColor}
+          onRename={handleRenameGroup}
+          onUngroup={handleUngroup}
+        />
       )}
       <ReactFlow
         colorMode="dark"

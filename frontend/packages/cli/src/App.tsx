@@ -1,17 +1,22 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
 import {
+  clearStoredGroups,
   clearStoredMemos,
   clearStoredTableLayout,
+  dumpGroups,
   dumpMemos,
   dumpTableLayout,
   ERDRenderer,
   ErdRendererProvider,
+  type Group,
   getCookie,
   getCookieJson,
   type Memo,
+  parseGroups,
   parseMemos,
   parseTableLayout,
+  setBaseGroups,
   setBaseMemos,
   setBaseTableLayout,
   VersionProvider,
@@ -32,6 +37,11 @@ declare global {
     /** Console helpers for producing and resetting memos.json. */
     liamMemos?: {
       dump: () => Memo[]
+      reset: () => void
+    }
+    /** Console helpers for producing and resetting groups.json. */
+    liamGroups?: {
+      dump: () => Group[]
       reset: () => void
     }
   }
@@ -66,8 +76,9 @@ function loadSchemaContent() {
  * Sidecar files that customise the deployed ERD:
  *   layout.json  pinned table positions, so everyone sees the same arrangement
  *   memos.json   free-form notes pinned to the canvas
- * Both are optional — without them tables fall back to the automatic ELK
- * layout and no memos are shown.
+ *   groups.json  named, view-only sets of tables drawn as boxes on the canvas
+ * All three are optional — without them tables fall back to the automatic
+ * ELK layout, and no memos or groups are shown.
  */
 function loadOptionalJson(fileName: string, fallback: unknown) {
   return ResultAsync.fromSafePromise(
@@ -118,15 +129,17 @@ function App() {
     getSidebarSettingsFromCookie()
 
   useEffect(() => {
-    // Both sidecars have to be registered before the schema lands, otherwise
+    // Every sidecar has to be registered before the schema lands, otherwise
     // the first auto-layout pass runs without the pinned positions.
     ResultAsync.combine([
       loadOptionalJson('layout.json', {}),
       loadOptionalJson('memos.json', []),
+      loadOptionalJson('groups.json', []),
     ])
-      .map(([layout, memos]) => {
+      .map(([layout, memos, groups]) => {
         setBaseTableLayout(parseTableLayout(layout))
         setBaseMemos(parseMemos(memos))
+        setBaseGroups(parseGroups(groups))
         return null
       })
       .andThen(loadSchemaContent)
@@ -161,6 +174,13 @@ function App() {
       dump: () => publish(dumpMemos()),
       reset: () => {
         clearStoredMemos()
+        location.reload()
+      },
+    }
+    window.liamGroups = {
+      dump: () => publish(dumpGroups()),
+      reset: () => {
+        clearStoredGroups()
         location.reload()
       },
     }

@@ -19,13 +19,13 @@
 |---|---|---|---|
 | planning | `carbon-erd-delivery` | [2026-08-03-carbon-erd-delivery](./active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md) | carbon ERD 배포 자동화 재개 (npx 전환 + 변경 감지). **차단: ECR 권한 + cli-distribution 선행** |
 | planning | `cli-distribution` | [2026-08-03-cli-distribution](./active/planning/2026-08-03/2026-08-03-cli-distribution.md) | CLI 개명(`erdkit`) · Apache-2.0 준수 · npm 배포. **1~6 완료, `npm publish` 만 남음 (본인 실행)** |
-| planning | `erd-viewer` | [2026-08-04-table-grouping](./active/planning/2026-08-04/2026-08-04-table-grouping.md) | 테이블 그룹화 — 오버레이 박스 · `groups.json` · 그룹 단위 이동. **설계만 확정, 구현 미착수** |
 
 ### Complete
 
 | 토픽 | 문서 | 요약 |
 |---|---|---|
 | `erd-viewer` | [2026-08-03-erd-viewer-impl](./complete/erd-viewer/2026-08-03-erd-viewer-impl.md) | 위치 영속 · 메모 · 색상 · 편집모드 · MySQL export. 커밋 `ac5b392fa..9af3ab35e` |
+| `erd-viewer` | [2026-08-04-table-grouping](./complete/erd-viewer/2026-08-04-table-grouping.md) | 테이블 그룹화 (0.4.0) — 파생 박스 · `groups.json` · 겹침 허용 · 좌측 2모드. 203→281 tests. **브라우저 스모크 미실시** |
 
 ---
 

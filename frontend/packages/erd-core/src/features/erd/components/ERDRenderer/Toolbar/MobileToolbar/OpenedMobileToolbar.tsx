@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { ChevronDown, Minus, Plus } from '@liam-hq/ui'
 import { useStore } from '@xyflow/react'
 import { type FC, useCallback } from 'react'
@@ -7,6 +9,7 @@ import { useUserEditingOrThrow } from '../../../../../../stores'
 import { toolbarActionLogEvent } from '../../../../../gtm/utils'
 import { useCustomReactflow } from '../../../../../reactflow/hooks'
 import { FitviewButton } from '../FitviewButton'
+import { GroupToggleButton } from '../GroupToggleButton'
 import { TidyUpButton } from '../TidyUpButton'
 import { ToolbarIconButton } from '../ToolbarIconButton'
 import styles from './OpenedMobileToolbar.module.css'
@@ -22,7 +25,7 @@ export const OpenedMobileToolbar: FC<Props> = ({
 }) => {
   const { zoomIn, zoomOut } = useCustomReactflow()
   const zoomLevel = useStore((store) => store.transform[2])
-  const { showMode } = useUserEditingOrThrow()
+  const { showMode, showGroups } = useUserEditingOrThrow()
   const { version } = useVersionOrThrow()
   const LabelList: Record<ShowMode, string> = {
     ALL_FIELDS: 'All Fields',
@@ -88,6 +91,9 @@ export const OpenedMobileToolbar: FC<Props> = ({
 
         <FitviewButton size="sm">Zoom to Fit</FitviewButton>
         <TidyUpButton size="sm">Tidy up</TidyUpButton>
+        <GroupToggleButton size="sm">
+          {showGroups ? 'Single View' : 'Group View'}
+        </GroupToggleButton>
       </div>
       <hr className={styles.divider} />
 

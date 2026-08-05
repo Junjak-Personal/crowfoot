@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import {
   BookText,
   Eye,
@@ -15,11 +17,17 @@ import {
   SidebarMenuItem,
 } from '@liam-hq/ui'
 import { useNodes } from '@xyflow/react'
-import { useCallback, useMemo } from 'react'
+import clsx from 'clsx'
+import { Fragment, useCallback, useMemo } from 'react'
 import { useVersionOrThrow } from '../../../../../providers'
 import { useUserEditingOrThrow } from '../../../../../stores'
 import { useCustomReactflow } from '../../../../reactflow/hooks'
-import { isTableNode } from '../../../utils'
+import {
+  deserializeGroups,
+  getEffectiveGroups,
+  isTableNode,
+  partitionTablesByGroup,
+} from '../../../utils'
 import { updateNodesHiddenState } from '../../ERDContent/utils'
 import { useTableVisibility } from '../hooks'
 import { CopyLinkButton } from './CopyLinkButton'
@@ -29,7 +37,8 @@ import { TableNameMenuButton } from './TableNameMenuButton'
 
 export const LeftPane = () => {
   const { version } = useVersionOrThrow()
-  const { selectedNodeIds, setHiddenNodeIds } = useUserEditingOrThrow()
+  const { selectedNodeIds, setHiddenNodeIds, groupEntries, showGroups } =
+    useUserEditingOrThrow()
 
   const { setNodes } = useCustomReactflow()
 
@@ -75,28 +84,33 @@ export const LeftPane = () => {
   )
 
   const nodes = useNodes()
-  const tableNodes = useMemo(() => {
-    return nodes.filter(isTableNode).sort((a, b) => {
-      const nameA = a.data.table.name
-      const nameB = b.data.table.name
-      if (nameA < nameB) {
-        return -1
-      }
-      if (nameA > nameB) {
-        return 1
-      }
-      return 0
-    })
-  }, [nodes])
+  const tableNodes = useMemo(() => nodes.filter(isTableNode), [nodes])
 
-  const allCount = tableNodes.length
-  const visibleCount = tableNodes.filter((node) => !node.hidden).length
+  const groups = useMemo(
+    () => getEffectiveGroups(deserializeGroups(groupEntries)),
+    [groupEntries],
+  )
+
+  const partition = useMemo(
+    () => partitionTablesByGroup(tableNodes, groups),
+    [tableNodes, groups],
+  )
+
+  // `partition.flat` — never the group-view sections, which repeat a table in
+  // every group it belongs to — is the source of both counts in BOTH modes,
+  // so a table in two groups is never double-counted as "48/60 visible".
+  const allCount = partition.flat.length
+  const visibleCount = partition.flat.filter((node) => !node.hidden).length
 
   const { visibilityStatus, showAllNodes, hideAllNodes } = useTableVisibility()
 
   const showSelectedTables = useCallback(() => {
     if (selectedNodeIds.size > 0) {
+      // Scoped to table nodes only (F4): `nodes` also carries memo and group
+      // ids, which are never in `selectedNodeIds`, so an unfiltered pass
+      // would push them all into `?hidden=` too.
       const hiddenNodeIds = nodes
+        .filter(isTableNode)
         .filter((node) => !selectedNodeIds.has(node.id))
         .map((node) => node.id)
       const updatedNodes = updateNodesHiddenState({
@@ -148,16 +162,70 @@ export const LeftPane = () => {
             </span>
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className={styles.tablesMenu}>
-              {tableNodes.map((node) => (
-                <TableNameMenuButton
-                  key={node.id}
-                  node={node}
-                  nodes={tableNodes}
-                  showSelectedTables={showSelectedTables}
-                />
-              ))}
-            </SidebarMenu>
+            {showGroups && partition.sectioned ? (
+              // Group view: sectioned by group, "Ungrouped" last, a table in
+              // N groups rendered N times — the shift-range `nodes` prop is
+              // `flattenedUnique` (dedup'd, first-appearance order) so it
+              // matches the visual order (F9 / handleShiftSelection).
+              <SidebarMenu className={styles.tablesMenu}>
+                {partition.sections.map((section) => (
+                  // The group arm is prefixed so a group whose id is literally
+                  // `ungrouped` cannot collide with the synthetic trailing
+                  // section. Group ids come from groups.json, so that is a
+                  // reachable value, not a hypothetical one.
+                  <Fragment
+                    key={
+                      section.group === null
+                        ? 'ungrouped'
+                        : `group:${section.group.id}`
+                    }
+                  >
+                    <SidebarMenuItem
+                      className={clsx(
+                        styles.sectionLabel,
+                        section.group === null && styles.sectionLabelUngrouped,
+                      )}
+                    >
+                      {section.group !== null && (
+                        <span
+                          aria-hidden="true"
+                          className={styles.sectionDot}
+                          data-view-color={section.group.color}
+                        />
+                      )}
+                      <span className={styles.sectionName}>
+                        {section.group ? section.group.name : 'Ungrouped'}
+                      </span>
+                    </SidebarMenuItem>
+                    {section.nodes.map((node) => (
+                      <TableNameMenuButton
+                        key={node.id}
+                        node={node}
+                        nodes={partition.flattenedUnique}
+                        showSelectedTables={showSelectedTables}
+                      />
+                    ))}
+                  </Fragment>
+                ))}
+              </SidebarMenu>
+            ) : (
+              // Single view (default toggle-off, and the empty-state fallback
+              // for group view too — UI/UX ruling 10): today's flat
+              // alphabetical list, every table exactly once. This branch is
+              // deliberately kept byte-identical to that list rather than
+              // folded into the sectioned branch above, which is what
+              // guarantees the escape hatch never drifts from it.
+              <SidebarMenu className={styles.tablesMenu}>
+                {partition.flat.map((node) => (
+                  <TableNameMenuButton
+                    key={node.id}
+                    node={node}
+                    nodes={partition.flat}
+                    showSelectedTables={showSelectedTables}
+                  />
+                ))}
+              </SidebarMenu>
+            )}
 
             <SidebarMenu className={styles.contentControls}>
               <CopyLinkButton />

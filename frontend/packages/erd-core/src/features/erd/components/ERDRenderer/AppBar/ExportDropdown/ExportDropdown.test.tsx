@@ -9,9 +9,24 @@ import { SchemaProvider, UserEditingProvider } from '../../../../../../stores'
 import { ExportDropdown } from './ExportDropdown'
 
 // UserEditingProvider is required since the dropdown reads edit mode from it
-// to decide whether to offer the layout.json / memos.json downloads.
+// to decide whether to offer the layout.json / memos.json / groups.json
+// downloads.
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter>
+    <ToastProvider>
+      <SchemaProvider
+        current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
+      >
+        <UserEditingProvider>{children}</UserEditingProvider>
+      </SchemaProvider>
+    </ToastProvider>
+  </NuqsTestingAdapter>
+)
+
+// `?edit=1` is what flips `editMode` on — the dropdown's layout/memos/groups
+// downloads are gated on it (see ExportDropdown.tsx's `{editMode && ...}`).
+const editModeWrapper: FC<PropsWithChildren> = ({ children }) => (
+  <NuqsTestingAdapter searchParams="?edit=1">
     <ToastProvider>
       <SchemaProvider
         current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
@@ -111,4 +126,27 @@ describe('YAML export', () => {
   it.todo('should handle unavailable clipboard API')
 
   it.todo('should show error toast if YAML generation fails')
+})
+
+describe('groups.json export', () => {
+  it('is hidden outside edit mode', async () => {
+    const user = userEvent.setup()
+    render(<ExportDropdown />, { wrapper })
+
+    await user.click(screen.getByRole('button'))
+
+    expect(screen.queryByText('Download groups.json')).not.toBeInTheDocument()
+  })
+
+  it('downloads groups.json in edit mode', async () => {
+    const user = userEvent.setup()
+    render(<ExportDropdown />, { wrapper: editModeWrapper })
+
+    await user.click(screen.getByRole('button'))
+    await user.click(screen.getByText('Download groups.json'))
+
+    expect(
+      await screen.findByText('groups.json downloaded'),
+    ).toBeInTheDocument()
+  })
 })
