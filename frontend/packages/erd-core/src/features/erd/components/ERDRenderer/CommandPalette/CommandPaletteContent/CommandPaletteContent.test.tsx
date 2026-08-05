@@ -267,29 +267,15 @@ describe('preview', () => {
     })
   })
 
-  describe('command preview', () => {
-    it('renders a command preview when a command option is selected', async () => {
-      const user = userEvent.setup()
-      render(<CommandPaletteContent />, { wrapper })
-      const previewContainer = screen.getByTestId('CommandPalettePreview')
+  // The command preview is gone: it hotlinked six upstream-hosted media files
+  // from a CDN this fork does not control. See
+  // _docs/active/planning/2026-08-05/2026-08-05-cli-distribution-debranding.md
+  it('leaves the preview empty when a command option is selected', async () => {
+    const user = userEvent.setup()
+    render(<CommandPaletteContent />, { wrapper })
+    const previewContainer = screen.getByTestId('CommandPalettePreview')
 
-      // renders the "Copy Link" preview when the "Copy Link" option is selected
-      await user.hover(screen.getByRole('option', { name: 'Copy Link' }))
-      expect(
-        within(previewContainer).getByLabelText(
-          'Demonstration of the copy link command execution result',
-        ),
-      ).toBeInTheDocument()
-
-      // renders the "Show All Fields" preview when the "Show All Fields" option is selected
-      await user.hover(
-        screen.getByRole('option', { name: 'Show All Fields ⇧ 2' }),
-      )
-      expect(
-        within(previewContainer).getByAltText(
-          'Demonstration of the Show All Fields command execution result',
-        ),
-      ).toBeInTheDocument()
-    })
+    await user.hover(screen.getByRole('option', { name: 'Copy Link' }))
+    expect(previewContainer).toBeEmptyDOMElement()
   })
 })

@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { Button } from '@liam-hq/ui'
 import { DialogClose } from '@radix-ui/react-dialog'
 import { Command, defaultFilter as cmdkBaseFilter } from 'cmdk'
@@ -7,7 +9,7 @@ import {
   TableDetailOptions,
   TableOptions,
 } from '../CommandPaletteOptions'
-import { CommandPreview, TablePreview } from '../CommandPalettePreview'
+import { TablePreview } from '../CommandPalettePreview'
 import { CommandPaletteSearchInput } from '../CommandPaletteSearchInput'
 import type { CommandPaletteInputMode } from '../types'
 import { textToSuggestion } from '../utils'
@@ -114,9 +116,6 @@ export const CommandPaletteContent: FC = () => {
           )}
           {(suggestion?.type === 'column' || suggestion?.type === 'index') && (
             <TablePreview tableName={suggestion.tableName} />
-          )}
-          {suggestion?.type === 'command' && (
-            <CommandPreview commandName={suggestion.name} />
           )}
         </div>
       </div>
