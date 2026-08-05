@@ -29,10 +29,43 @@ related:
 
 ---
 
-## 선행 조건 (차단 중)
+## 상표 — 이름 확정, 마크 검토 중
 
-1. **상표 결정 — 이름 + 마크. 본인 담당.** 2·3·5번 항목의 선행 조건이며, 정해지기 전까지
-   시작할 수 없다
+**이름은 `crowfoot` 으로 확정됐다 (2026-08-05).** `erdkit` 은 ERD + kit 로 순수 서술어라
+상표로 가장 약한 층이었다. `crowfoot` 은 suggestive 층이고, 무엇보다 **이 제품이 화면에 실제로
+그리는 도형**이다 — `RelationshipEdge.tsx:42` 가 1:1 이 아닌 모든 관계선의 끝에
+`url(#zeroOrManyLeft)` 을 물리고, 그 마커가 까마귀발이다. npm 미점유 확인함.
+
+감수하기로 한 단점: DB 밖에서는 의미가 안 통하고, 업계 일반 용어라 무의미 조어보다 상표력이
+낮으며, 영어권에서 "crow's feet"(눈가 주름) 연상이 있다.
+
+**마크는 검토 중.** 두 후보를 같은 크기에서 비교 중이다 — 생성형(Gemini) 결과 vs 아래
+`CrowfootLogoMark`. 남은 판단은 **링을 유지할지 하나뿐**이다.
+
+### 마크 제약 (코드에서 실측 — 새로 만들든 생성하든 동일하게 적용)
+
+| 제약 | 근거 |
+|---|---|
+| **12px 에서 읽혀야 함** | `LeftPane.module.css:73` 아이콘 `0.75rem`. AppBar 로고는 `1.25rem`(20px), favicon 16px |
+| **단색 `currentColor` 실루엣** | `LeftPane.module.css:75` 가 아이콘에 `color: var(--overlay-70)` 를 먹인다 — 색이 박힌 마크는 그 자리에서 못 쓴다 |
+| **초록 금지** | 기존 `LiamLogoMark` 가 `#1DED83`, 테마 `--color-green-300` 이 `#4af19c`. 초록 마크는 이름만 바꾸고 trade dress 를 물려받는 꼴이 된다 |
+
+### `CrowfootLogoMark` (`packages/ui/src/logos/CrowfootLogoMark.tsx`)
+
+`CardinalityZeroOrManyLeftMarker` 의 geometry 를 승격시킨 것. 원본 실측값은 수렴점 `(10.75, 8)`,
+세 갈래 `-26° / 0° / +30°`, 링 `r≈4.67`, 획 두께 `1.0`(viewBox 23.5 기준 ≈ 4%).
+
+원본에서 바꾼 것은 셋뿐이다:
+
+| | 원본 마커 | 로고 |
+|---|---|---|
+| 획 | 약 4% | `3/24` = 12.5% — **4% 를 12px 로 줄이면 0.5px 라 사라진다** |
+| 갈래 벌림 | 26–30° | 35° — 가로로 납작한 마크가 정사각 슬롯을 버티게 |
+| 캡 | 평평 | 라운드 |
+
+**남은 판단:** 링(zero-or-many 의 "zero") 구멍이 12px 에서 `2.5px` 라 메워져 점으로 보일 수
+있다. 그 경우 LeftPane 슬롯은 fork-only 변형이 답이다. 비교 하네스는 스크래치에 있었고
+버려도 된다 — 위 수치만으로 재생성된다.
 
 ---
 
@@ -52,11 +85,11 @@ related:
 
 **인수 중 발견한 어긋난 것 3건:**
 
-- 🔴 **`.github/workflows/release-erdkit.yml` 이 미커밋 상태로 인계됐다.** Trusted Publishing
-  (OIDC) 전환 diff — 토큰 스텝 삭제, `npm@^11.5.1` 업그레이드 추가, `--provenance` 제거 — 가
-  워킹트리에 떠 있다. 릴리즈 흐름의 핵심 변경인데 커밋되지 않았다
-- 🟠 **`_test/`(`smoke-040`·`smoke-042`·`smoke-043`) 가 untracked 이고 `.gitignore` 에도 없다.**
-  스모크 스크래치 디렉터리
+- ✅ ~~🔴 `.github/workflows/release-erdkit.yml` 이 미커밋 상태로 인계됐다~~ — Trusted Publishing
+  (OIDC) 전환 diff(토큰 스텝 삭제, `npm@^11.5.1` 업그레이드, `--provenance` 제거)가 워킹트리에
+  떠 있었다. **`e094438f2` 로 커밋됨**
+- ✅ ~~🟠 `_test/` 가 untracked 이고 `.gitignore` 에도 없다~~ — 스모크 스크래치 디렉터리.
+  **`.gitignore` 에 추가함**
 - 🟠 **`2026-08-03-cli-distribution.md` 와 `index.md` 가 "`npm publish` 만 남음" 이라고
   말하는데 이미 배포됐다.** 그 문서 자신의 검증 기록에 `npx erdkit@0.1.1` 성공이 적혀 있고,
   지금 버전은 0.4.3 이며 태그 트리거 릴리즈 워크플로까지 있다. 그 문서는 status 갱신 대상
@@ -90,7 +123,7 @@ related:
 
 ## 작업 순서
 
-1. **상표 결정** — 본인 담당. 위 "선행 조건" 참조
+1. ✅ **이름 확정 — `crowfoot`.** 마크는 검토 중 (위 "상표" 절)
 2. **앱 브랜딩 교체** — 인벤토리대로. `AppBar` 의 `<h1>` 과 로고가 최우선(가장 눈에 띄고
    가장 명확한 §6 위반 표면). `favicon.ico` 도 같이
 3. **링크 정리** — upstream 문서 링크는 두 갈래다:

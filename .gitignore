@@ -20,3 +20,6 @@ coverage/
 
 # Lefthook local config
 lefthook-local.yml
+
+# Browser-smoke scratch dirs (built ERD output, per-release)
+_test/
