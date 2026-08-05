@@ -63,8 +63,11 @@ jobs:
       # restore a stale erdkit bundle from cache and publish the old code.
       - run: pnpm exec turbo build --filter=erdkit --force
 
+      # ERDKITDEPLOY, not the conventional NPM_TOKEN, because that is the name
+      # the repository secret was created under. GitHub stores secret names
+      # upper-cased, so this must be spelled the way `gh secret list` shows it.
       - name: Publish to npm
         working-directory: frontend/packages/cli
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.ERDKITDEPLOY }}
         run: npm publish --provenance --access public
