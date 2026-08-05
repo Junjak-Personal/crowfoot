@@ -77,6 +77,7 @@ import {
 import styles from './ERDContent.module.css'
 import { ErdContentProvider, useErdContentContext } from './ErdContentContext'
 import { useInitialAutoLayout, useQueryParamsChanged } from './hooks'
+import { nodeElementAt } from './utils'
 
 const nodeTypes = {
   table: TableNode,
@@ -550,10 +551,9 @@ export const ERDContentInner: FC<Props> = ({
    */
   const handleCanvasContextMenu = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
-      const element =
-        event.target instanceof Element
-          ? event.target.closest('.react-flow__node')
-          : null
+      const element = nodeElementAt(event.target, () =>
+        document.elementsFromPoint(event.clientX, event.clientY),
+      )
       const nodeId = element?.getAttribute('data-id') ?? null
       const node = nodeId
         ? getNodes().find((candidate) => candidate.id === nodeId)
