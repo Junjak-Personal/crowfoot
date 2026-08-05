@@ -168,6 +168,7 @@ All asset paths are relative, so the build can be mounted at a sub-path
 | **Persisted table positions** | Dragged tables stay put across reloads. Resolution order is `?positions=` → browser storage → `layout.json` → automatic layout. Tables not pinned anywhere still get the automatic layout, so adding a table to the schema does not break an existing arrangement. |
 | **Canvas memos** | Free-form notes pinned to the diagram. In edit mode, `Ctrl`/`Cmd` + right-click the canvas to add one; memos can be moved, resized, recoloured, duplicated, copy-pasted (including into another tab) and have their font size changed. Shipped with the build in `memos.json`. |
 | **Multi-select** | In edit mode, drag a box across the canvas or `Ctrl`/`Cmd`/`Shift` + click to select several tables and memos at once, then move, tint or delete them together. |
+| **Table grouping** | Gather tables into named groups, drawn as a dashed tinted box behind them. A table may belong to more than one group. Dragging a group's label moves its members together. One toolbar control switches between **group view** (boxes drawn, sidebar sectioned by group) and **single view** (no boxes, the plain alphabetical list). Shipped with the build in `groups.json`. |
 | **Colour coding** | Tables and memos can be tinted from a fixed 12-colour palette taken from the existing design tokens: `green`, `mint`, `teal`, `sky`, `blue`, `steel`, `sand`, `yellow`, `gold`, `orange`, `vermilion`, `red`. |
 | **Read-only by default** | Positions, memos and colours are locked unless the page is opened with `?edit=1`, so a shared link cannot be rearranged by accident. |
 | **MySQL export** | Upstream exports PostgreSQL and YAML only; MySQL DDL was added, and the export menu can copy to the clipboard or download a `.sql` file. |
@@ -196,20 +197,25 @@ npx erdkit erd from-link --input '<the ?edit=1 URL>' --output-dir dist
 Quote the URL — it contains `&`. Only the files the link actually carries are
 written, so a link with no memos will not blow away an existing `memos.json`.
 
-`layout.json` and `memos.json` are loaded from the same directory as `schema.json`,
-so keep them next to it and commit them to whatever your deploy copies in — a
-rebuild overwrites the directory otherwise.
+`layout.json`, `memos.json` and `groups.json` are loaded from the same directory
+as `schema.json`, so keep them next to it and commit them to whatever your deploy
+copies in — a rebuild overwrites the directory otherwise.
 
 | File | Contents | Missing means |
 |---|---|---|
 | `schema.json` | The parsed schema. Written by `erd build`. | Nothing renders. |
 | `layout.json` | `{"table_name": {"x": 0, "y": 0, "color": "teal"}}` | Automatic layout for every table. |
 | `memos.json` | The canvas memos. | No memos. |
+| `groups.json` | `[{"id": "...", "name": "Payment", "tableNames": ["orders"], "color": "gold"}]` | No groups. |
 
-In edit mode the Export menu also offers **Download layout.json** and
-**Download memos.json**, which is the same output without going through a URL.
-The browser console exposes `liamLayout.dump()` / `liamLayout.reset()` and
-`liamMemos.dump()` / `liamMemos.reset()` for the same purpose.
+A table name may appear in more than one `groups.json` entry; both boxes are
+drawn, and the sidebar lists that table once per group it belongs to.
+
+In edit mode the Export menu also offers **Download layout.json**,
+**Download memos.json** and **Download groups.json**, which is the same output
+without going through a URL. The browser console exposes `liamLayout.dump()` /
+`liamLayout.reset()`, `liamMemos.dump()` / `liamMemos.reset()` and
+`liamGroups.dump()` / `liamGroups.reset()` for the same purpose.
 
 ## Query parameters
 
@@ -221,12 +227,16 @@ The browser console exposes `liamLayout.dump()` / `liamLayout.reset()` and
 | `positions` | compressed `name:x:y` list | Table positions. Wins over `layout.json`. |
 | `colors` | compressed `name:colorkey` list | Table tints. |
 | `memos` | compressed JSON | The memos, verbatim. |
+| `groups` | compressed JSON | The groups, verbatim. Wins over `groups.json`. |
+| `showgroups` | `on` \| `off` | View mode. `on` (the default) draws the group boxes and sections the sidebar; `off` hides the boxes and returns the sidebar to a plain alphabetical list. Group data is untouched either way. |
 | `edit` | `1` \| `true` | Enables editing. Absent means read-only. |
 
-`positions`, `colors` and `memos` are deflate-compressed and URL-safe base64
-encoded, so they survive CDN query-string handling intact. Navigation
-parameters (`active`, `show`, `hidden`) push history entries; editing
-parameters (`positions`, `colors`, `memos`) replace them, so the back button
+`positions`, `colors`, `memos` and `groups` are deflate-compressed and URL-safe
+base64 encoded, so they survive CDN query-string handling intact. `memos` and
+`groups` go in as one JSON blob rather than a list, because free-form text would
+be shredded by the list parser's `,` split. Navigation parameters (`active`,
+`show`, `hidden`, `showgroups`) push history entries; editing parameters
+(`positions`, `colors`, `memos`, `groups`) replace them, so the back button
 still does what you expect.
 
 ## Export menu
@@ -239,6 +249,7 @@ still does what you expect.
 | Copy YAML | Schema as YAML |
 | Download layout.json | Current positions and colours *(edit mode only)* |
 | Download memos.json | Current memos *(edit mode only)* |
+| Download groups.json | Current groups *(edit mode only)* |
 
 ## Keyboard shortcuts
 
