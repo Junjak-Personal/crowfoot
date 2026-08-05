@@ -256,3 +256,34 @@ describe(stepMemoFontSize, () => {
     ).toBeUndefined()
   })
 })
+
+describe('storage key migration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setBaseMemos([])
+  })
+
+  it('reads memos left behind under the pre-0.4.1 liam: key and moves them', () => {
+    // Written through saveStoredMemos so the payload is exactly what an old
+    // build would have left, rather than a hand-rolled guess at the shape.
+    saveStoredMemos([memo('kept')])
+    const stored = localStorage.getItem('erdkit:memos')
+    localStorage.clear()
+    localStorage.setItem('liam:memos', String(stored))
+
+    expect(loadStoredMemos()).toEqual([memo('kept')])
+    expect(localStorage.getItem('erdkit:memos')).toBe(stored)
+    expect(localStorage.getItem('liam:memos')).toBeNull()
+  })
+
+  it('clears both names, so a reset is not undone by the migration', () => {
+    saveStoredMemos([memo('kept')])
+    const stored = localStorage.getItem('erdkit:memos')
+    localStorage.clear()
+    localStorage.setItem('liam:memos', String(stored))
+
+    clearStoredMemos()
+
+    expect(loadStoredMemos()).toBeNull()
+  })
+})

@@ -204,3 +204,30 @@ describe('table color', () => {
     expect(getTableColor('users')).toBeUndefined()
   })
 })
+
+describe('storage key migration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setBaseTableLayout({})
+    setResolvedTableLayout([])
+  })
+
+  it('reads a layout left behind under the pre-0.4.1 liam: key and moves it', () => {
+    const stored = JSON.stringify({ users: { x: 1, y: 2 } })
+    localStorage.setItem('liam:tableLayout', stored)
+
+    expect(loadStoredTableLayout()).toEqual({ users: { x: 1, y: 2 } })
+    expect(localStorage.getItem('erdkit:tableLayout')).toBe(stored)
+    expect(localStorage.getItem('liam:tableLayout')).toBeNull()
+  })
+
+  it('clears both names, so a reset is not undone by the migration', () => {
+    localStorage.setItem(
+      'liam:tableLayout',
+      JSON.stringify({ users: { x: 1, y: 2 } }),
+    )
+    clearStoredTableLayout()
+
+    expect(loadStoredTableLayout()).toEqual({})
+  })
+})

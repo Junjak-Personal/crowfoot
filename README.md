@@ -213,9 +213,13 @@ drawn, and the sidebar lists that table once per group it belongs to.
 
 In edit mode the Export menu also offers **Download layout.json**,
 **Download memos.json** and **Download groups.json**, which is the same output
-without going through a URL. The browser console exposes `liamLayout.dump()` /
-`liamLayout.reset()`, `liamMemos.dump()` / `liamMemos.reset()` and
-`liamGroups.dump()` / `liamGroups.reset()` for the same purpose.
+without going through a URL. The browser console exposes `erdkitLayout.dump()` /
+`erdkitLayout.reset()`, `erdkitMemos.dump()` / `erdkitMemos.reset()` and
+`erdkitGroups.dump()` / `erdkitGroups.reset()` for the same purpose.
+
+Browser storage lives under `erdkit:tableLayout`, `erdkit:memos` and
+`erdkit:groups`. These were `liam:*` up to 0.4.0; a value left under an old key
+is moved to the new one on the first read, so nothing has to be rearranged.
 
 ## Query parameters
 

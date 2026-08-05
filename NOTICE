@@ -59,6 +59,10 @@ Summary of the changes made to the original work
 
 9. The command-line tool is redistributed under a different name.
    Section 6 of the License grants no trademark rights, so the npm package,
-   its executable, this repository and the generated page title no longer
-   carry the "Liam" product name; they are published as "erdkit". No
+   its executable, this repository, the generated page title, the browser
+   storage keys and the browser console helpers no longer carry the "Liam"
+   product name; they are published as "erdkit". A value still held under a
+   previous "liam:" storage key is moved to the new key the first time it is
+   read, so nothing a user arranged is lost. The tool names Liam ERD as the
+   work it is derived from in its banner and its --help output. No
    endorsement by ROUTE06, Inc. is implied.

@@ -402,9 +402,14 @@ Browser storage keys:
 
 | Key | Contents |
 |---|---|
-| `liam:tableLayout` | Tables moved or tinted in this browser |
-| `liam:memos` | This browser's working copy of the memos |
-| `liam:groups` | This browser's working copy of the groups |
+| `erdkit:tableLayout` | Tables moved or tinted in this browser |
+| `erdkit:memos` | This browser's working copy of the memos |
+| `erdkit:groups` | This browser's working copy of the groups |
+
+> These were `liam:*` up to 0.4.0. A value left under an old key is **moved to
+> the new key on the first read, and the old key is deleted** — nothing has to
+> be rearranged by hand. The console helpers were renamed alongside them
+> (`liamLayout` → `erdkitLayout`, and so on).
 
 > Browser storage stays **in your browser only**. To show the arrangement to
 > anyone else, share the link or pin it into the sidecar files below.
@@ -429,12 +434,12 @@ In edit mode: `Export` → `Download layout.json` / `Download memos.json` /
 **C. Browser console**
 
 ```js
-liamLayout.dump()    // print the current layout and copy it to the clipboard
-liamLayout.reset()   // clear this browser's layout edits and reload
-liamMemos.dump()     // same for memos
-liamMemos.reset()
-liamGroups.dump()    // same for groups
-liamGroups.reset()
+erdkitLayout.dump()    // print the current layout and copy it to the clipboard
+erdkitLayout.reset()   // clear this browser's layout edits and reload
+erdkitMemos.dump()     // same for memos
+erdkitMemos.reset()
+erdkitGroups.dump()    // same for groups
+erdkitGroups.reset()
 ```
 
 `dump()` prints and copies. Outside a secure context the clipboard is unavailable,
@@ -658,7 +663,7 @@ The extension was not enough to detect the format. Pass `--format` explicitly.
 CDN cache. Invalidate `layout.json` / `memos.json` / `groups.json`.
 
 **How do I reset?**
-`liamLayout.reset()` / `liamMemos.reset()` / `liamGroups.reset()` in the browser
+`erdkitLayout.reset()` / `erdkitMemos.reset()` / `erdkitGroups.reset()` in the browser
 console. That clears only this browser's edits and returns to whatever
 `layout.json` / `memos.json` / `groups.json` say.
 

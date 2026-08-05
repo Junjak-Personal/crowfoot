@@ -379,9 +379,13 @@ FK 로 자동 추론하지 않는다 — 언제나 사람이 명시적으로 묶
 
 | 키 | 내용 |
 |---|---|
-| `liam:tableLayout` | 이 브라우저에서 옮기거나 칠한 테이블 |
-| `liam:memos` | 이 브라우저의 메모 작업본 |
-| `liam:groups` | 이 브라우저의 그룹 작업본 |
+| `erdkit:tableLayout` | 이 브라우저에서 옮기거나 칠한 테이블 |
+| `erdkit:memos` | 이 브라우저의 메모 작업본 |
+| `erdkit:groups` | 이 브라우저의 그룹 작업본 |
+
+> 0.4.0 까지는 `liam:*` 이었다. 예전 키에 값이 남아 있으면 **처음 읽을 때 새 키로 한 번
+> 옮기고 예전 키를 지운다** — 배치를 다시 만들 필요는 없다. 콘솔 헬퍼도
+> `liamLayout` → `erdkitLayout` 식으로 함께 바뀌었다.
 
 > 브라우저 저장소는 **내 브라우저에만** 남는다. 팀에 보여주려면 링크를 공유하거나
 > 아래 방법으로 사이드카 파일에 고정해야 한다.
@@ -406,12 +410,12 @@ npx erdkit erd from-link --input '<복사한 URL>' --output-dir dist
 **C. 브라우저 콘솔**
 
 ```js
-liamLayout.dump()    // 현재 레이아웃을 출력 + 클립보드 복사
-liamLayout.reset()   // 이 브라우저의 레이아웃 편집 내역 삭제 후 새로고침
-liamMemos.dump()     // 메모도 동일
-liamMemos.reset()
-liamGroups.dump()    // 그룹도 동일
-liamGroups.reset()
+erdkitLayout.dump()    // 현재 레이아웃을 출력 + 클립보드 복사
+erdkitLayout.reset()   // 이 브라우저의 레이아웃 편집 내역 삭제 후 새로고침
+erdkitMemos.dump()     // 메모도 동일
+erdkitMemos.reset()
+erdkitGroups.dump()    // 그룹도 동일
+erdkitGroups.reset()
 ```
 
 `dump()` 는 콘솔 출력과 클립보드 복사를 같이 한다. HTTPS 가 아닌 컨텍스트에서는
@@ -628,7 +632,7 @@ URL 에 `?edit=1` 이 없다. 읽기 전용이 기본값이다.
 CDN 캐시다. `layout.json` / `memos.json` / `groups.json` 을 무효화한다.
 
 **초기화하고 싶다**
-브라우저 콘솔에서 `liamLayout.reset()` / `liamMemos.reset()` / `liamGroups.reset()`.
+브라우저 콘솔에서 `erdkitLayout.reset()` / `erdkitMemos.reset()` / `erdkitGroups.reset()`.
 이 브라우저의 편집 내역만 지우고 `layout.json` / `memos.json` / `groups.json` 상태로 돌아간다.
 
 ---

@@ -243,7 +243,7 @@ describe('group persistence', () => {
   it('returns null instead of throwing when storage holds malformed JSON directly, and falls through', () => {
     // Bypasses saveStoredGroups' own JSON.stringify to simulate a hand-edited
     // or corrupted localStorage entry, not just a value this module wrote.
-    localStorage.setItem('liam:groups', 'not json')
+    localStorage.setItem('erdkit:groups', 'not json')
 
     expect(loadStoredGroups()).toBeNull()
     expect(getEffectiveGroups()).toEqual([])
@@ -636,5 +636,36 @@ describe(padGroupRect, () => {
       width: 50 + GROUP_BOX_PADDING * 2,
       height: 30 + GROUP_BOX_PADDING * 2,
     })
+  })
+})
+
+describe('storage key migration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setBaseGroups([])
+  })
+
+  it('reads groups left behind under the pre-0.4.1 liam: key and moves them', () => {
+    // Written through saveStoredGroups so the payload is exactly what an old
+    // build would have left, rather than a hand-rolled guess at the shape.
+    saveStoredGroups([group('billing', ['orders'])])
+    const stored = localStorage.getItem('erdkit:groups')
+    localStorage.clear()
+    localStorage.setItem('liam:groups', String(stored))
+
+    expect(loadStoredGroups()).toEqual([group('billing', ['orders'])])
+    expect(localStorage.getItem('erdkit:groups')).toBe(stored)
+    expect(localStorage.getItem('liam:groups')).toBeNull()
+  })
+
+  it('clears both names, so a reset is not undone by the migration', () => {
+    saveStoredGroups([group('billing', ['orders'])])
+    const stored = localStorage.getItem('erdkit:groups')
+    localStorage.clear()
+    localStorage.setItem('liam:groups', String(stored))
+
+    clearStoredGroups()
+
+    expect(loadStoredGroups()).toBeNull()
   })
 })

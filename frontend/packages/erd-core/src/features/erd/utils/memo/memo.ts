@@ -1,5 +1,6 @@
 // Added in erdkit; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
+import { readStoredItem, removeStoredItem } from '../storage'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 export type Memo = {
@@ -13,7 +14,9 @@ export type Memo = {
   fontSize?: number | undefined
 }
 
-const STORAGE_KEY = 'liam:memos'
+const STORAGE_KEY = 'erdkit:memos'
+/** Read once, then migrated away — see `readStoredItem`. */
+const LEGACY_STORAGE_KEY = 'liam:memos'
 
 export const DEFAULT_MEMO_WIDTH = 220
 export const DEFAULT_MEMO_HEIGHT = 120
@@ -126,7 +129,7 @@ export const loadStoredMemos = (): Memo[] | null => {
   if (typeof localStorage === 'undefined') return null
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
     if (!raw) return null
     return parseMemos(JSON.parse(raw))
   } catch {
@@ -145,10 +148,8 @@ export const saveStoredMemos = (memos: Memo[]): void => {
 }
 
 export const clearStoredMemos = (): void => {
-  if (typeof localStorage === 'undefined') return
-
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
   } catch {
     // Best-effort reset only.
   }

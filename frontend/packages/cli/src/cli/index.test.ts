@@ -22,8 +22,11 @@ setupMocks()
 describe('program', () => {
   it('should have the correct name and description', () => {
     expect(program.name()).toBe('erdkit')
+    // The second line is the Apache-2.0 attribution the fork owes its
+    // upstream, and --help is the surface that always shows it.
     expect(program.description()).toBe(
-      'CLI tool for building ER diagram viewers',
+      'CLI tool for building ER diagram viewers.\n' +
+        'A fork of Liam ERD (Apache-2.0, ROUTE06, Inc.) — https://github.com/liam-hq/liam',
     )
     const require = createRequire(import.meta.url)
     const { version: packageVersion } = require('../../package.json')
