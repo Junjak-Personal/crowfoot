@@ -18,15 +18,17 @@ import {
 } from '@liam-hq/ui'
 import { useNodes } from '@xyflow/react'
 import clsx from 'clsx'
-import { Fragment, useCallback, useMemo } from 'react'
+import { Fragment, useCallback, useMemo, useSyncExternalStore } from 'react'
 import { useVersionOrThrow } from '../../../../../providers'
 import { useUserEditingOrThrow } from '../../../../../stores'
 import { useCustomReactflow } from '../../../../reactflow/hooks'
 import {
   deserializeGroups,
+  getBaseGroups,
   getEffectiveGroups,
   isTableNode,
   partitionTablesByGroup,
+  subscribeBaseGroups,
 } from '../../../utils'
 import { updateNodesHiddenState } from '../../ERDContent/utils'
 import { useTableVisibility } from '../hooks'
@@ -86,9 +88,18 @@ export const LeftPane = () => {
   const nodes = useNodes()
   const tableNodes = useMemo(() => nodes.filter(isTableNode), [nodes])
 
+  // groups.json is fetched by the host app and lands after the first render.
+  // The canvas is rebuilt by the `schemaKey` remount when it does; this pane is
+  // not, so it subscribes instead of reading the module value once.
+  const baseGroups = useSyncExternalStore(
+    subscribeBaseGroups,
+    getBaseGroups,
+    getBaseGroups,
+  )
+
   const groups = useMemo(
-    () => getEffectiveGroups(deserializeGroups(groupEntries)),
-    [groupEntries],
+    () => getEffectiveGroups(deserializeGroups(groupEntries), baseGroups),
+    [groupEntries, baseGroups],
   )
 
   const partition = useMemo(

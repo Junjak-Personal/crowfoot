@@ -2,7 +2,7 @@
 // See the NOTICE file at the repository root.
 import { aTable } from '@liam-hq/schema'
 import { SidebarProvider } from '@liam-hq/ui'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { type Node, ReactFlowProvider } from '@xyflow/react'
 import { NuqsTestingAdapter, type UrlUpdateEvent } from 'nuqs/adapters/testing'
@@ -17,6 +17,7 @@ import {
   clearStoredGroups,
   groupToNode,
   saveStoredGroups,
+  setBaseGroups,
 } from '../../../utils'
 import { LeftPane } from './LeftPane'
 import styles from './LeftPane.module.css'
@@ -107,6 +108,7 @@ const sectionsFromDom = (container: HTMLElement) => {
 
 beforeEach(() => {
   clearStoredGroups()
+  setBaseGroups([])
   onUrlUpdate.mockClear()
 })
 
@@ -248,6 +250,35 @@ describe('LeftPane group sectioning', () => {
 })
 
 describe('LeftPane regressions', () => {
+  /**
+   * Every other test here seeds groups through `saveStoredGroups`, which is a
+   * synchronous localStorage read and is therefore already in place on the
+   * first render. `groups.json` is not: the host app fetches it and calls
+   * `setBaseGroups` when that resolves, which is after LeftPane has mounted.
+   * Memoising on `groupEntries` alone pinned the empty pre-fetch value, so a
+   * deployed ERD whose only group source was groups.json showed boxes on the
+   * canvas (rebuilt by the `schemaKey` remount) and a flat sidebar forever.
+   */
+  it('sections the list when groups.json lands after the first render', () => {
+    const { container } = renderLeftPane([
+      aTableNode('orders'),
+      aTableNode('payments'),
+    ])
+
+    expect(sectionsFromDom(container)).toEqual([])
+
+    act(() => {
+      setBaseGroups([
+        { id: 'billing', name: 'Billing', tableNames: ['orders'] },
+      ])
+    })
+
+    expect(sectionsFromDom(container)).toEqual([
+      { label: 'Billing', tableIds: ['orders'] },
+      { label: 'Ungrouped', tableIds: ['payments'] },
+    ])
+  })
+
   // F4: unfiltered, this pushed memo and group node ids into `?hidden=` too.
   it('"Show Only Selected Layers" hides only unselected TABLE ids — memo and group ids never join `?hidden=`', async () => {
     const user = userEvent.setup()

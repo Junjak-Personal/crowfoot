@@ -87,8 +87,33 @@ export const parseGroups = (value: unknown): Group[] => {
   return groups
 }
 
+/**
+ * The host app calls `setBaseGroups` from the sidecar fetch, which resolves
+ * *after* the first render. Everything under the ERD's `schemaKey` remount
+ * picks the new value up for free; LeftPane lives outside that key, so without
+ * a notification it would cache the empty pre-fetch value for the life of the
+ * page — the sidebar would stay flat however many groups groups.json declares.
+ */
+const baseGroupsListeners = new Set<() => void>()
+
 export const setBaseGroups = (groups: Group[]): void => {
   baseGroups = groups
+  baseGroupsListeners.forEach((notify) => {
+    notify()
+  })
+}
+
+/**
+ * Snapshot for `useSyncExternalStore`: the same reference until `setBaseGroups`
+ * replaces it, which is what stops the subscription from looping.
+ */
+export const getBaseGroups = (): Group[] => baseGroups
+
+export const subscribeBaseGroups = (notify: () => void): (() => void) => {
+  baseGroupsListeners.add(notify)
+  return () => {
+    baseGroupsListeners.delete(notify)
+  }
 }
 
 /**
@@ -151,9 +176,15 @@ export const deserializeGroups = (raw: string): Group[] | null => {
  * A shared link wins, then the local working copy, then what shipped with the
  * build. `null` from the link means "the link said nothing", which is not the
  * same as a link that deliberately carries zero groups.
+ *
+ * `base` defaults to the module value for callers that remount when it lands.
+ * A caller that does not remount passes the value it subscribed to, so React
+ * sees the dependency it has to recompute on.
  */
-export const getEffectiveGroups = (urlGroups: Group[] | null = null): Group[] =>
-  urlGroups ?? loadStoredGroups() ?? baseGroups
+export const getEffectiveGroups = (
+  urlGroups: Group[] | null = null,
+  base: Group[] = baseGroups,
+): Group[] => urlGroups ?? loadStoredGroups() ?? base
 
 /** Snapshot for committing as groups.json. */
 export const dumpGroups = (): Group[] => getEffectiveGroups()
