@@ -52,9 +52,6 @@
     "@electric-sql/pglite" // Used by pglite-server package and app package
   ],
 
-  // TODO: Review ignoreBinaries configuration later
-  "ignoreBinaries": ["playwright"],
-
   // Workspace-specific configurations
   "workspaces": {
     "frontend/packages/cli": {

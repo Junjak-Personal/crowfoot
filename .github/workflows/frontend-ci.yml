@@ -51,7 +51,11 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
       - run: pnpm lint
 
-  frontend-ci:
+  # Upstream's `frontend-ci` job booted Supabase and diffed its generated types.
+  # This fork ships erdkit only and has no Supabase project, so the job could
+  # never pass here. The packages the fork actually publishes are tested
+  # instead — and again, as a hard gate, in release-erdkit.yml.
+  frontend-test:
     needs: [setup-job]
     if: ${{ needs.setup-job.outputs.has-changes == 'true' }}
     runs-on: ubuntu-latest
@@ -64,23 +68,5 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/pnpm-setup
-      - run: pnpm --filter @liam-hq/db supabase:start
-      - run: cp .env.template .env
-      - name: Make scripts executable
-        run: chmod +x ./scripts/extract-supabase-anon-key.sh ./scripts/extract-supabase-service-key.sh
-      - run: ./scripts/extract-supabase-anon-key.sh
-      - run: ./scripts/extract-supabase-service-key.sh
-      - run: pnpm test
-      - run: pnpm --filter @liam-hq/db supabase:gen
-      - name: Check for diff in generated types and schema.sql
-        env:
-          # check two files.
-          GENERATED_FILES: "frontend/internal-packages/db/supabase/database.types.ts frontend/internal-packages/db/supabase/schemas/schema.sql"
-        run: |
-          if ! git diff HEAD --ignore-space-at-eol --exit-code ${{ env.GENERATED_FILES }}; then
-            echo "Generated types and schema.sql differ from committed files."
-            exit 1
-          else
-            echo "Generated types and schema.sql are up-to-date."
-            exit 0
-          fi
+      - run: pnpm --filter @liam-hq/erd-core test
+      - run: pnpm --filter erdkit test

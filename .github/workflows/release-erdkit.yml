@@ -1,0 +1,70 @@
+name: release-erdkit
+
+# Publishing is gated on a tag rather than on a push to master: the tag is both
+# the release record and the deliberate act, so merging a version bump never
+# ships anything on its own.
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel a half-finished publish.
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # npm provenance signs the tarball with this workflow's OIDC identity.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/pnpm-setup
+
+      # Writes the ~/.npmrc that `npm publish` reads NODE_AUTH_TOKEN from.
+      # pnpm-setup's own setup-node call has no registry-url, so without this
+      # the token is present but never used and the publish 401s.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          registry-url: https://registry.npmjs.org
+
+      # A tag that disagrees with package.json means someone tagged without
+      # bumping (or bumped without tagging). Fail here, before the registry
+      # sees anything — a wrong version cannot be unpublished cleanly.
+      - name: Verify tag matches erdkit version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p "require('./frontend/packages/cli/package.json').version")"
+          if [ "$TAG" != "v${version}" ]; then
+            echo "Tag ${TAG} does not match erdkit version ${version}." >&2
+            exit 1
+          fi
+          echo "Releasing erdkit ${version}."
+
+      - run: pnpm lint
+
+      - run: pnpm --filter @liam-hq/erd-core test
+
+      - run: pnpm --filter erdkit test
+
+      # --force is not belt-and-braces here. turbo does not hash erd-core's
+      # sources into erdkit's cache key — erd-core is consumed as TypeScript
+      # source, not as a built artifact — so an erd-core-only change can
+      # restore a stale erdkit bundle from cache and publish the old code.
+      - run: pnpm exec turbo build --filter=erdkit --force
+
+      - name: Publish to npm
+        working-directory: frontend/packages/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
