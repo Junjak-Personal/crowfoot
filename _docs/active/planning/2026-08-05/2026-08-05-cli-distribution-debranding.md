@@ -31,10 +31,8 @@ related:
 
 ## 선행 조건 (차단 중)
 
-1. **상표 결정 — 이름 + 마크. 본인 담당.** 나머지 전부의 선행 조건이며, 정해지기 전까지
-   2·3번 항목은 시작할 수 없다
-2. **CommandPalette 프리뷰의 운명 — 자체 호스팅 vs 기능 제거.** 상표와 **독립**이라 지금 결정
-   가능 (아래 4번 참조)
+1. **상표 결정 — 이름 + 마크. 본인 담당.** 2·3·5번 항목의 선행 조건이며, 정해지기 전까지
+   시작할 수 없다
 
 ---
 
@@ -84,7 +82,7 @@ related:
 | `erd-core/.../ERDRenderer/LeftPane/LeftPane.tsx` | 메뉴 5개 전부 upstream(51·58·65·72·79) + `LiamLogoMark`(8·75) |
 | `erd-core/.../ErrorDisplay/ParseErrorDisplay.tsx` | `liambx.com/docs/parser/troubleshooting`(59), discussions(78) |
 | `erd-core/.../ErrorDisplay/ErrorDisplay.test.tsx` | 위 URL 을 단언(52·57) — 같이 고쳐야 함 |
-| `erd-core/.../CommandPalette/CommandPalettePreview/CommandPreview.tsx` | `assets.liambx.com` 동영상 3 · 이미지 3 **(핫링크)** |
+| ~~`erd-core/.../CommandPalette/CommandPalettePreview/CommandPreview.tsx`~~ | ~~`assets.liambx.com` 동영상 3 · 이미지 3 **(핫링크)**~~ → ✅ 제거됨 (아래 4번) |
 | `cli/src/cli/urls.ts` | `DocsUrl`(5) · troubleshooting(7) · discussions(13) |
 | `cli/public/favicon.ico` | upstream 자산 그대로 |
 
@@ -99,13 +97,23 @@ related:
    - *포크에도 여전히 정확한 것*(파서 포맷 문서 등) → 남겨도 되지만 "upstream 문서" 라고
      읽히게 라벨링. `cli/src/cli/urls.ts:4` 에 이미 그런 주석이 있다
    - *제품 정체성을 참칭하는 것*(Homepage, GitHub, Release Notes, Discussions) → 교체 또는 제거
-4. **`assets.liambx.com` 핫링크 제거** — 남의 CDN 에 런타임 의존 중이라 브랜딩 이전에
-   **가용성 문제**다. **상표 결정과 무관하게 지금 착수 가능.** 두 갈래:
-   - *제거* — `CommandPreview.tsx` + `CommandPreview.test.tsx` 삭제, `index.ts` 와
-     `CommandPaletteContent.tsx:10` 에서 참조 제거. `TablePreview` 는 남는다. 영상 6개가
-     보여주는 UI 는 어차피 포크가 바꾼 화면이라 **내용도 이미 낡았다**
-   - *자체 호스팅* — 포크 UI 로 영상 3 · 이미지 3 을 다시 찍어 번들에 동봉. `cli.js` 가 이미
-     3.5MB 인데 여기에 미디어가 더해진다
+4. ✅ **`assets.liambx.com` 핫링크 제거 — 완료.** 상표 결정과 무관해서 먼저 처리했다.
+   **자체 호스팅이 아니라 기능 제거**를 골랐다. 근거 셋:
+   - 남의 CDN 에 런타임 의존 — 브랜딩 이전에 **가용성 문제**
+   - 영상·이미지가 보여주는 건 upstream 의 2025-09-01 UI 다. 포크가 그 뒤로 그룹화·편집모드·
+     색상·메모를 얹었으므로 **내용이 이미 틀렸다**
+   - 자체 호스팅하면 미디어 6개를 다시 찍어 이미 3.5MB 인 `cli.js` 옆에 얹어야 한다
+     — 개발 도구의 마케팅 장식치고 비용이 크다
+
+   커맨드 6개 중 **미디어가 있던 건 애초에 6개뿐**이고 나머지 커맨드는 원래 프리뷰 칸이
+   비어 있었다. 즉 빈 칸은 새 상태가 아니라 **기존 상태**다 (`CommandPreview.tsx` 의
+   `TODO: set gif or image for "Show All Table"…` 주석이 그 증거). `TablePreview` 는 그대로다.
+
+   지운 것: `CommandPreview.tsx` · `CommandPreview.test.tsx`,
+   `CommandPalettePreview/index.ts` 의 재export, `CommandPaletteContent.tsx` 의 import 와
+   `suggestion?.type === 'command'` 분기, `.module.css` 의 `.image`/`.video` 규칙(+`.d.ts` 재생성).
+   `CommandPaletteContent.test.tsx` 의 `command preview` 케이스는 **프리뷰 칸이 비는지 단언하는
+   테스트로 교체**했다 — 지우기만 하면 회귀 감지가 사라진다.
 5. **별도 리포 분리** — 히스토리 유지한 채 새 리포로 push (귀속이 커밋 로그에 남아 §4(c) 에
    유리). 그 다음 미사용 upstream 패키지 정리
 6. **분리 후 §4 재검증** — 정리 과정에서 `LICENSE`/`NOTICE`/파일 헤더가 빠지지 않았는지.
