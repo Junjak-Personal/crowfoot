@@ -5,10 +5,24 @@ import { type Node, ReactFlow } from '@xyflow/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { VersionProvider } from '../../../../../../providers'
+import type { Version } from '../../../../../../schemas/version'
 import { UserEditingProvider } from '../../../../../../stores'
 import type { TableGroupNodeType } from '../../../../types'
 import { TableGroupNode } from './TableGroupNode'
 import styles from './TableGroupNode.module.css'
+
+/**
+ * The header can commit table positions now (label drag), and that path logs a
+ * reposition event, so the node needs a version in context.
+ */
+const version: Version = {
+  version: '0.0.0',
+  gitHash: 'abcdef0123',
+  envName: 'test',
+  date: '2026-08-05',
+  displayedOn: 'web',
+}
 
 const nodeTypes = { tableGroup: TableGroupNode }
 
@@ -51,7 +65,9 @@ const wrapperFor =
     <NuqsTestingAdapter
       {...(searchParams === undefined ? {} : { searchParams })}
     >
-      <UserEditingProvider>{children}</UserEditingProvider>
+      <VersionProvider version={version}>
+        <UserEditingProvider>{children}</UserEditingProvider>
+      </VersionProvider>
     </NuqsTestingAdapter>
   )
 

@@ -20,13 +20,14 @@
 | planning | `carbon-erd-delivery` | [2026-08-03-carbon-erd-delivery](./active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md) | carbon ERD 배포 자동화 재개 (npx 전환 + 변경 감지). **차단: ECR 권한 + cli-distribution 선행** |
 | planning | `cli-distribution` | [2026-08-03-cli-distribution](./active/planning/2026-08-03/2026-08-03-cli-distribution.md) | CLI 개명(`erdkit`) · Apache-2.0 준수 · npm 배포. **1~6 완료, `npm publish` 만 남음 (본인 실행)** |
 | planning | `erd-viewer` | [2026-08-05-erd-viewer-backlog](./active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md) | 그룹화 이후 남은 7건 — E2E · tbls 시드 · 섹션별 표시 · `aria-pressed` 등. **1(노드타입 감사)·2(`liam:*` 개명) 완료.** 번호는 고정 |
+| planning | `erd-viewer` | [2026-08-05-group-label-drag-design](./active/planning/2026-08-05/2026-08-05-group-label-drag-design.md) | 그룹 라벨을 끌어 멤버 전체 이동 — 박스는 계속 파생, 겹친 멤버도 전부 따라옴. 설계 승인됨, 구현 대기 |
 
 ### Complete
 
 | 토픽 | 문서 | 요약 |
 |---|---|---|
 | `erd-viewer` | [2026-08-03-erd-viewer-impl](./complete/erd-viewer/2026-08-03-erd-viewer-impl.md) | 위치 영속 · 메모 · 색상 · 편집모드 · MySQL export. 커밋 `ac5b392fa..9af3ab35e` |
-| `erd-viewer` | [2026-08-04-table-grouping](./complete/erd-viewer/2026-08-04-table-grouping.md) | 테이블 그룹화 (0.4.0) — 파생 박스 · `groups.json` · 겹침 허용 · 좌측 2모드. 203→281 tests. **브라우저 스모크 미실시** |
+| `erd-viewer` | [2026-08-04-table-grouping](./complete/erd-viewer/2026-08-04-table-grouping.md) | 테이블 그룹화 (0.4.0) — 파생 박스 · `groups.json` · 겹침 허용 · 좌측 2모드. 203→281 tests. **브라우저 스모크 완료** — `groups.json` 단독 경로에서 사이드바가 섹션을 안 만들던 결함 1건 발견·수정(`6c112432a`) |
 
 ---
 

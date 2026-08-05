@@ -27,9 +27,13 @@ import {
 import { useVersionOrThrow } from '../../../../providers'
 import { useUserEditingOrThrow } from '../../../../stores'
 import { selectTableLogEvent } from '../../../gtm/utils'
-import { repositionTableLogEvent } from '../../../gtm/utils/repositionTableLogEvent'
 import { MAX_ZOOM, MIN_ZOOM } from '../../../reactflow/constants'
-import { useGroupNodes, useMemoNodes, useTableSelection } from '../../hooks'
+import {
+  useCommitTablePositions,
+  useGroupNodes,
+  useMemoNodes,
+  useTableSelection,
+} from '../../hooks'
 import type { DisplayArea, MemoNodeType } from '../../types'
 import {
   clampMemoFontSize,
@@ -38,7 +42,6 @@ import {
   deserializeGroups,
   deserializeMemos,
   deserializeTableColors,
-  deserializeTableLayout,
   duplicateMemo,
   type Group,
   getEffectiveGroups,
@@ -57,9 +60,7 @@ import {
   nodeToMemo,
   parseMemosFromClipboard,
   placeMemos,
-  rememberTablePositions,
   serializeMemosToClipboard,
-  serializeTableLayout,
   setTableColor,
   stepMemoFontSize,
   tableGroupNodesFrom,
@@ -216,8 +217,6 @@ export const ERDContentInner: FC<Props> = ({
 }) => {
   const {
     activeTableName,
-    tablePositions,
-    setTablePositions,
     tableColors,
     setTableColors,
     memoEntries,
@@ -260,6 +259,7 @@ export const ERDContentInner: FC<Props> = ({
   const { selectTable, deselectTable } = useTableSelection()
   const { commitMemos, selectedMemos } = useMemoNodes()
   const { commitGroups } = useGroupNodes()
+  const commitTablePositions = useCommitTablePositions()
 
   useInitialAutoLayout({
     nodes,
@@ -343,30 +343,7 @@ export const ERDContentInner: FC<Props> = ({
       // braces: a read-only view must never write a layout.
       if (!editMode) return
 
-      const tables = dragged.filter(isTableNode)
-      if (tables.length > 0) {
-        const stored = rememberTablePositions(tables)
-        // Keep the link shareable: merge over whatever the incoming URL carried
-        // so positions from a shared link survive a local drag.
-        setTablePositions(
-          serializeTableLayout({
-            ...deserializeTableLayout(tablePositions),
-            ...stored,
-          }),
-        )
-
-        const operationId = `id_${Date.now()}`
-        for (const node of tables) {
-          repositionTableLogEvent({
-            tableId: node.id,
-            operationId,
-            platform: version.displayedOn,
-            gitHash: version.gitHash,
-            ver: version.version,
-            appEnv: version.envName,
-          })
-        }
-      }
+      commitTablePositions(dragged)
 
       // A multi-selection drag can carry both kinds at once, so this is not an
       // else. The dragged nodes are merged in rather than read back: React
@@ -378,7 +355,7 @@ export const ERDContentInner: FC<Props> = ({
         )
       }
     },
-    [version, tablePositions, setTablePositions, editMode, commitMemos],
+    [editMode, commitTablePositions, commitMemos],
   )
 
   /** Where a paste lands. Null until the pointer has been over the canvas. */

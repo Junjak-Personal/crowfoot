@@ -46,6 +46,26 @@
   cursor: pointer;
   background: none;
   border: none;
+  /* The label is a drag handle in edit mode; without this the browser starts
+     its own text/element drag and the pointer stream stops mid-gesture. */
+  touch-action: none;
+  user-select: none;
+}
+
+/*
+ * Attribute selectors, not sibling classes: `.header` already declares
+ * `cursor: pointer`, and a second class carries the same specificity, so which
+ * one wins would come down to rule order in the bundle. The extra attribute
+ * makes these unambiguously more specific.
+ *
+ * Only edit mode gets a drag cursor — a read-only view never writes a layout.
+ */
+.header[data-draggable='true'] {
+  cursor: grab;
+}
+
+.header[data-dragging='true'] {
+  cursor: grabbing;
 }
 
 /*
