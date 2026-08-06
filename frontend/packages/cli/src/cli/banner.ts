@@ -4,7 +4,10 @@ import { Box, render, Text } from 'ink'
 import Gradient from 'ink-gradient'
 import React from 'react'
 
-const ourColors = ['#1DED83', '#B4FED7']
+// Deliberately not the upstream gradient: #1DED83 is Liam ERD's brand green,
+// and keeping it would carry the trade dress across a rename that exists to
+// drop it.
+const ourColors = ['#38BDF8', '#818CF8']
 
 // Check if colors should be disabled
 const shouldDisableColors = () => {
@@ -20,17 +23,19 @@ const shouldDisableColors = () => {
 // The ASCII art is based on the output of `oh-my-logo`.
 // see https://github.com/shinshin86/oh-my-logo
 
-// ponytail: 45 cols fits any terminal, so the upstream long/short variant split is gone
+// ponytail: 72 cols fits an 80-column terminal, so the upstream long/short
+// variant split is gone. Eight letters cannot be squeezed into the 45 the
+// six-letter wordmark used, and 80 columns is the floor worth designing for.
 const asciiArt = `
- ███████╗██████╗ ██████╗ ██╗  ██╗██╗████████╗
- ██╔════╝██╔══██╗██╔══██╗██║ ██╔╝██║╚══██╔══╝
- █████╗  ██████╔╝██║  ██║█████╔╝ ██║   ██║
- ██╔══╝  ██╔══██╗██║  ██║██╔═██╗ ██║   ██║
- ███████╗██║  ██║██████╔╝██║  ██╗██║   ██║
- ╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝   ╚═╝
+  ██████╗ ██████╗  ██████╗ ██╗    ██╗███████╗ ██████╗  ██████╗ ████████╗
+ ██╔════╝ ██╔══██╗██╔═══██╗██║    ██║██╔════╝██╔═══██╗██╔═══██╗╚══██╔══╝
+ ██║      ██████╔╝██║   ██║██║ █╗ ██║█████╗  ██║   ██║██║   ██║   ██║
+ ██║      ██╔══██╗██║   ██║██║███╗██║██╔══╝  ██║   ██║██║   ██║   ██║
+ ╚██████╗ ██║  ██║╚██████╔╝╚███╔███╔╝██║     ╚██████╔╝╚██████╔╝   ██║
+  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ╚═╝      ╚═════╝  ╚═════╝    ╚═╝
 `
 
-// Kept to the 45 columns of the art above so it never wraps. The full
+// Kept within the width of the art above so it never wraps. The full
 // attribution and the list of changes live in NOTICE, as section 4(d) asks.
 const attribution = ' A fork of Liam ERD (Apache-2.0, ROUTE06, Inc.)'
 

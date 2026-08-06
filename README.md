@@ -8,11 +8,11 @@
 > this fork are marked as such.
 >
 > The command-line tool is redistributed under a different name,
-> [`erdkit`](https://www.npmjs.com/package/erdkit), because section 6 of the
+> [`crowfoot`](https://www.npmjs.com/package/crowfoot), because section 6 of the
 > License grants no trademark rights. No endorsement by ROUTE06, Inc. is implied.
 >
 > Two usage sections follow: [the original Liam ERD](#using-liam-erd-upstream) and
-> [this fork](#using-erdkit-this-fork).
+> [this fork](#using-crowfoot-this-fork).
 
 ---
 
@@ -136,9 +136,9 @@ Reference documentation: [UI Features](https://liambx.com/docs/ui-features) ·
 
 ---
 
-# Using erdkit (this fork)
+# Using crowfoot (this fork)
 
-[`erdkit`](https://www.npmjs.com/package/erdkit) is the CLI of this fork. It builds
+[`crowfoot`](https://www.npmjs.com/package/crowfoot) is the CLI of this fork. It builds
 the same kind of standalone ERD app, plus persisted table positions, canvas memos,
 colour coding, an explicit edit mode and MySQL export.
 
@@ -149,13 +149,13 @@ colour coding, an explicit edit mode and MySQL export.
 ## Build and serve
 
 ```bash
-npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 npx serve dist/
 ```
 
 Options are the same as upstream (`--input`, `--format`, `--output-dir`), and
 `--format` accepts `postgres`, `schemarb`, `prisma`, `drizzle`, `tbls`, `liam`.
-The interactive setup is `npx erdkit init`.
+The interactive setup is `npx crowfoot init`.
 
 As upstream, the output is a static SPA: `file://` will not work, serve it over HTTP.
 All asset paths are relative, so the build can be mounted at a sub-path
@@ -191,7 +191,7 @@ but not permanent. To turn a link into the sidecar files the viewer loads on eve
 visit, copy the URL and run:
 
 ```bash
-npx erdkit erd from-link --input '<the ?edit=1 URL>' --output-dir dist
+npx crowfoot erd from-link --input '<the ?edit=1 URL>' --output-dir dist
 ```
 
 Quote the URL — it contains `&`. Only the files the link actually carries are
@@ -213,13 +213,14 @@ drawn, and the sidebar lists that table once per group it belongs to.
 
 In edit mode the Export menu also offers **Download layout.json**,
 **Download memos.json** and **Download groups.json**, which is the same output
-without going through a URL. The browser console exposes `erdkitLayout.dump()` /
-`erdkitLayout.reset()`, `erdkitMemos.dump()` / `erdkitMemos.reset()` and
-`erdkitGroups.dump()` / `erdkitGroups.reset()` for the same purpose.
+without going through a URL. The browser console exposes `crowfootLayout.dump()` /
+`crowfootLayout.reset()`, `crowfootMemos.dump()` / `crowfootMemos.reset()` and
+`crowfootGroups.dump()` / `crowfootGroups.reset()` for the same purpose.
 
-Browser storage lives under `erdkit:tableLayout`, `erdkit:memos` and
-`erdkit:groups`. These were `liam:*` up to 0.4.0; a value left under an old key
-is moved to the new one on the first read, so nothing has to be rearranged.
+Browser storage lives under `crowfoot:tableLayout`, `crowfoot:memos` and
+`crowfoot:groups`. These were `liam:*` up to 0.4.0 and `erdkit:*` after that; a
+value left under either old name is moved to the current one on the first read,
+so nothing has to be rearranged.
 
 ## Query parameters
 
@@ -292,15 +293,15 @@ node ./dist-cli/bin/cli.js erd build --input ./fixtures/input.schema.rb --format
 
 The fork's work surface is three packages: `frontend/packages/erd-core` (the
 viewer), `frontend/packages/schema` (parsers and deparsers) and
-`frontend/packages/cli` (the `erdkit` command). See [`CLAUDE.md`](./CLAUDE.md)
+`frontend/packages/cli` (the `crowfoot` command). See [`CLAUDE.md`](./CLAUDE.md)
 for the monorepo layout and conventions.
 
 ---
 
 ## Documentation
 
-- **[docs/usage.md](./docs/usage.md)** — erdkit 사용 가이드 (한국어)
-- **[docs/usage_en.md](./docs/usage_en.md)** — erdkit usage guide (English)
+- **[docs/usage.md](./docs/usage.md)** — crowfoot 사용 가이드 (한국어)
+- **[docs/usage_en.md](./docs/usage_en.md)** — crowfoot usage guide (English)
 - [liambx.com/docs](https://liambx.com/docs) — upstream Liam ERD documentation
 
 What this fork changes is listed in [`NOTICE`](./NOTICE) and documented under `_docs/`.

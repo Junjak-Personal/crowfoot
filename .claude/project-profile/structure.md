@@ -3,7 +3,7 @@
 ## Directory Layout
 
 ```
-erdkit/
+crowfoot/
 ├── frontend/
 │   ├── apps/
 │   │   ├── app/            @liam-hq/app        Next.js 15 web app (upstream — fork does NOT touch)
@@ -11,7 +11,7 @@ erdkit/
 │   │   ├── assets/                             shared static assets
 │   │   └── erd-sample/     @liam-hq/erd-sample smoke target: builds an ERD from mastodon schema.rb
 │   ├── packages/
-│   │   ├── cli/            erdkit             ★ the publishable CLI (src = ~1,440 lines)
+│   │   ├── cli/            crowfoot             ★ the publishable CLI (src = ~1,440 lines)
 │   │   ├── erd-core/       @liam-hq/erd-core   ★ the ERD viewer (React + xyflow)
 │   │   ├── schema/         @liam-hq/schema     ★ parsers + deparsers (incl. fork's MySQL deparser)
 │   │   ├── ui/             @liam-hq/ui         design system (Radix + CSS Modules + tokens)
@@ -57,7 +57,7 @@ Modified upstream file (TS/TSX):
 ```
 New fork-only file:
 ```ts
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 ```
 CSS uses the same text in a `/* … */` block. When the *nature* of a change changes, update the

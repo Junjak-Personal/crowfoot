@@ -53,8 +53,8 @@ URL (?positions=)  >  localStorage  >  layout.json (shipped with build)  >  ELK 
 ```
 Unpinned tables always fall through to ELK, so **a newly added table never breaks an existing layout**.
 ELK runs with `nodePlacement/layering: INTERACTIVE`, so seeded coordinates are honoured as placement hints.
-`localStorage` key namespace: **`erdkit:*`** (`erdkit:tableLayout`, `erdkit:memos`,
-`erdkit:groups`). These were `liam:*` up to 0.4.0; a value under an old key is moved to the new one
+`localStorage` key namespace: **`crowfoot:*`** (`crowfoot:tableLayout`, `crowfoot:memos`,
+`crowfoot:groups`). These were `liam:*` up to 0.4.0; a value under an old key is moved to the new one
 on first read and the old key deleted — `.../utils/storage/storage.ts`, shared by all three modules.
 Any reset must clear **both** names or the migration resurrects the old value.
 

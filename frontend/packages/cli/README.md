@@ -1,4 +1,4 @@
-# erdkit
+# crowfoot
 
 Command-line tool that generates a standalone web app displaying ER diagrams.
 
@@ -12,7 +12,7 @@ See `NOTICE` for the full list of changes.
 ## Usage
 
 ```bash
-npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 ```
 
 `--format` accepts `postgres`, `schemarb`, `prisma`, `drizzle`, `tbls`, `liam`.
@@ -31,7 +31,7 @@ then copy the URL — it carries the arrangement. Turn that link back into the
 sidecar files the viewer loads:
 
 ```bash
-npx erdkit erd from-link --input '<the ?edit=1 URL>' --output-dir dist
+npx crowfoot erd from-link --input '<the ?edit=1 URL>' --output-dir dist
 ```
 
 Quote the URL; it contains `&`. Only the files the link actually carries are

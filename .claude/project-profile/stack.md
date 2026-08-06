@@ -1,6 +1,6 @@
 # Tech Stack
 
-> **This repo is a fork.** `erdkit` = a modified fork of [Liam ERD](https://github.com/liam-hq/liam)
+> **This repo is a fork.** `crowfoot` = a modified fork of [Liam ERD](https://github.com/liam-hq/liam)
 > (ROUTE06, Inc., Apache-2.0), **pinned to upstream `92156eac5` (2026-06-18)** and NOT tracking upstream.
 > Most of the monorepo is inherited upstream code the fork does not touch. See `structure.md` → "Fork work surface".
 
@@ -43,8 +43,8 @@
 
 ## Build (pnpm)
 - Install: `pnpm install --frozen-lockfile`
-- Dev (all): `pnpm dev` · single package: `pnpm --filter erdkit dev`
-- Build (all): `pnpm build` · single: `pnpm turbo build --filter=erdkit`
+- Dev (all): `pnpm dev` · single package: `pnpm --filter crowfoot dev`
+- Build (all): `pnpm build` · single: `pnpm turbo build --filter=crowfoot`
 - Test: `pnpm test` (turbo fan-out) · single: `pnpm --filter @liam-hq/erd-core test`
 - Format: `pnpm fmt` · Lint: `pnpm lint`
 - CSS type gen: `pnpm gen:css` (per-package `tcm src`) — **required after adding/changing any `.module.css`**
@@ -61,9 +61,9 @@
   - Vacuity-checked: **yes** — each package's `tsconfig.json` has `"include": ["src/**/*"]` extending
     `@liam-hq/configs/tsconfig/base.json`; it compiles real sources. There is **no root `tsconfig.json`**,
     so a root-level `tsc --noEmit` is meaningless — always filter to a package.
-  - Pre-existing error baseline: **0** (`@liam-hq/erd-core` exit 0, `erdkit` exit 0). Gate on net-new vs 0.
+  - Pre-existing error baseline: **0** (`@liam-hq/erd-core` exit 0, `crowfoot` exit 0). Gate on net-new vs 0.
 - **Lint (authoritative)**: `pnpm lint` → `turbo lint` + `syncpack lint` + `knip --treat-config-hints-as-errors`
-  - Per-package: `biome check .` (+ `eslint .`, **disabled in `erdkit`** — its `lint:eslint` is a no-op `echo`)
+  - Per-package: `biome check .` (+ `eslint .`, **disabled in `crowfoot`** — its `lint:eslint` is a no-op `echo`)
   - Baseline: **0**
   - CSS: `pnpm lint:stylelint` (`--max-warnings 0`)
 - **Test (authoritative)**: `pnpm --filter <pkg> test` (vitest)
@@ -74,7 +74,7 @@
 - `frontend/packages/cli` is already a **self-contained publishable package**: rollup does *not* mark
   `@liam-hq/erd-core` / `@liam-hq/schema` external (they are inlined), and `scripts/pack-cli.js`
   strips `workspace:*` deps on `prepack` and restores on `postpack`.
-- ✅ **Publish-ready as `erdkit` 0.1.0** (2026-08-03; plan:
+- ✅ **Publish-ready as `crowfoot` 0.1.0** (2026-08-03; plan:
   `_docs/active/planning/2026-08-03/2026-08-03-cli-distribution.md`). `files` carries `LICENSE` +
-  `NOTICE` via `prepack`; `npm pack` → clean-install → `erdkit erd build` verified end to end.
+  `NOTICE` via `prepack`; `npm pack` → clean-install → `crowfoot erd build` verified end to end.
   Only `npm publish --access public` remains, and it is run by hand.

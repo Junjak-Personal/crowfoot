@@ -1,8 +1,8 @@
-# erdkit 사용 가이드
+# crowfoot 사용 가이드
 
 > English: [usage_en.md](./usage_en.md) · 요약은 [README](../README.md) 참고
 
-`erdkit` 은 스키마 파일에서 정적 ERD 웹앱을 생성하는 CLI 다.
+`crowfoot` 은 스키마 파일에서 정적 ERD 웹앱을 생성하는 CLI 다.
 [Liam ERD](https://github.com/liam-hq/liam)(Apache-2.0, ROUTE06, Inc.)의 포크이며,
 upstream 커밋 `92156eac5` 에 핀되어 있고 추종하지 않는다.
 
@@ -29,7 +29,7 @@ upstream 원본 사용법은 <https://liambx.com/docs> 에 있고, 이 문서는
 ## 빠른 시작
 
 ```bash
-npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 npx serve dist/
 ```
 
@@ -41,7 +41,7 @@ npx serve dist/
 처음이라 어떤 포맷을 써야 할지 모르겠으면 대화형 셋업을 쓴다.
 
 ```bash
-npx erdkit init
+npx crowfoot init
 ```
 
 ---
@@ -49,7 +49,7 @@ npx erdkit init
 ## CLI 레퍼런스
 
 ```
-erdkit [command]
+crowfoot [command]
 
 Commands:
   erd build       스키마 파일에서 ERD 웹앱 생성
@@ -61,7 +61,7 @@ Options:
   -h, --help      도움말
 ```
 
-### `erdkit erd build`
+### `crowfoot erd build`
 
 스키마 파일을 읽어 `schema.json` 을 만들고, 뷰어 정적 파일 일체를 출력 디렉터리에 복사한다.
 
@@ -75,18 +75,18 @@ Options:
 
 ```bash
 # 로컬 파일
-npx erdkit erd build --input db/schema.sql --format postgres
+npx crowfoot erd build --input db/schema.sql --format postgres
 
 # glob — 여러 파일을 하나의 스키마로 합친다
-npx erdkit erd build --input 'db/migrations/*.sql' --format postgres
+npx crowfoot erd build --input 'db/migrations/*.sql' --format postgres
 
 # 원격 URL
-npx erdkit erd build \
+npx crowfoot erd build \
   --input https://raw.githubusercontent.com/user/repo/main/schema.sql \
   --format postgres
 
 # 출력 위치 지정
-npx erdkit erd build --input schema.prisma --output-dir public/erd
+npx crowfoot erd build --input schema.prisma --output-dir public/erd
 ```
 
 #### 지원 포맷
@@ -115,7 +115,7 @@ npx erdkit erd build --input schema.prisma --output-dir public/erd
 
 > 반대로 **MySQL DDL 로 내보내는 것**은 이 포크가 지원한다. [Export 메뉴](#export-메뉴) 참고.
 
-### `erdkit erd from-link`
+### `crowfoot erd from-link`
 
 편집 모드에서 만든 배치를 `layout.json` / `memos.json` / `groups.json` 으로 되돌린다.
 [레이아웃 영속화](#레이아웃-영속화)의 핵심 명령.
@@ -126,7 +126,7 @@ npx erdkit erd build --input schema.prisma --output-dir public/erd
 | `--output-dir <path>` | `dist` | 출력 디렉터리. |
 
 ```bash
-npx erdkit erd from-link --input 'https://example.com/erd/?edit=1&positions=...' --output-dir dist
+npx crowfoot erd from-link --input 'https://example.com/erd/?edit=1&positions=...' --output-dir dist
 ```
 
 동작 규칙:
@@ -138,7 +138,7 @@ npx erdkit erd from-link --input 'https://example.com/erd/?edit=1&positions=...'
   뷰어의 `parseGroups` 가 로드 시점에 한다. `?showgroups=` 는 순수 뷰 설정이라 `from-link` 는
   아예 읽지 않는다.
 
-### `erdkit init`
+### `crowfoot init`
 
 대화형으로 DB/ORM 을 고르면 그에 맞는 `erd build` 명령을 안내한다.
 `MySQL (via tbls)` 처럼 우회가 필요한 항목도 선택지에 있다.
@@ -379,13 +379,14 @@ FK 로 자동 추론하지 않는다 — 언제나 사람이 명시적으로 묶
 
 | 키 | 내용 |
 |---|---|
-| `erdkit:tableLayout` | 이 브라우저에서 옮기거나 칠한 테이블 |
-| `erdkit:memos` | 이 브라우저의 메모 작업본 |
-| `erdkit:groups` | 이 브라우저의 그룹 작업본 |
+| `crowfoot:tableLayout` | 이 브라우저에서 옮기거나 칠한 테이블 |
+| `crowfoot:memos` | 이 브라우저의 메모 작업본 |
+| `crowfoot:groups` | 이 브라우저의 그룹 작업본 |
 
-> 0.4.0 까지는 `liam:*` 이었다. 예전 키에 값이 남아 있으면 **처음 읽을 때 새 키로 한 번
-> 옮기고 예전 키를 지운다** — 배치를 다시 만들 필요는 없다. 콘솔 헬퍼도
-> `liamLayout` → `erdkitLayout` 식으로 함께 바뀌었다.
+> 0.4.0 까지는 `liam:*`, 그 뒤로는 `erdkit:*` 이었다. 예전 키 어느 쪽에든 값이 남아
+> 있으면 **처음 읽을 때 현재 키로 한 번 옮기고 예전 키를 지운다** — 배치를 다시 만들
+> 필요는 없다. 콘솔 헬퍼도 `liamLayout` → `erdkitLayout` → `crowfootLayout` 으로
+> 함께 바뀌었다.
 
 > 브라우저 저장소는 **내 브라우저에만** 남는다. 팀에 보여주려면 링크를 공유하거나
 > 아래 방법으로 사이드카 파일에 고정해야 한다.
@@ -398,7 +399,7 @@ FK 로 자동 추론하지 않는다 — 언제나 사람이 명시적으로 묶
 # 1. ?edit=1 로 열어 배치·색상·메모·그룹 정리
 # 2. 우상단 Copy Link 버튼으로 링크 복사
 # 3. 링크를 파일로 되돌린다
-npx erdkit erd from-link --input '<복사한 URL>' --output-dir dist
+npx crowfoot erd from-link --input '<복사한 URL>' --output-dir dist
 # 4. dist/layout.json, dist/memos.json, dist/groups.json 을 소스에 커밋
 ```
 
@@ -410,12 +411,12 @@ npx erdkit erd from-link --input '<복사한 URL>' --output-dir dist
 **C. 브라우저 콘솔**
 
 ```js
-erdkitLayout.dump()    // 현재 레이아웃을 출력 + 클립보드 복사
-erdkitLayout.reset()   // 이 브라우저의 레이아웃 편집 내역 삭제 후 새로고침
-erdkitMemos.dump()     // 메모도 동일
-erdkitMemos.reset()
-erdkitGroups.dump()    // 그룹도 동일
-erdkitGroups.reset()
+crowfootLayout.dump()    // 현재 레이아웃을 출력 + 클립보드 복사
+crowfootLayout.reset()   // 이 브라우저의 레이아웃 편집 내역 삭제 후 새로고침
+crowfootMemos.dump()     // 메모도 동일
+crowfootMemos.reset()
+crowfootGroups.dump()    // 그룹도 동일
+crowfootGroups.reset()
 ```
 
 `dump()` 는 콘솔 출력과 클립보드 복사를 같이 한다. HTTPS 가 아닌 컨텍스트에서는
@@ -546,7 +547,7 @@ ERD 자체는 정상적으로 뜬다 — 사이드카 로딩이 스키마 로딩
 산출물은 순수 정적 파일이라 S3+CloudFront, GitHub Pages, Netlify, Vercel, nginx 어디에나 올라간다.
 
 ```bash
-npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 aws s3 sync dist/ s3://my-bucket/erd/ --delete
 ```
 
@@ -567,7 +568,7 @@ CDN 쪽에서 이 세 파일의 TTL 을 짧게 잡거나 무효화(invalidation)
 
 ```bash
 # 스키마가 바뀌었을 때만 다시 빌드하고, 사이드카는 소스에서 복사
-npx erdkit erd build --input db/schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input db/schema.sql --format postgres --output-dir dist
 cp docs/erd/layout.json docs/erd/memos.json dist/
 ```
 
@@ -632,7 +633,7 @@ URL 에 `?edit=1` 이 없다. 읽기 전용이 기본값이다.
 CDN 캐시다. `layout.json` / `memos.json` / `groups.json` 을 무효화한다.
 
 **초기화하고 싶다**
-브라우저 콘솔에서 `erdkitLayout.reset()` / `erdkitMemos.reset()` / `erdkitGroups.reset()`.
+브라우저 콘솔에서 `crowfootLayout.reset()` / `crowfootMemos.reset()` / `crowfootGroups.reset()`.
 이 브라우저의 편집 내역만 지우고 `layout.json` / `memos.json` / `groups.json` 상태로 돌아간다.
 
 ---

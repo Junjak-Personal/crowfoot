@@ -1,4 +1,4 @@
-name: release-erdkit
+name: release-crowfoot
 
 # Publishing is gated on a tag rather than on a push to master: the tag is both
 # the release record and the deliberate act, so merging a version bump never
@@ -40,28 +40,28 @@ jobs:
       # A tag that disagrees with package.json means someone tagged without
       # bumping (or bumped without tagging). Fail here, before the registry
       # sees anything — a wrong version cannot be unpublished cleanly.
-      - name: Verify tag matches erdkit version
+      - name: Verify tag matches crowfoot version
         env:
           TAG: ${{ github.ref_name }}
         run: |
           version="$(node -p "require('./frontend/packages/cli/package.json').version")"
           if [ "$TAG" != "v${version}" ]; then
-            echo "Tag ${TAG} does not match erdkit version ${version}." >&2
+            echo "Tag ${TAG} does not match crowfoot version ${version}." >&2
             exit 1
           fi
-          echo "Releasing erdkit ${version}."
+          echo "Releasing crowfoot ${version}."
 
       - run: pnpm lint
 
       - run: pnpm --filter @liam-hq/erd-core test
 
-      - run: pnpm --filter erdkit test
+      - run: pnpm --filter crowfoot test
 
       # --force is not belt-and-braces here. turbo does not hash erd-core's
-      # sources into erdkit's cache key — erd-core is consumed as TypeScript
+      # sources into crowfoot's cache key — erd-core is consumed as TypeScript
       # source, not as a built artifact — so an erd-core-only change can
-      # restore a stale erdkit bundle from cache and publish the old code.
-      - run: pnpm exec turbo build --filter=erdkit --force
+      # restore a stale crowfoot bundle from cache and publish the old code.
+      - run: pnpm exec turbo build --filter=crowfoot --force
 
       # No --provenance flag: trusted publishing generates the attestation on
       # its own, and no token env either — a token would take precedence over

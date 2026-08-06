@@ -1,8 +1,8 @@
-# erdkit Usage Guide
+# crowfoot Usage Guide
 
 > 한국어: [usage.md](./usage.md) · For a summary, see the [README](../README.md)
 
-`erdkit` is a CLI that generates a standalone static ERD web app from a schema file.
+`crowfoot` is a CLI that generates a standalone static ERD web app from a schema file.
 It is a fork of [Liam ERD](https://github.com/liam-hq/liam) (Apache-2.0, ROUTE06, Inc.),
 pinned to upstream commit `92156eac5` and not tracking it.
 
@@ -29,7 +29,7 @@ The full list of changes is in [`NOTICE`](../NOTICE).
 ## Quick start
 
 ```bash
-npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 npx serve dist/
 ```
 
@@ -41,7 +41,7 @@ Then open `http://localhost:3000`.
 If you are not sure which format applies, use the interactive setup:
 
 ```bash
-npx erdkit init
+npx crowfoot init
 ```
 
 ---
@@ -49,7 +49,7 @@ npx erdkit init
 ## CLI reference
 
 ```
-erdkit [command]
+crowfoot [command]
 
 Commands:
   erd build       Generate the ERD web app from a schema file
@@ -61,7 +61,7 @@ Options:
   -h, --help      Show help
 ```
 
-### `erdkit erd build`
+### `crowfoot erd build`
 
 Parses the schema into `schema.json` and copies the viewer's static files into the
 output directory.
@@ -76,18 +76,18 @@ Examples:
 
 ```bash
 # Local file
-npx erdkit erd build --input db/schema.sql --format postgres
+npx crowfoot erd build --input db/schema.sql --format postgres
 
 # Glob — several files merged into one schema
-npx erdkit erd build --input 'db/migrations/*.sql' --format postgres
+npx crowfoot erd build --input 'db/migrations/*.sql' --format postgres
 
 # Remote URL
-npx erdkit erd build \
+npx crowfoot erd build \
   --input https://raw.githubusercontent.com/user/repo/main/schema.sql \
   --format postgres
 
 # Custom output location
-npx erdkit erd build --input schema.prisma --output-dir public/erd
+npx crowfoot erd build --input schema.prisma --output-dir public/erd
 ```
 
 #### Supported formats
@@ -118,7 +118,7 @@ PostgreSQL and pass `--format postgres`.
 
 > Exporting **to** MySQL DDL is supported by this fork — see the [Export menu](#export-menu).
 
-### `erdkit erd from-link`
+### `crowfoot erd from-link`
 
 Turns an arrangement made in edit mode back into `layout.json` / `memos.json` /
 `groups.json`. This is the central command of
@@ -130,7 +130,7 @@ Turns an arrangement made in edit mode back into `layout.json` / `memos.json` /
 | `--output-dir <path>` | `dist` | Output directory. |
 
 ```bash
-npx erdkit erd from-link --input 'https://example.com/erd/?edit=1&positions=...' --output-dir dist
+npx crowfoot erd from-link --input 'https://example.com/erd/?edit=1&positions=...' --output-dir dist
 ```
 
 Behaviour:
@@ -144,7 +144,7 @@ Behaviour:
   boundary. Real validation happens in the viewer's `parseGroups` on load.
   `?showgroups=` is a pure view preference, so `from-link` never reads it.
 
-### `erdkit init`
+### `crowfoot init`
 
 Walks through a database/ORM picker and prints the matching `erd build` command,
 including the workaround paths such as `MySQL (via tbls)`.
@@ -402,14 +402,15 @@ Browser storage keys:
 
 | Key | Contents |
 |---|---|
-| `erdkit:tableLayout` | Tables moved or tinted in this browser |
-| `erdkit:memos` | This browser's working copy of the memos |
-| `erdkit:groups` | This browser's working copy of the groups |
+| `crowfoot:tableLayout` | Tables moved or tinted in this browser |
+| `crowfoot:memos` | This browser's working copy of the memos |
+| `crowfoot:groups` | This browser's working copy of the groups |
 
-> These were `liam:*` up to 0.4.0. A value left under an old key is **moved to
-> the new key on the first read, and the old key is deleted** — nothing has to
-> be rearranged by hand. The console helpers were renamed alongside them
-> (`liamLayout` → `erdkitLayout`, and so on).
+> These were `liam:*` up to 0.4.0, then `erdkit:*`. A value left under either
+> old name is **moved to the current key on the first read, and the old keys
+> are deleted** — nothing has to be rearranged by hand. The console helpers
+> were renamed alongside them (`liamLayout` → `erdkitLayout` →
+> `crowfootLayout`).
 
 > Browser storage stays **in your browser only**. To show the arrangement to
 > anyone else, share the link or pin it into the sidecar files below.
@@ -422,7 +423,7 @@ Browser storage keys:
 # 1. Open with ?edit=1 and arrange tables, colours, memos and groups
 # 2. Copy the link with the Copy Link button, top right
 # 3. Turn the link back into files
-npx erdkit erd from-link --input '<the copied URL>' --output-dir dist
+npx crowfoot erd from-link --input '<the copied URL>' --output-dir dist
 # 4. Commit dist/layout.json, dist/memos.json and dist/groups.json to source control
 ```
 
@@ -434,12 +435,12 @@ In edit mode: `Export` → `Download layout.json` / `Download memos.json` /
 **C. Browser console**
 
 ```js
-erdkitLayout.dump()    // print the current layout and copy it to the clipboard
-erdkitLayout.reset()   // clear this browser's layout edits and reload
-erdkitMemos.dump()     // same for memos
-erdkitMemos.reset()
-erdkitGroups.dump()    // same for groups
-erdkitGroups.reset()
+crowfootLayout.dump()    // print the current layout and copy it to the clipboard
+crowfootLayout.reset()   // clear this browser's layout edits and reload
+crowfootMemos.dump()     // same for memos
+crowfootMemos.reset()
+crowfootGroups.dump()    // same for groups
+crowfootGroups.reset()
 ```
 
 `dump()` prints and copies. Outside a secure context the clipboard is unavailable,
@@ -577,7 +578,7 @@ The output is plain static files — S3 + CloudFront, GitHub Pages, Netlify, Ver
 and nginx all work.
 
 ```bash
-npx erdkit erd build --input schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 aws s3 sync dist/ s3://my-bucket/erd/ --delete
 ```
 
@@ -599,7 +600,7 @@ short TTL or invalidate them.
 
 ```bash
 # Rebuild when the schema changes, then copy the sidecars back in from source
-npx erdkit erd build --input db/schema.sql --format postgres --output-dir dist
+npx crowfoot erd build --input db/schema.sql --format postgres --output-dir dist
 cp docs/erd/layout.json docs/erd/memos.json dist/
 ```
 
@@ -663,7 +664,7 @@ The extension was not enough to detect the format. Pass `--format` explicitly.
 CDN cache. Invalidate `layout.json` / `memos.json` / `groups.json`.
 
 **How do I reset?**
-`erdkitLayout.reset()` / `erdkitMemos.reset()` / `erdkitGroups.reset()` in the browser
+`crowfootLayout.reset()` / `crowfootMemos.reset()` / `crowfootGroups.reset()` in the browser
 console. That clears only this browser's edits and returns to whatever
 `layout.json` / `memos.json` / `groups.json` say.
 

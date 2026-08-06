@@ -1,4 +1,4 @@
-# Project Profile — erdkit
+# Project Profile — crowfoot
 
 > Generated: 2026-08-03
 > Last updated: 2026-08-03
@@ -45,10 +45,10 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
 ## Key Conventions for Agents
 
 1. **🔴 Apache-2.0 headers are mandatory.** Every file the fork creates or modifies gets a two-line
-   header (`// Added in erdkit…` or `// Modified from the original Liam ERD source…`) pointing at
+   header (`// Added in crowfoot…` or `// Modified from the original Liam ERD source…`) pointing at
    `NOTICE`. §4(b) requires it. When the nature of a change shifts, update `NOTICE`'s change summary.
    Exact text: `structure.md` → "Apache-2.0 file-header convention".
-2. **🔴 Never name anything `liam-*`.** §6 grants no trademark rights. The CLI ships as `erdkit`
+2. **🔴 Never name anything `liam-*`.** §6 grants no trademark rights. The CLI ships as `crowfoot`
    (package, bin, repo, banner, generated page title). `prepack` copies the root `LICENSE` and
    `NOTICE` into the tarball — do not remove that, it is what satisfies §4(a) and §4(d).
 3. **Stay on the fork's work surface**: `packages/erd-core`, `packages/schema`, `packages/cli`.
@@ -56,7 +56,7 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
    and re-scan rather than assuming this profile applies.
 4. **Verify with the authoritative commands, per package.** There is **no root `tsconfig.json`**, so
    root `tsc --noEmit` is vacuous. Use `pnpm --filter <pkg> exec tsc --noEmit`. Baseline is **0 errors,
-   0 lint findings, `schema` 562 + `erd-core` 297 green, `erdkit` 27 passed / 4 failed (Windows,
+   0 lint findings, `schema` 562 + `erd-core` 297 green, `crowfoot` 27 passed / 4 failed (Windows,
    pre-existing)** — gate on net-new against that, never on absolutes. See `testing.md`.
 5. **Named exports only, `const` arrow functions, `handle*` for event handlers.** No default exports.
    No backward-compat shims — update all call sites together.

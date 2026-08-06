@@ -21,9 +21,10 @@ related:
 
 ## 왜 지금
 
-`erdkit` 은 이미 자기 이름·자기 스토리지 네임스페이스(`erdkit:*`)·자기 기능(위치 영속 · 메모 ·
-색상 · 그룹화 · 편집모드)을 갖고 npm 에 배포되고 있다. 그런데 **앱이 여전히 남의 제품명과
-로고를 자기 브랜딩으로 띄운다.** 이건 Apache-2.0 §6 이 허용하는 "출처 설명" 범위 밖이다.
+포크는 이미 자기 이름(`crowfoot`)·자기 스토리지 네임스페이스(`crowfoot:*`)·자기 기능(위치
+영속 · 메모 · 색상 · 그룹화 · 편집모드)을 갖고 npm 에 배포된다. 그런데 **앱이 여전히 남의
+제품명과 로고를 자기 브랜딩으로 띄운다.** 이건 Apache-2.0 §6 이 허용하는 "출처 설명" 범위
+밖이다.
 
 > **§4 귀속 고지와 §6 상표를 혼동하지 말 것.** 아래 "절대 지우면 안 되는 것" 을 먼저 읽어라.
 
@@ -130,7 +131,7 @@ path  M11.5 12H15                          관계선
 | `erd-core/.../ERDRenderer/LeftPane/LeftPane.tsx` | 메뉴 5개 전부 upstream(51·58·65·72·79) + `LiamLogoMark`(8·75) |
 | `erd-core/.../ErrorDisplay/ParseErrorDisplay.tsx` | `liambx.com/docs/parser/troubleshooting`(59), discussions(78) |
 | `erd-core/.../ErrorDisplay/ErrorDisplay.test.tsx` | 위 URL 을 단언(52·57) — 같이 고쳐야 함 |
-| ~~`erd-core/.../CommandPalette/CommandPalettePreview/CommandPreview.tsx`~~ | ~~`assets.liambx.com` 동영상 3 · 이미지 3 **(핫링크)**~~ → ✅ 제거됨 (아래 4번) |
+| ~~`erd-core/.../CommandPalette/CommandPalettePreview/CommandPreview.tsx`~~ | ~~`assets.liambx.com` 동영상 3 · 이미지 3 **(핫링크)**~~ → ✅ 제거됨 (아래 5번) |
 | `cli/src/cli/urls.ts` | `DocsUrl`(5) · troubleshooting(7) · discussions(13) |
 | `cli/public/favicon.ico` | upstream 자산 그대로 |
 
@@ -139,13 +140,15 @@ path  M11.5 12H15                          관계선
 ## 작업 순서
 
 1. ✅ **상표 확정 — 이름 `crowfoot`, 마크 `CrowfootLogoMark`** (위 "상표" 절)
-2. **앱 브랜딩 교체** — 인벤토리대로. `AppBar` 의 `<h1>` 과 로고가 최우선(가장 눈에 띄고
+2. ✅ **`erdkit` → `crowfoot` 개명 sweep — 완료 (2026-08-06).** `erdkit` 0.4.3 을 내보내지
+   않고 **`crowfoot` 0.1.0 으로 새로 시작**하기로 했다. 아래 "개명 sweep" 절 참조
+3. **앱 브랜딩 교체** — 인벤토리대로. `AppBar` 의 `<h1>` 과 로고가 최우선(가장 눈에 띄고
    가장 명확한 §6 위반 표면). `favicon.ico` 도 같이
-3. **링크 정리** — upstream 문서 링크는 두 갈래다:
+4. **링크 정리** — upstream 문서 링크는 두 갈래다:
    - *포크에도 여전히 정확한 것*(파서 포맷 문서 등) → 남겨도 되지만 "upstream 문서" 라고
      읽히게 라벨링. `cli/src/cli/urls.ts:4` 에 이미 그런 주석이 있다
    - *제품 정체성을 참칭하는 것*(Homepage, GitHub, Release Notes, Discussions) → 교체 또는 제거
-4. ✅ **`assets.liambx.com` 핫링크 제거 — 완료.** 상표 결정과 무관해서 먼저 처리했다.
+5. ✅ **`assets.liambx.com` 핫링크 제거 — 완료.** 상표 결정과 무관해서 먼저 처리했다.
    **자체 호스팅이 아니라 기능 제거**를 골랐다. 근거 셋:
    - 남의 CDN 에 런타임 의존 — 브랜딩 이전에 **가용성 문제**
    - 영상·이미지가 보여주는 건 upstream 의 2025-09-01 UI 다. 포크가 그 뒤로 그룹화·편집모드·
@@ -162,11 +165,67 @@ path  M11.5 12H15                          관계선
    `suggestion?.type === 'command'` 분기, `.module.css` 의 `.image`/`.video` 규칙(+`.d.ts` 재생성).
    `CommandPaletteContent.test.tsx` 의 `command preview` 케이스는 **프리뷰 칸이 비는지 단언하는
    테스트로 교체**했다 — 지우기만 하면 회귀 감지가 사라진다.
-5. **별도 리포 분리** — 히스토리 유지한 채 새 리포로 push (귀속이 커밋 로그에 남아 §4(c) 에
+6. **별도 리포 분리** — 히스토리 유지한 채 새 리포로 push (귀속이 커밋 로그에 남아 §4(c) 에
    유리). 그 다음 미사용 upstream 패키지 정리
-6. **분리 후 §4 재검증** — 정리 과정에서 `LICENSE`/`NOTICE`/파일 헤더가 빠지지 않았는지.
+7. **분리 후 §4 재검증** — 정리 과정에서 `LICENSE`/`NOTICE`/파일 헤더가 빠지지 않았는지.
    `npm pack --dry-run` 으로 타르볼에 `LICENSE`·`NOTICE` 가 여전히 들어가는지 확인
-7. **README 귀속 한 줄** — "Based on Liam ERD by ROUTE06, Inc., Apache-2.0"
+8. **README 귀속 한 줄** — "Based on Liam ERD by ROUTE06, Inc., Apache-2.0"
+
+---
+
+## 개명 sweep — `erdkit` → `crowfoot` (2026-08-06 완료)
+
+**`erdkit` 0.4.3 을 내보내지 않고 `crowfoot` 0.1.0 으로 새로 시작했다.** `erdkit` 은 0.1.0~0.4.2
+가 npm 에 올라가 있으나 사용자가 사실상 없고, 개명 후 버전을 이어받으면 "0.4.3 이 첫 릴리즈" 인
+이상한 히스토리가 남는다.
+
+**일괄 치환이 안전했던 이유:** §4 귀속 문구는 `Liam ERD source (Apache-2.0, ROUTE06, Inc.)` 라
+**"erdkit" 을 포함하지 않는다.** 그래서 `erdkit` 치환은 고지를 건드리지 않는다 — 계획서가 경고한
+"Liam 일괄 치환" 함정의 정반대다. 다만 `_docs/complete/`·`_docs/handoff/` 의 과거 기록은
+**당시 사실이므로 손대지 않았다.**
+
+| 대상 | 처리 |
+|---|---|
+| 파일 헤더 `// Added in erdkit;` | 44파일 기계적 치환 |
+| 코드·설정 | 17파일 (`App.tsx` 콘솔 헬퍼, `urls.ts`, `index.ts`, `initCommand`, `pack-cli.js`, `knip.jsonc`, 루트/erd-sample `package.json`) |
+| `cli/package.json` | `name`·`bin`→`crowfoot`, `version`→**0.1.0**, repo/homepage/bugs URL |
+| 워크플로 | `release-erdkit.yml` → **`release-crowfoot.yml`** (Trusted Publisher 가 파일명을 참조하므로 등록 전에 확정돼야 함) |
+| localStorage | `crowfoot:*`. 아래 참조 |
+| 배너 | ASCII 워드마크 `ERDKIT`(45칸) → `CROWFOOT`(72칸, 80칸 터미널 기준). 그라디언트 `#1DED83`(**Liam 브랜드 그린**) → `#38BDF8`/`#818CF8` |
+| `NOTICE` | 9번 항목에 erdkit 경유 사실 반영 + **10번(배너 워드마크·색) 신설** |
+| 문서 | `README.md`·`docs/usage*.md`·`.claude/project-profile/` |
+| 락파일 | `pnpm install --lockfile-only` 로 재생성 |
+
+### 스토리지 마이그레이션이 2단 hop 이 됐다
+
+`readStoredItem(key, legacyKey)` 의 두 번째 인자를 **배열로 일반화**했다
+(`['erdkit:*', 'liam:*']`, 최신 우선). 인자를 하나 더 늘리는 대신 목록으로 만들어 다음 hop 이
+생겨도 같은 코드로 끝난다. 클립보드 마커(`crowfoot.memo`)도 같은 방식으로 옛 마커를 읽는다 —
+안 그러면 개명 전에 복사한 메모가 **조용히 붙지 않는다.**
+
+### 검증 (2026-08-06 실측)
+
+| 검사 | 결과 |
+|---|---|
+| `erd-core` 테스트 | ✅ 36파일 302 passed (4 todo) — 스토리지 체인 우선순위·전체 삭제 케이스 추가 |
+| `cli` 테스트 | ✅ 31 passed |
+| `tsc --noEmit` (erd-core · cli · ui) | ✅ 0 errors |
+| 루트 `pnpm lint` | ✅ exit 0 |
+| `turbo build --filter=crowfoot --force` | ✅ 6 tasks |
+| `cli.js --version` / `--help` | ✅ `0.1.0` / `Usage: crowfoot …` + 귀속 문구 유지 |
+| `erd build` 실행 | ✅ `out/{index.html,schema.json,assets,favicon.ico,serve.json}`, 탭 제목 `ERD` |
+| `npm pack --dry-run` | ✅ 13파일, **`LICENSE`·`NOTICE` 포함** (§4(a)·§4(d)) |
+| `npm publish --dry-run` | ✅ 경고 0건 — `bin` 제거 함정 없음 |
+| 매니페스트 `workspace:` 누출 | ✅ 0건 |
+
+### 남은 수동 작업 (본인)
+
+```bash
+# 1) GitHub 리포 개명  Junjak-Personal/erdkit → crowfoot
+# 2) npm Trusted Publisher 등록: crowfoot / GitHub Actions / release-crowfoot.yml
+# 3) 옛 패키지 deprecate
+npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"
+```
 
 ---
 
@@ -176,7 +235,7 @@ path  M11.5 12H15                          관계선
 
 ```
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 ```
 
 는 **§4(b)/§4(c) 가 요구하는 귀속 고지**다. "Liam" 을 일괄 치환하는 스크립트를 돌리면 이게 같이
@@ -201,7 +260,7 @@ pnpm lint                     # 루트. turbo + syncpack + knip
 **빌드 산출물로 육안 확인:**
 
 ```
-pnpm exec turbo build --filter=erdkit --force
+pnpm exec turbo build --filter=crowfoot --force
 cd <scratch> && node <repo>/frontend/packages/cli/dist-cli/bin/cli.js \
   erd build --input ./schema.sql --format postgres --output-dir ./erd-out
 cd erd-out && python3 -m http.server 5199 --bind 127.0.0.1
@@ -211,10 +270,10 @@ cd erd-out && python3 -m http.server 5199 --bind 127.0.0.1
 
 ## 이 저장소를 만지기 전에 알아야 할 함정
 
-1. **`turbo build --filter=erdkit` 는 `--force` 없이 믿으면 안 된다.** erd-core 를 TS 소스로
-   소비하는 구조라 erd-core 의 파일이 erdkit 의 캐시 키에 안 들어간다. erd-core 만 고치면
+1. **`turbo build --filter=crowfoot` 는 `--force` 없이 믿으면 안 된다.** erd-core 를 TS 소스로
+   소비하는 구조라 erd-core 의 파일이 crowfoot 의 캐시 키에 안 들어간다. erd-core 만 고치면
    **옛 번들이 캐시에서 나온다.** 릴리즈 워크플로에도 `--force` 가 박혀 있다
-   (`release-erdkit.yml:64`)
+   (`release-crowfoot.yml:64`)
 2. **브라우저 테스트 중 탭이 백그라운드로 밀리면 ResizeObserver 가 멈춘다.** React Flow 가
    노드를 측정 못 해 `data-loading` 이 `true` 에 영원히 머물고, 캔버스가 빈 화면으로 보인다.
    **제품 결함으로 오진하기 쉽다** — `document.visibilityState` 를 먼저 확인하라. 스크린샷도

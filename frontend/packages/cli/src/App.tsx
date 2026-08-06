@@ -30,17 +30,17 @@ import * as v from 'valibot'
 declare global {
   interface Window {
     /** Console helpers for producing and resetting layout.json. */
-    erdkitLayout?: {
+    crowfootLayout?: {
       dump: () => Record<string, { x: number; y: number }>
       reset: () => void
     }
     /** Console helpers for producing and resetting memos.json. */
-    erdkitMemos?: {
+    crowfootMemos?: {
       dump: () => Memo[]
       reset: () => void
     }
     /** Console helpers for producing and resetting groups.json. */
-    erdkitGroups?: {
+    crowfootGroups?: {
       dump: () => Group[]
       reset: () => void
     }
@@ -163,21 +163,21 @@ function App() {
       return value
     }
 
-    window.erdkitLayout = {
+    window.crowfootLayout = {
       dump: () => publish(dumpTableLayout()),
       reset: () => {
         clearStoredTableLayout()
         location.reload()
       },
     }
-    window.erdkitMemos = {
+    window.crowfootMemos = {
       dump: () => publish(dumpMemos()),
       reset: () => {
         clearStoredMemos()
         location.reload()
       },
     }
-    window.erdkitGroups = {
+    window.crowfootGroups = {
       dump: () => publish(dumpGroups()),
       reset: () => {
         clearStoredGroups()

@@ -52,9 +52,9 @@ jobs:
       - run: pnpm lint
 
   # Upstream's `frontend-ci` job booted Supabase and diffed its generated types.
-  # This fork ships erdkit only and has no Supabase project, so the job could
+  # This fork ships crowfoot only and has no Supabase project, so the job could
   # never pass here. The packages the fork actually publishes are tested
-  # instead — and again, as a hard gate, in release-erdkit.yml.
+  # instead — and again, as a hard gate, in release-crowfoot.yml.
   frontend-test:
     needs: [setup-job]
     if: ${{ needs.setup-job.outputs.has-changes == 'true' }}
@@ -69,4 +69,4 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/pnpm-setup
       - run: pnpm --filter @liam-hq/erd-core test
-      - run: pnpm --filter erdkit test
+      - run: pnpm --filter crowfoot test

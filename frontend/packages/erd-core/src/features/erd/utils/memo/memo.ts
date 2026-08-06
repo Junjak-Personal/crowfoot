@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { readStoredItem, removeStoredItem } from '../storage'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
@@ -14,9 +14,9 @@ export type Memo = {
   fontSize?: number | undefined
 }
 
-const STORAGE_KEY = 'erdkit:memos'
-/** Read once, then migrated away — see `readStoredItem`. */
-const LEGACY_STORAGE_KEY = 'liam:memos'
+const STORAGE_KEY = 'crowfoot:memos'
+/** Newest first. Read once, then migrated away — see `readStoredItem`. */
+const LEGACY_STORAGE_KEYS = ['erdkit:memos', 'liam:memos']
 
 export const DEFAULT_MEMO_WIDTH = 220
 export const DEFAULT_MEMO_HEIGHT = 120
@@ -129,7 +129,7 @@ export const loadStoredMemos = (): Memo[] | null => {
   if (typeof localStorage === 'undefined') return null
 
   try {
-    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
+    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
     if (!raw) return null
     return parseMemos(JSON.parse(raw))
   } catch {
@@ -149,7 +149,7 @@ export const saveStoredMemos = (memos: Memo[]): void => {
 
 export const clearStoredMemos = (): void => {
   try {
-    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
+    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
   } catch {
     // Best-effort reset only.
   }
@@ -237,7 +237,14 @@ export const placeMemos = (
  * is what keeps a paste of ordinary text from being turned into a memo, and it
  * lets memos copied in one ERD tab be pasted into another.
  */
-const CLIPBOARD_KEY = 'erdkit.memo'
+const CLIPBOARD_KEY = 'crowfoot.memo'
+
+/**
+ * Markers written by earlier releases, newest first. A paste still carries
+ * whatever marker was current when the copy happened, so dropping these would
+ * make a memo copied before the rename paste as nothing at all.
+ */
+const LEGACY_CLIPBOARD_KEYS = ['erdkit.memo', 'liam.memo']
 
 export const serializeMemosToClipboard = (memos: Memo[]): string =>
   JSON.stringify({ [CLIPBOARD_KEY]: memos })
@@ -251,7 +258,14 @@ export const parseMemosFromClipboard = (text: string): Memo[] => {
   }
 
   if (typeof parsed !== 'object' || parsed === null) return []
-  if (!(CLIPBOARD_KEY in parsed)) return []
 
-  return parseMemos(parsed[CLIPBOARD_KEY])
+  // Read through a Map so the marker can be looked up by a variable without a
+  // cast; `in` only narrows for a literal key.
+  const fields = new Map(Object.entries(parsed))
+  const marker = [CLIPBOARD_KEY, ...LEGACY_CLIPBOARD_KEYS].find((key) =>
+    fields.has(key),
+  )
+  if (marker === undefined) return []
+
+  return parseMemos(fields.get(marker))
 }

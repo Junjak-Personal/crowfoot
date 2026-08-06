@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { type Node, ReactFlowProvider } from '@xyflow/react'

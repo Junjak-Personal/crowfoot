@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "devDependencies": {
-    "erdkit": "workspace:*"
+    "crowfoot": "workspace:*"
   },
   "scripts": {
     "build": "node ../../packages/cli/dist-cli/bin/cli.js erd build --input https://github.com/mastodon/mastodon/blob/1bc28709ccde4106ab7d654ad5888a14c6bb1724/db/schema.rb --format schemarb",

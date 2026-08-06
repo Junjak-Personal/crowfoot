@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
@@ -204,7 +204,9 @@ describe('clipboard round trip', () => {
   })
 
   it('drops malformed entries out of a marked payload', () => {
-    expect(parseMemosFromClipboard('{"erdkit.memo":[{"id":"a"}]}')).toEqual([])
+    expect(parseMemosFromClipboard('{"crowfoot.memo":[{"id":"a"}]}')).toEqual(
+      [],
+    )
   })
 })
 
@@ -267,18 +269,18 @@ describe('storage key migration', () => {
     // Written through saveStoredMemos so the payload is exactly what an old
     // build would have left, rather than a hand-rolled guess at the shape.
     saveStoredMemos([memo('kept')])
-    const stored = localStorage.getItem('erdkit:memos')
+    const stored = localStorage.getItem('crowfoot:memos')
     localStorage.clear()
     localStorage.setItem('liam:memos', String(stored))
 
     expect(loadStoredMemos()).toEqual([memo('kept')])
-    expect(localStorage.getItem('erdkit:memos')).toBe(stored)
+    expect(localStorage.getItem('crowfoot:memos')).toBe(stored)
     expect(localStorage.getItem('liam:memos')).toBeNull()
   })
 
   it('clears both names, so a reset is not undone by the migration', () => {
     saveStoredMemos([memo('kept')])
-    const stored = localStorage.getItem('erdkit:memos')
+    const stored = localStorage.getItem('crowfoot:memos')
     localStorage.clear()
     localStorage.setItem('liam:memos', String(stored))
 

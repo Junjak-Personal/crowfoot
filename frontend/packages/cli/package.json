@@ -1,5 +1,5 @@
 {
-  "name": "erdkit",
+  "name": "crowfoot",
   "description": "Command-line tool that generates a standalone web app displaying ER diagrams, with persisted table positions, canvas memos and colour coding.",
   "keywords": [
     "data-visualization",
@@ -7,21 +7,21 @@
     "er-diagram",
     "erd"
   ],
-  "homepage": "https://github.com/Junjak-Personal/erdkit",
-  "bugs": "https://github.com/Junjak-Personal/erdkit/issues",
+  "homepage": "https://github.com/Junjak-Personal/crowfoot",
+  "bugs": "https://github.com/Junjak-Personal/crowfoot/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Junjak-Personal/erdkit.git"
+    "url": "git+https://github.com/Junjak-Personal/crowfoot.git"
   },
   "license": "Apache-2.0",
   "private": false,
-  "version": "0.4.3",
+  "version": "0.1.0",
   "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "erdkit": "dist-cli/bin/cli.js"
+    "crowfoot": "dist-cli/bin/cli.js"
   },
   "dependencies": {
     "@prisma/internals": "6.8.2",

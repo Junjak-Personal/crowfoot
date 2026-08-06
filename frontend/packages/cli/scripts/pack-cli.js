@@ -18,7 +18,7 @@ const action = process.argv[2]
 if (action === 'pre') {
   // `npm publish` reads the manifest it uploads BEFORE prepack runs, so a
   // `workspace:*` runtime dep cannot be stripped here — it reaches the registry
-  // and every `npx erdkit` then dies with EUNSUPPORTEDPROTOCOL, even though the
+  // and every `npx crowfoot` then dies with EUNSUPPORTEDPROTOCOL, even though the
   // tarball itself looks clean. Fail loudly instead. erd-core and schema are
   // inlined into cli.js by rollup, so they belong in devDependencies.
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))

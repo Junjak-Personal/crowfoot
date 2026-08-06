@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url)
 const { version } = require('../../package.json')
 
 program
-  .name('erdkit')
+  .name('crowfoot')
   .description(
     'CLI tool for building ER diagram viewers.\n' +
       'A fork of Liam ERD (Apache-2.0, ROUTE06, Inc.) — https://github.com/liam-hq/liam',

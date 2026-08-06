@@ -54,7 +54,7 @@ All deparsers implement the shared `SchemaDeparser` / `OperationDeparser` types 
 - Post-regen fixups: **None**
 - Editable: **no** — `schema.generated.ts` is regenerated; edit the source schema instead
 
-## CLI ingest contract (`erdkit`)
+## CLI ingest contract (`crowfoot`)
 ```
 <cli> erd build --format <fmt> --input <path-or-url> --output-dir <dir>
 ```

@@ -21,7 +21,7 @@ setupMocks()
 
 describe('program', () => {
   it('should have the correct name and description', () => {
-    expect(program.name()).toBe('erdkit')
+    expect(program.name()).toBe('crowfoot')
     // The second line is the Apache-2.0 attribution the fork owes its
     // upstream, and --help is the surface that always shows it.
     expect(program.description()).toBe(

@@ -36,7 +36,7 @@
     "prebuild": "pnpm create-env-files",
     "prelint": "pnpm create-env-files",
     "prepare": "lefthook install",
-    "release": "pnpm turbo build --filter=erdkit && pnpm --filter=erdkit publish --access public",
+    "release": "pnpm turbo build --filter=crowfoot && pnpm --filter=crowfoot publish --access public",
     "test": "turbo test",
     "test:coverage": "vitest --coverage",
     "test:e2e": "turbo test:e2e",

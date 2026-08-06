@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { aTable } from '@liam-hq/schema'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -243,7 +243,7 @@ describe('group persistence', () => {
   it('returns null instead of throwing when storage holds malformed JSON directly, and falls through', () => {
     // Bypasses saveStoredGroups' own JSON.stringify to simulate a hand-edited
     // or corrupted localStorage entry, not just a value this module wrote.
-    localStorage.setItem('erdkit:groups', 'not json')
+    localStorage.setItem('crowfoot:groups', 'not json')
 
     expect(loadStoredGroups()).toBeNull()
     expect(getEffectiveGroups()).toEqual([])
@@ -649,18 +649,18 @@ describe('storage key migration', () => {
     // Written through saveStoredGroups so the payload is exactly what an old
     // build would have left, rather than a hand-rolled guess at the shape.
     saveStoredGroups([group('billing', ['orders'])])
-    const stored = localStorage.getItem('erdkit:groups')
+    const stored = localStorage.getItem('crowfoot:groups')
     localStorage.clear()
     localStorage.setItem('liam:groups', String(stored))
 
     expect(loadStoredGroups()).toEqual([group('billing', ['orders'])])
-    expect(localStorage.getItem('erdkit:groups')).toBe(stored)
+    expect(localStorage.getItem('crowfoot:groups')).toBe(stored)
     expect(localStorage.getItem('liam:groups')).toBeNull()
   })
 
   it('clears both names, so a reset is not undone by the migration', () => {
     saveStoredGroups([group('billing', ['orders'])])
-    const stored = localStorage.getItem('erdkit:groups')
+    const stored = localStorage.getItem('crowfoot:groups')
     localStorage.clear()
     localStorage.setItem('liam:groups', String(stored))
 

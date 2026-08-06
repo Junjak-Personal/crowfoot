@@ -41,7 +41,7 @@
     "destyle.css", // Used by CSS imports in ui package
     "json-refs", // Used by schema npm scripts
     "json-schema-to-zod", // Used by schema npm scripts
-    "erdkit", // Used by erd-sample build script
+    "crowfoot", // Used by erd-sample build script
     "@liam-hq/configs", // Used by tsconfig and biome configuration files
     "@turbo/gen", // Required for `turbo gen` command in npm scripts
     "@langchain/community", // Temporarily unused due to disabled vectorstore functionality

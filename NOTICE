@@ -1,4 +1,4 @@
-erdkit
+crowfoot
 Copyright (c) 2026 QESG
 
 This product includes software developed by ROUTE06, Inc.
@@ -61,8 +61,13 @@ Summary of the changes made to the original work
    Section 6 of the License grants no trademark rights, so the npm package,
    its executable, this repository, the generated page title, the browser
    storage keys and the browser console helpers no longer carry the "Liam"
-   product name; they are published as "erdkit". A value still held under a
-   previous "liam:" storage key is moved to the new key the first time it is
-   read, so nothing a user arranged is lost. The tool names Liam ERD as the
-   work it is derived from in its banner and its --help output. No
-   endorsement by ROUTE06, Inc. is implied.
+   product name; they are published as "crowfoot". They were briefly published
+   as "erdkit" (0.1.0 through 0.4.2) before settling on the present name. A
+   value still held under a previous "liam:" or "erdkit:" storage key is moved
+   to the current key the first time it is read, so nothing a user arranged is
+   lost. The tool names Liam ERD as the work it is derived from in its banner
+   and its --help output. No endorsement by ROUTE06, Inc. is implied.
+
+10. The terminal banner no longer uses the upstream wordmark or its colours.
+    The ASCII art spells the fork's own name, and the gradient no longer uses
+    Liam ERD's brand green (#1DED83).

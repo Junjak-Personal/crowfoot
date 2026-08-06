@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { Node } from '@xyflow/react'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -217,7 +217,7 @@ describe('storage key migration', () => {
     localStorage.setItem('liam:tableLayout', stored)
 
     expect(loadStoredTableLayout()).toEqual({ users: { x: 1, y: 2 } })
-    expect(localStorage.getItem('erdkit:tableLayout')).toBe(stored)
+    expect(localStorage.getItem('crowfoot:tableLayout')).toBe(stored)
     expect(localStorage.getItem('liam:tableLayout')).toBeNull()
   })
 

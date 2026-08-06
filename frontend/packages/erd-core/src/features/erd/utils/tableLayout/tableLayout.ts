@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { Node } from '@xyflow/react'
 import { readStoredItem, removeStoredItem } from '../storage'
@@ -16,9 +16,9 @@ export type TablePosition = {
 }
 export type TableLayout = Record<string, TablePosition>
 
-const STORAGE_KEY = 'erdkit:tableLayout'
-/** Read once, then migrated away — see `readStoredItem`. */
-const LEGACY_STORAGE_KEY = 'liam:tableLayout'
+const STORAGE_KEY = 'crowfoot:tableLayout'
+/** Newest first. Read once, then migrated away — see `readStoredItem`. */
+const LEGACY_STORAGE_KEYS = ['erdkit:tableLayout', 'liam:tableLayout']
 
 /**
  * Canonical layout shipped with the build (layout.json), set by the host app.
@@ -88,7 +88,7 @@ export const loadStoredTableLayout = (): TableLayout => {
   if (typeof localStorage === 'undefined') return {}
 
   try {
-    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
+    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
     if (!raw) return {}
     return parseTableLayout(JSON.parse(raw))
   } catch {
@@ -109,7 +109,7 @@ const saveStoredTableLayout = (layout: TableLayout): void => {
 
 export const clearStoredTableLayout = (): void => {
   try {
-    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
+    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
   } catch {
     // Nothing to do; the caller only asked for a best-effort reset.
   }

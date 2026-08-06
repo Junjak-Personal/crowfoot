@@ -7,7 +7,8 @@ export const TroubleshootingUrl =
   'https://liambx.com/docs/parser/troubleshooting'
 
 // github.com
-export const RepositoryUrl = 'https://github.com/Junjak-Personal/erdkit'
-export const DiscussionUrl = 'https://github.com/Junjak-Personal/erdkit/issues'
+export const RepositoryUrl = 'https://github.com/Junjak-Personal/crowfoot'
+export const DiscussionUrl =
+  'https://github.com/Junjak-Personal/crowfoot/issues'
 export const DbOrmDiscussionUrl =
   'https://github.com/liam-hq/liam/discussions/364'

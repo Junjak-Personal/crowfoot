@@ -22,14 +22,14 @@ design issues"). **Test observable behaviour, not implementation.**
 - Coverage: `pnpm test:coverage` (v8 → `./coverage`, `text|json|html`)
 - E2E: `pnpm test:e2e` (turbo) or `pnpm --filter @liam-hq/e2e test:e2e`
 
-## Verified baseline (run 2026-08-05 @ `erdkit 0.4.1`, storage-key rename)
+## Verified baseline (run 2026-08-05 @ `crowfoot 0.4.1`, storage-key rename)
 | Package | Files | Result |
 |---|---|---|
 | `@liam-hq/schema` | 37 | **562 passed** |
 | `@liam-hq/erd-core` | 35 | **297 passed, 4 todo** |
-| `erdkit` | 5 | **27 passed, 4 FAILED** — see below |
+| `crowfoot` | 5 | **27 passed, 4 FAILED** — see below |
 
-**`erdkit` is NOT green, and never has been on Windows.** All 4 failures are in
+**`crowfoot` is NOT green, and never has been on Windows.** All 4 failures are in
 `src/cli/erdCommand/runPreprocess.test.ts`, which feeds `os.tmpdir()` (an absolute Windows path)
 into `getInputContent`, where it is parsed as a URL. Treat 27/4 as the baseline and gate on
 net-new; do not chase these.
@@ -68,7 +68,7 @@ Fork-owned suites: `utils/group/group.test.ts` (55) · `utils/tableLayout/tableL
   `frontend/internal-packages/e2e/globalSetup.ts`; unused by the fork.)
 - Credentials source: `VERCEL_PROTECTION_BYPASS_SECRET`, `URL`, `DEFAULT_TEST_URL` env vars — upstream only
 - Test-data seed: **not applicable.** The fork's fixture is a built artifact:
-  `pnpm turbo build --filter=erdkit` → `node frontend/packages/cli/dist-cli/bin/cli.js erd build
+  `pnpm turbo build --filter=crowfoot` → `node frontend/packages/cli/dist-cli/bin/cli.js erd build
   --format schemarb --input <relative path> --output-dir dist` → serve `dist/` over HTTP
   (`npx serve dist/`). **`file://` does not work.**
 - Target env: **local only.** Never point automated tests at `carbon-stage.qesg.co.kr`.

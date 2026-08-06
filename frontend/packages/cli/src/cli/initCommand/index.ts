@@ -35,21 +35,21 @@ const formatMap: Record<string, string> = {
  */
 const displayWelcomeMessage = () => {
   console.info(`
-👾  Welcome to the erdkit setup process! 👾
+👾  Welcome to the crowfoot setup process! 👾
 
 This \`init\` subcommand will guide you interactively through the setup.
 
 ${yocto.greenBright('🌟 This init command is a work in progress! 🌟')}
-We're continuously improving it. Don't forget to run \`npx erdkit init\` after updates for the latest features.
+We're continuously improving it. Don't forget to run \`npx crowfoot init\` after updates for the latest features.
 
 💡 Have feedback? Share it with us!
 Visit ${yocto.blueBright(DiscussionUrl)} to submit ideas or report issues.
 
-🌟️ ${yocto.bold('Love erdkit')}? Help us grow by starring our GitHub repository:
+🌟️ ${yocto.bold('Love crowfoot')}? Help us grow by starring our GitHub repository:
 ${yocto.blueBright(RepositoryUrl)}
 
 ----
-Now, let's get started with setting up your erdkit project.
+Now, let's get started with setting up your crowfoot project.
   `)
 }
 
@@ -85,7 +85,7 @@ const handlePostgresPrompts = async (): Promise<string> => {
   // If no, do not ask for path—just inform
   console.info(`
 ${yocto.yellow(
-  'Please run `pg_dump --schema-only` later to generate a dump file you can use with erdkit.',
+  'Please run `pg_dump --schema-only` later to generate a dump file you can use with crowfoot.',
 )}
 `)
   return ''
@@ -146,7 +146,7 @@ const handleTblsViaOtherPrompts = (): string => {
   console.info(`
 ${yocto.yellow("Note: Direct support is not available yet. You'll need to use tbls as a bridge.")}
 
-To use tbls with erdkit:
+To use tbls with crowfoot:
 
 1. Install tbls from: https://github.com/k1LoW/tbls?tab=readme-ov-file#install
 
@@ -154,7 +154,7 @@ To use tbls with erdkit:
 
 ${yocto.blueBright('   $ tbls out -t json -o schema.json')}
 
-For more details about using tbls with erdkit, see:
+For more details about using tbls with crowfoot, see:
 ${yocto.blueBright(`${DocsUrl}/parser/supported-formats/tbls`)}
 
 Want direct support without using tbls? Let us know at:
@@ -198,7 +198,7 @@ const displayUnsupportedMessage = () => {
 
 Visit ${yocto.yellowBright(DbOrmDiscussionUrl)} to suggest support for your database or ORM!
 
-For more details about erdkit usage and advanced configurations, check out:
+For more details about crowfoot usage and advanced configurations, check out:
 ${yocto.blueBright(DocsUrl)}
 `)
   exit(0)
@@ -223,7 +223,7 @@ const displayNextSteps = (
     stepNum++
     console.info(
       yocto.blueBright(
-        '   $ npx erdkit erd build --input schema.json --format tbls',
+        '   $ npx crowfoot erd build --input schema.json --format tbls',
       ),
     )
   } else if (inputFilePath) {
@@ -233,7 +233,7 @@ const displayNextSteps = (
     stepNum++
     console.info(
       yocto.blueBright(
-        `   $ npx erdkit erd build --input ${inputFilePath} --format ${selectedFormat}`,
+        `   $ npx crowfoot erd build --input ${inputFilePath} --format ${selectedFormat}`,
       ),
     )
   } else {
@@ -244,7 +244,7 @@ const displayNextSteps = (
     stepNum++
     console.info(
       yocto.blueBright(
-        '   $ npx erdkit erd build --input <schema.sql> --format postgres',
+        '   $ npx crowfoot erd build --input <schema.sql> --format postgres',
       ),
     )
   }
@@ -298,7 +298,7 @@ jobs:
       - uses: actions/checkout@v4
 ${setupSteps}
       - name: Generate ER Diagrams
-        run: npx erdkit erd build --input ${effectivePath} --format ${selectedFormat}
+        run: npx crowfoot erd build --input ${effectivePath} --format ${selectedFormat}
 
     # - Next step: Deploy ERD \`./dist\` to your preferred hosting service for easy sharing and access.
 `
@@ -392,7 +392,7 @@ initCommand.action(async () => {
 
   // Show docs link
   console.info(`
-For more details about erdkit usage and advanced configurations, check out:
+For more details about crowfoot usage and advanced configurations, check out:
 ${yocto.blueBright(DocsUrl)}
 `)
 
@@ -404,7 +404,7 @@ ${yocto.blueBright(DocsUrl)}
 
   console.info(
     yocto.greenBright(`
-✅ Setup complete! Enjoy using erdkit to visualize your database schema!`),
+✅ Setup complete! Enjoy using crowfoot to visualize your database schema!`),
   )
 })
 

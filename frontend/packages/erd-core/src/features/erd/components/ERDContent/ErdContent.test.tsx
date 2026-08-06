@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { aSchema, aTable } from '@liam-hq/schema'
 import { ToastProvider } from '@liam-hq/ui'
@@ -22,7 +22,7 @@ import { ERDContent } from './ErdContent'
  * The context-menu group actions (`Group selected tables`, `Remove from
  * group`, rename, ungroup, colour) live entirely inside ErdContent.tsx and
  * had zero coverage before this file. Assertions read back through
- * `loadStoredGroups()` — `commitGroups` mirrors to `erdkit:groups`
+ * `loadStoredGroups()` — `commitGroups` mirrors to `crowfoot:groups`
  * synchronously (see useGroupNodes.ts) — rather than through rendered DOM,
  * because the derived group box depends on React Flow's async
  * ResizeObserver-driven `measured` size, which this test does not need.

@@ -1,4 +1,4 @@
-// Added in erdkit; not part of the original Liam ERD source.
+// Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { TableNodeType } from '../../types'
 import { readStoredItem, removeStoredItem } from '../storage'
@@ -16,9 +16,9 @@ export type Group = {
   color?: ViewColorKey | undefined
 }
 
-const STORAGE_KEY = 'erdkit:groups'
-/** Read once, then migrated away — see `readStoredItem`. */
-const LEGACY_STORAGE_KEY = 'liam:groups'
+const STORAGE_KEY = 'crowfoot:groups'
+/** Newest first. Read once, then migrated away — see `readStoredItem`. */
+const LEGACY_STORAGE_KEYS = ['erdkit:groups', 'liam:groups']
 
 /** Groups shipped with the build (groups.json), set by the host app. */
 let baseGroups: Group[] = []
@@ -128,7 +128,7 @@ export const loadStoredGroups = (): Group[] | null => {
   if (typeof localStorage === 'undefined') return null
 
   try {
-    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
+    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
     if (!raw) return null
     return parseGroups(JSON.parse(raw))
   } catch {
@@ -148,7 +148,7 @@ export const saveStoredGroups = (groups: Group[]): void => {
 
 export const clearStoredGroups = (): void => {
   try {
-    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEY)
+    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
   } catch {
     // Best-effort reset only.
   }

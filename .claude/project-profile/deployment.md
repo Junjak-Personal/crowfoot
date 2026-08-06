@@ -6,7 +6,7 @@
 
 ## CI/CD
 - Platform: GitHub Actions (`.github/workflows/`, 17 files, inherited)
-- Fork repo: `Junjak-Personal/erdkit`, working branch `feature/erd-view-customization`
+- Fork repo: `Junjak-Personal/crowfoot`, working branch `feature/erd-view-customization`
 - Relevant inherited workflows:
 
 | Workflow | Purpose | Fork status |
@@ -24,7 +24,7 @@
 ## Environments
 | Env | Branch | URL/Config |
 |-----|--------|------------|
-| Local | any | `pnpm turbo build --filter=erdkit` → `erd build` → serve `dist/` over HTTP (`npx serve dist/`) |
+| Local | any | `pnpm turbo build --filter=crowfoot` → `erd build` → serve `dist/` over HTTP (`npx serve dist/`) |
 | carbon **stage** | manual | **https://carbon-stage.qesg.co.kr/erd/** — S3 `s3://carbon-estimate-dev/erd-stage/` behind CloudFront. Deployed by hand 2026-08-03; 86 tables / 128 FKs. |
 | carbon **dev** | — | **not configured** — CloudFront origin path is pinned to `/erd-stage`, so the dev domain shows the stage ERD |
 | Production | — | none |
