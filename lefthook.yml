@@ -1,6 +1,18 @@
 pre-commit:
   parallel: true
   commands:
+    # `.npmrc` is tracked and holds only pnpm settings. `npm login` normally
+    # writes its token to ~/.npmrc, but `--location=project` puts a live token
+    # in the tracked file — and this repository is public. Cheaper to block the
+    # commit than to rotate a leaked token.
+    no-npm-credentials:
+      glob: ".npmrc"
+      run: |
+        if grep -qE '(_authToken|_auth|_password)\s*=' {staged_files}; then
+          echo "Credentials found in .npmrc — remove them; npm login belongs in ~/.npmrc."
+          exit 1
+        fi
+      fail_text: "Refusing to commit npm credentials."
     lint:
       glob: "*.{js,jsx,ts,tsx,json,md,mdx,yml,yaml}"
       run: pnpm lint
