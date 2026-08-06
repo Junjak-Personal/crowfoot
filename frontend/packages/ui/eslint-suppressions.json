@@ -1,2 +1,12 @@
 {
+  "src/components/Callout/Callout.module.css": {
+    "css-modules-kit/no-unused-class-names": {
+      "count": 5
+    }
+  },
+  "src/components/RoundBadge/RoundBadge.module.css": {
+    "css-modules-kit/no-unused-class-names": {
+      "count": 4
+    }
+  }
 }
