@@ -439,7 +439,113 @@ favicon 은 브라우저가 `assets/favicon-*.ico` 를 **200 / 1890바이트**�
 
 ---
 
-## 패키지 정리 (작업 순서 6번의 남은 절반) — 착수 전 확인된 사실
+## 패키지 정리 — 확정 계획 (2026-08-06, `/team` Phase 1 완료)
+
+Leader + Architect FE/BE/Infra 4명이 실측으로 다듬은 최종안. **단일 커밋.** Designer 1명 순차.
+
+### 왜 병렬이 아닌가 (기각 근거)
+`pnpm-lock.yaml` 이 단일 전역 산출물이라 워크트리 2개가 각자 install 하면 병합 불가. 루트
+`pnpm lint` 는 워크스페이스 전체를 보므로 **절반만 지운 워크트리에서는 원리적으로 검증 불가.**
+`lefthook` pre-commit 이 `pnpm lint` 를 돌려 half-state 는 커밋 자체가 막힌다.
+
+### 🔴 아키텍트가 뒤집은 전제 4건 (전부 실측 증명)
+
+| # | 통념 | 실측 |
+|---|---|---|
+| 1 | "knip 이 죽은 설정을 다 짚어준다 → oracle 로 쓰면 됨" | **절반만 참.** 죽은 `ignoreDependencies` → hint → exit 1 ✅. 죽은 `ignore[]` **경로 → 출력 없음, exit 0** ❌. **11개는 손으로 지워야 한다** |
+| 2 | "knip 이 ui 의 죽은 export 를 강제로 잡아준다" | **거짓.** `ui/src/index.ts` 가 entry 파일이라 `includeEntryExports` 없이는 보고 안 함. ui 정리는 **강제가 아니라 선택** |
+| 3 | "`frontend/turbo/generators/` 는 쓸모 있으니 유지" | **이미 3중으로 깨져 있다.** `stories.tsx.hbs` 없음(config.ts:60 이 요구) · `apps/service-site` 를 `readdirSync`(존재 안 함 → throw) · 루트 `turbo/` 없음. **삭제** |
+| 4 | "§4(b) 헤더가 삭제로 훼손될 위험" | 92개 **전부** keep-package 안. 디렉터리 삭제로는 못 건드림. 단 **헤더 카운트는 2가지 문구를 다 세고 `-- frontend/packages` 로 스코프**해야 92가 나온다(A형만 세면 43) |
+
+### 🔴 강제 의존 1건
+`erd-core/src/features/erd/mocks.ts`(18KB)의 유일한 importer 가 삭제 대상 스토리 2개다.
+**같이 안 지우면 knip unused-file 로 루트 lint 가 깨진다.**
+
+### 삭제 대상
+
+**패키지 14개** (`crowfoot` 에서 의존 그래프상 도달 불가):
+`apps/{app,assets,docs,erd-sample}` ·
+`internal-packages/{agent,db,e2e,figma-to-css-variables,github,mcp-server,pglite-server,schema-bench,security,storybook}`
+
+**그 외:** `packages/db-structure`(package.json 없는 고아) · `frontend/turbo/generators/` ·
+`scripts/{extract-supabase-anon-key,extract-supabase-service-key,setup-local-dev}.sh` ·
+`CONTRIBUTING.md`(upstream 기여 거절 정책 + 죽은 Supabase 안내) ·
+`docs/{langgraph/,migrationOpsContext.md,migrationPatterns.md,schemaPatterns.md}` ·
+`.env.template`(21개 변수 전부 고아) · `.stylelintrc.json` · `.stylelintignore`
+
+**keep-package 내부 정리 (사용자 결정):**
+- 스토리 32개 전부(ui 30 + erd-core 2) + `@storybook/nextjs` devDep + `erd-core/.../mocks.ts`
+- ui 컴포넌트 디렉터리 18개 + 심볼 106개 → **`@radix-ui` 의존 6개가 배포 산출물에서 빠진다**
+  (collapsible · dialog · popover · select · switch · tabs)
+- 로고/아이콘: `Liam{LogoMark,Logo,DbLogo}` · `LinkedInLogo` · `XLogo` · `CookieConsent` ·
+  `Cardinality*Icon` 3종 · `ErdIcon` · `FacebookIcon`
+  → **`markers/` 3종은 유지** (erd-core `CardinalityMarkers.tsx` 가 실제로 그린다)
+
+### 설정 변경
+`turbo.json`(태스크 4개 삭제 + `@liam-hq/cli#dev`→`crowfoot#dev` 결함 수정 + `build.env` 비움) ·
+`package.json`(name→`crowfoot-monorepo`, 스크립트 4개·devDep 4개 삭제, `onlyBuiltDependencies` 삭제) ·
+`pnpm-workspace.yaml`(`apps/*`·dangling `__mocks__/*`·`minimumReleaseAgeExclude` 삭제) ·
+`knip.jsonc`(`ignore[]` 11개 손으로, `ignoreDependencies` 5개) · `.syncpackrc` · `vitest.config.ts` ·
+`.vscode/settings.json` · `AGENTS.md` · `CLAUDE.md` · `README.md` · `NOTICE`
+
+> 🔴 `knip.jsonc` 의 `workspaces` 블록(`frontend/packages/cli` entry)은 **그대로 둔다.**
+> 지우면 `bin/cli.ts` 가 unused file 로 잡힌다.
+
+### 🔴 `pnpm.overrides` 6개 — 전부 보존 (Infra 판정, BE 와 충돌 → Infra 채택)
+`esbuild`·`@radix-ui/react-dialog` 는 keep-set 에서 여전히 살아 있다. 나머지 4개
+(`cookie`·`path-to-regexp`·`prismjs`·`undici`)는 트리에서 사라지지만 **no-op override 는
+비용이 0이고, 지우면 나중에 그 패키지가 transitive 로 돌아올 때 핀이 풀린다.** 비대칭 리스크라
+보존이 맞다. `cookie: ^0.7.0` 은 리포 유일의 비-exact 스펙 = 명백한 CVE 범위 핀.
+(별건: pnpm 11 은 이 필드를 조용히 무시한다 → `packageManager` 올리기 전에
+`pnpm-workspace.yaml` 로 옮길 것. **이번 작업 아님.**)
+
+### 게이트 (실측 기준선 → 기대값)
+
+| 검사 | 이전 | 이후 |
+|---|---|---|
+| 워크스페이스 | 21 | **7** |
+| `turbo build --filter=crowfoot --force` | 6 tasks | **6 (불변)** |
+| `turbo lint` | 26 | **10** |
+| `schema` / `erd-core` / `cli` 테스트 | 562 / 303+4 todo / 31 | **동일** |
+| **`ui` 테스트** | **60** | **30** (아이콘 테스트 5파일 삭제 — 의도된 감소) |
+| `tsc --noEmit` (erd-core·cli·ui) | 0 | **0** |
+| 루트 `pnpm lint` | exit 0 | **exit 0** ← 하드 게이트 |
+| `npm pack --dry-run` | 13파일 + LICENSE·NOTICE | **동일** (§4(a)(d)) |
+| §4(b) 헤더 | 92 | **92** (diff 가 비어야 함) |
+| `turbo dev --filter=crowfoot --dry` | `deps: []` | **`["crowfoot#build"]`** ← 결함 수정 증명 |
+
+### 별건 등록 (이번 커밋 아님)
+- 🔴 `cli/vite-plugins/setEnv.ts` → **이번에 같이 처리하기로 결정됨** (아래 절)
+- pnpm 11 에서 overrides 무시 → `pnpm-workspace.yaml` 이관
+- `route06/actions` 재사용 워크플로 의존 (codeql·dependency_review) → inline 권고
+- `command:build` 가 mastodon `main` 을 unpinned 로 참조 (erd-sample 은 커밋 고정이었음)
+- `frontend-ci.yml:33` paths-filter 의 선행 `./` 가 매칭 안 될 가능성
+- CI 가 `@liam-hq/schema` 562 테스트를 한 번도 안 돌림
+
+---
+
+## `setEnv.ts` 정리 (사용자 추가 지시, 2026-08-06)
+
+`frontend/packages/cli/vite-plugins/setEnv.ts` — **유지되는 패키지**인데 upstream 을 향한다.
+
+| 위치 | 문제 | 현재 실제 효과 |
+|---|---|---|
+| L20 | `git remote add origin .../liam-hq/liam.git` | origin 없는 체크아웃에서 **빌드가 upstream 에 연결** |
+| L55 | `versionPrefix = '@liam-hq/cli@'` | crowfoot 태그는 `v*` → **태그 조회가 영원히 불일치** |
+| L95 | `gitBranch === 'main'` | 기본 브랜치는 **`master`** → `envName` 이 항상 `'preview'` |
+| L61–65 | `git fetch --tags` + `git ls-remote origin` | 매 빌드마다 네트워크 I/O, 오프라인 실패 |
+
+L15 주석이 `remoteAddOrigin` 을 **Vercel 자동배포 우회책**이라고 설명한다 — crowfoot 에 Vercel 이
+없으므로 근거 자체가 소멸했다.
+
+**해법:** `isReleasedGitHash` 의 유일한 소비자는 `ReleaseVersion.tsx:24`(릴리즈가 아니면
+`+<hash>` 표기)이고, **로컬 태그만으로 답할 수 있다** — `v<version>` 태그가 HEAD 를 가리키는가.
+→ `remoteAddOrigin` 전체 · 네트워크 호출 2개 · Vercel 주석이 한꺼번에 사라진다.
+`versionPrefix` → `'v'`, 브랜치 비교 → `'master'`.
+
+---
+
+## 패키지 정리 — 착수 전 확인된 사실 (원본 메모)
 
 포크가 실제로 쓰는 건 `packages/{cli,erd-core,schema,ui}` 뿐이고, 후보는 이만큼이다:
 
