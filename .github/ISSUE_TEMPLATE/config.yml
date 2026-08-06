@@ -1,8 +1,4 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Feature request
-    url: https://github.com/liam-hq/liam/discussions/categories/ideas
-    about: Share ideas for new features
-  - name: Ask a question
-    url: https://github.com/liam-hq/liam/discussions/categories/q-a
-    about: Ask questions and discuss with other community members
+# Discussions are not enabled on this repository, so there are no contact links —
+# everything goes through issues. Blank issues stay enabled because the three
+# templates do not cover every case (a question, a packaging problem, an idea).
+blank_issues_enabled: true

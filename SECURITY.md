@@ -1,49 +1,36 @@
 # Security Policy
 
+## Scope
+
+This policy covers **crowfoot** — the [`crowfoot`](https://www.npmjs.com/package/crowfoot)
+npm package and this repository.
+
+crowfoot is a fork of [Liam ERD](https://github.com/liam-hq/liam) and shares much of
+its code. A vulnerability you find here may also exist upstream, but **reports about
+upstream belong upstream** — please do not send crowfoot reports to ROUTE06, or the
+other way round.
+
 ## Supported Versions
 
-As an open source product, we will only provide security patches for the latest version. Older versions will not receive retroactive security patches.
+Only the latest published version receives security fixes. Older versions are not
+patched retroactively.
 
-## Reporting Security Issues
+## Reporting a Vulnerability
 
-### case1: Report via Email
+Email **haring157@gmail.com**. Please do not open a public issue for a vulnerability.
 
-If you discover a security vulnerability, please report it to us in the following manner:
+Include whatever you have: steps to reproduce, the version (`npx crowfoot --version`),
+and what an attacker could do with it.
 
-1. **Email us** at oss@liambx.com. Please do not create a public GitHub issue.
-2. Include as much detail as possible, including steps to reproduce the vulnerability, potential impact, and any other relevant information.
-3. We will acknowledge your email within 3 business days and work with you to understand the issue and address it promptly.
+This is a personal project maintained by one person, so there is no guaranteed
+response time. You will get an acknowledgement as soon as it is seen, and a note when
+a fix ships. If you would like to be credited in the release notes, say so.
 
-### case2: Report via GitHub Private vulnerability reporting
+For a vulnerability in a third-party dependency, report it to that project — though
+telling us as well is welcome, so the dependency can be updated or replaced here.
 
-Out team and community take security bugs in seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
+## What Happens Next
 
-To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/liam-hq/liam/security/advisories/new) tab. **Do not open up a GitHub issue.**
-
-Our team will send a response indicating the next steps in handling your report. After the initial reply to your report, the security team will keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
-
-Report security bugs in third-party modules to the person or team maintaining the module.
-
-## Handling Security Issues
-
-We follow a responsible disclosure process:
-
-1. We will investigate the reported vulnerability and work on a fix.
-2. A fix will be developed, tested, and incorporated into the project.
-3. Once the fix is ready, we will release a new version of the project with a detailed release note.
-4. We will notify the reporter about the fix and acknowledge their contribution in the release notes, if they wish to be credited.
-
-## Security Best Practices
-
-To ensure the security of our project, we are committed the following best practices:
-
-1. **Keep dependencies up to date**: Regularly update dependencies to incorporate security fixes.
-2. **Review and audit code**: Periodically review and audit the codebase for potential security issues.
-3. **Use secure coding practices**: Follow best practices for secure coding to minimize vulnerabilities.
-4. **Stay informed**: Keep up to date with the latest security news and advisories related to the technologies used in this project.
-
-## Contact
-
-For any other security-related inquiries, please contact us at oss@liambx.com.
-
-Thank you for helping us keep our project secure!
+1. The report is confirmed and the impact assessed.
+2. A fix is developed and released as a new version.
+3. The release notes describe the issue once a fixed version is available.

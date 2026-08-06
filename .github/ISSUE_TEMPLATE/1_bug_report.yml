@@ -6,39 +6,45 @@ body:
   - type: checkboxes
     attributes:
       label: Self Checks
-      description: "To make sure we get to your issue in time, please check the following:"
       options:
-        - label: This is only for bug report, if you would like to ask a question, please head to [Discussions](https://github.com/liam-hq/liam/discussions/categories/q-a).
+        - label: I have searched [existing issues](https://github.com/Junjak-Personal/crowfoot/issues), including closed ones.
           required: true
-        - label: I have searched for existing issues [search for existing issues](https://github.com/liam-hq/liam/issues), including closed ones.
+        - label: This is not a security vulnerability. (Those go to the address in [SECURITY.md](https://github.com/Junjak-Personal/crowfoot/blob/master/SECURITY.md), not here.)
           required: true
+
+  - type: input
+    attributes:
+      label: crowfoot version
+      description: Output of `npx crowfoot --version`, or the version shown in the viewer's Help menu.
+    validations:
+      required: true
 
   - type: dropdown
     attributes:
-      label: Version Type
-      description: Which version of Liam ERD are you using?
+      label: Where did it happen?
       multiple: false
       options:
-        - Web Version (liambx.com)
-        - CLI Version (npm package)
+        - The CLI (erd build / erd from-link / init)
+        - The generated viewer (in a browser)
+        - Both
     validations:
       required: true
 
   - type: input
     attributes:
-      label: Version (only for Self Hosted)
-      description: See about section in console
+      label: Schema format
+      description: The `--format` you used — postgres, schemarb, prisma, drizzle, tbls or liam.
     validations:
       required: false
 
   - type: textarea
     attributes:
       label: Steps to reproduce
-      description: Describe the exact steps that lead to the bug.
+      description: The exact steps that lead to the bug.
       placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Scroll down to '...'
+        1. Run '...'
+        2. Open '...'
+        3. Click on '...'
         4. See error
     validations:
       required: true
@@ -46,20 +52,20 @@ body:
   - type: textarea
     attributes:
       label: Expected Behavior
-      description: Describe what you expected to happen.
+      description: What you expected to happen.
     validations:
       required: false
 
   - type: textarea
     attributes:
       label: Actual Behavior
-      description: Describe what actually happened.
+      description: What actually happened.
     validations:
       required: false
 
   - type: textarea
     attributes:
       label: Additional Context
-      description: Provide any other relevant information or context (e.g., logs, screenshots).
+      description: Anything else that helps — logs, screenshots, a minimal schema that triggers it.
     validations:
       required: false

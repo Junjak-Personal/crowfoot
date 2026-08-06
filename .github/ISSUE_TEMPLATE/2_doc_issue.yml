@@ -8,7 +8,7 @@ body:
       label: Self Checks
       description: "To make sure we get to your issue in time, please check the following:"
       options:
-        - label: I have searched for existing issues [search for existing issues](https://github.com/liam-hq/liam/issues), including closed ones.
+        - label: I have searched for existing issues [search for existing issues](https://github.com/Junjak-Personal/crowfoot/issues), including closed ones.
           required: true
 
   - type: input
