@@ -1,13 +1,13 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
 import { Box, render, Text } from 'ink'
-import Gradient from 'ink-gradient'
 import React from 'react'
 
 // Deliberately not the upstream gradient: #1DED83 is Liam ERD's brand green,
 // and keeping it would carry the trade dress across a rename that exists to
-// drop it.
-const ourColors = ['#38BDF8', '#818CF8']
+// drop it. One flat colour rather than a gradient — it is the same amber as
+// the favicon, and a gradient here bought nothing a single colour does not.
+const brandColor = '#F59E0B'
 
 // Check if colors should be disabled
 const shouldDisableColors = () => {
@@ -41,14 +41,8 @@ const attribution = ' A fork of Liam ERD (Apache-2.0, ROUTE06, Inc.)'
 
 const Banner = () => {
   const art = shouldDisableColors()
-    ? // If colors are disabled, render plain text
-      React.createElement(Text, {}, asciiArt)
-    : // Otherwise, render with gradient
-      React.createElement(Gradient, {
-        colors: ourColors,
-        // biome-ignore lint/correctness/noChildrenProp: TypeScript requires explicit children prop for this component
-        children: React.createElement(Text, {}, asciiArt),
-      })
+    ? React.createElement(Text, {}, asciiArt)
+    : React.createElement(Text, { color: brandColor }, asciiArt)
 
   return React.createElement(
     Box,

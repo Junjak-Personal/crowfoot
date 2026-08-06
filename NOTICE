@@ -69,5 +69,16 @@ Summary of the changes made to the original work
    and its --help output. No endorsement by ROUTE06, Inc. is implied.
 
 10. The terminal banner no longer uses the upstream wordmark or its colours.
-    The ASCII art spells the fork's own name, and the gradient no longer uses
-    Liam ERD's brand green (#1DED83).
+    The ASCII art spells the fork's own name, and it is drawn in a single
+    colour of this fork's choosing rather than Liam ERD's brand green
+    (#1DED83).
+
+11. The viewer no longer presents itself as Liam ERD. Its heading, logo mark
+    and favicon are this fork's own, and the links that asserted product
+    identity — homepage, repository, release notes, community forum — now
+    point at this fork or have been removed. Links to upstream documentation
+    are kept where it remains accurate for this fork, and are labelled as
+    upstream so they do not read as this project's own. The per-file notices
+    required by section 4(b), the attribution in the banner and --help output,
+    and this file are unaffected: what is dropped is trademark use under
+    section 6, not attribution under section 4.

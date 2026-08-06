@@ -215,14 +215,11 @@ pnpm exec turbo build --filter=@liam-hq/schema --filter=@liam-hq/ui   # ← 이�
 1. ✅ **상표 확정 — 이름 `crowfoot`, 마크 `CrowfootLogoMark`** (위 "상표" 절)
 2. ✅ **`erdkit` → `crowfoot` 개명 sweep — 완료 (2026-08-06).** `erdkit` 0.4.3 을 내보내지
    않고 **`crowfoot` 0.1.0 으로 새로 시작**하기로 했다. 아래 "개명 sweep" 절 참조
-3. **앱 브랜딩 교체 ← 여기가 다음 작업.** 인벤토리대로. `AppBar` 의 `<h1>` 과 로고가
-   최우선(가장 눈에 띄고 가장 명확한 §6 위반 표면). `favicon.ico` 도 같이.
-   **출발점: `CrowfootLogoMark` 는 `0759f6e09` 로 만들어져 있고 아직 아무도 안 쓴다**
-   (`ui/src` 밖 참조 0건). 즉 교체 대상은 있고 교체할 물건도 이미 있다.
-   종료 조건은 위 "인수하며 새로 발견한 것 2" 참조 — `LiamLogoMark` 자체까지 사라져야 끝난다
-4. **링크 정리** — upstream 문서 링크는 두 갈래다:
-   - *포크에도 여전히 정확한 것*(파서 포맷 문서 등) → 남겨도 되지만 "upstream 문서" 라고
-     읽히게 라벨링. `cli/src/cli/urls.ts:4` 에 이미 그런 주석이 있다
+3. ✅ **앱 브랜딩 교체 — 완료 (2026-08-06).** 아래 "앱 브랜딩 교체" 절 참조.
+   `LiamLogoMark` 제거만 6번에 딸려 남았다
+4. ✅ **링크 정리 — 완료 (2026-08-06).** 3번과 같은 커밋에서 처리했다. 원칙은 그대로였다:
+   - *포크에도 여전히 정확한 것*(파서 포맷 문서) → 남기되 "upstream" 이라고 **라벨에 박았다**
+     (`Parser Docs (upstream)`, `Check out the upstream troubleshooting guide →`)
    - *제품 정체성을 참칭하는 것*(Homepage, GitHub, Release Notes, Discussions) → 교체 또는 제거
 5. ✅ **`assets.liambx.com` 핫링크 제거 — 완료.** 상표 결정과 무관해서 먼저 처리했다.
    **자체 호스팅이 아니라 기능 제거**를 골랐다. 근거 셋:
@@ -370,6 +367,78 @@ clone 해서 독립 검증했다: 트리 해시 로컬/원격 일치, upstream �
 
 ---
 
+## 브랜드 색 — 확정 (2026-08-06)
+
+**`#F59E0B` (앰버) 단색.** 본인이 3개 안 중에 고른 값이다.
+
+전임 에이전트가 임의로 넣었던 `#38BDF8`/`#818CF8`(sky→indigo)는 **폐기**했다. 그 색을 버린
+이유는 미승인이라서만이 아니라 **sky→indigo 그라디언트가 AI 생성물에서 가장 흔한 팔레트**라,
+그대로 두면 제품 색이 "생성물 기본값" 으로 굳기 때문이다.
+
+| 표면 | 적용 |
+|---|---|
+| `banner.ts` | 단색 `#F59E0B`. **그라디언트 자체를 없앴다** → `ink-gradient` 의존 제거(`package.json`·락파일) |
+| `cli/public/favicon.ico` | `#F59E0B` 라운드 사각 + 흰색 마크, 16/32/48px |
+
+> 초록 금지 제약은 그대로 유효하다 (위 "마크 제약"). 앰버는 Liam 그린과도, 흔한 AI 팔레트와도
+> 겹치지 않는다.
+
+### favicon 을 어떻게 만들었나
+
+변환 도구(`magick`·`rsvg-convert`)가 이 머신에 없어서 `sharp`(모노레포에 이미 있음)로 SVG →
+PNG 3종을 렌더하고 **ICO 컨테이너를 직접 조립**했다(헤더 6바이트 + 엔트리 16바이트×3 + PNG
+페이로드). PNG-in-ICO 는 현행 브라우저가 전부 읽는다.
+
+**생성 스크립트는 리포에 남기지 않았다** — 산출물이 `favicon.ico` 이고, 마크가 바뀌지 않는 한
+다시 돌릴 일이 없다. 다시 필요하면 `CrowfootLogoMark.tsx` 의 `rect`/`path` 를 그대로 SVG 로
+옮기고 `translate(2.6 2.4) scale(0.8)` 로 감싸면 된다(내용 bbox 가 x 0.5..23 · y 4..20 이라
+이 값이 24 그리드 정중앙에 놓는다).
+
+---
+
+## 앱 브랜딩 교체 — 완료 (2026-08-06, `d9e6adb`)
+
+작업 순서 3·4번. 인벤토리 9파일 중 `favicon.ico` 를 포함해 전부 처리했다.
+
+| 표면 | 결과 |
+|---|---|
+| `AppBar` | `<h1>Crowfoot</h1>`, `CrowfootLogoMark`, 로고 링크 → 리포 (툴팁 `Go to the repository`) |
+| `LeftPane` | 메뉴 **5개 → 3개**. `Go to Homepage` 는 리포 링크로 바뀌면서 `Go to GitHub` 와 **같은 URL 이 되어** 제거. `Community Forum` 도 제거 |
+| `GithubButton` · `ReleaseNoteButton` | → `Junjak-Personal/crowfoot`(+`/releases`) |
+| `HelpButton` | `Community Forum` 제거, 문서 항목은 `Parser Docs (upstream)` 으로 개명 |
+| `ParseErrorDisplay` | `Send a signal!` 블록 **삭제** — upstream discussions 로 이 포크의 파서 버그를 보내라는 안내였다. 쓰이지 않게 된 `.message3*` CSS 3규칙도 같이 제거 |
+| `ErrorDisplay.test.tsx` | `Send Signal` 단언을 **"어떤 링크도 upstream discussions 로 안 간다"** 는 단언으로 교체 (지우기만 하면 회귀 감지가 사라진다 — 5번과 같은 원칙) |
+| `cli/urls.ts` | `DbOrmDiscussionUrl`(upstream 스레드 364) 제거 → `DiscussionUrl`(우리 Issues)로 흡수 |
+| `initCommand` | "crowfoot 사용법은 여기" 라며 upstream 문서를 가리키던 문구 3곳을 upstream 문서라고 명시하도록 수정 |
+| `favicon.ico` | 위 "브랜드 색" 참조 |
+
+**§4(b) 헤더를 6파일에 새로 넣었다** (AppBar · GithubButton · ReleaseNoteButton · HelpButton ·
+ParseErrorDisplay · ErrorDisplay.test). 손대는 순간 고지 의무가 생기는 파일들이다. **86 → 92파일.**
+
+> `LiamLogoMark` 는 **아직 지우지 않았다.** 배포 패키지에서는 소비자가 0이 됐지만 `apps/app`
+> 이 6곳에서 아직 쓴다. 그 패키지는 6번에서 통째로 나가므로 **같이 지우는 게 맞다** — 지금
+> 지우면 루트 `pnpm lint` 만 깨진다.
+
+### 브라우저 스모크 (실측)
+
+빌드 산출물을 띄워 확인했다. 페이지의 **`<a>` 7개 전수**:
+
+```
+(로고)                  → github.com/Junjak-Personal/crowfoot
+(GitHub 버튼)           → github.com/Junjak-Personal/crowfoot
+(릴리즈 버튼)           → .../crowfoot/releases
+Release Notes           → .../crowfoot/releases
+Parser Docs (upstream)  → liambx.com/docs        ← 유일하게 남은 upstream 링크, 라벨로 명시
+Go to GitHub            → github.com/Junjak-Personal/crowfoot
+React Flow              → reactflow.dev          ← 서드파티 귀속, 무관
+```
+
+`liam-hq/liam` 링크 **0건**. `<h1>` 은 `Crowfoot`, 마크는 `<rect>`+`<path>` 둘 다 DOM 에 있고
+20px 에서 갈래 3개가 살아 있다(조립형 SVG 함정 해당 없음 — 실제 React 컴포넌트라 안전).
+favicon 은 브라우저가 `assets/favicon-*.ico` 를 **200 / 1890바이트**로 실제 로드하는 것까지 확인.
+
+---
+
 ## 패키지 정리 (작업 순서 6번의 남은 절반) — 착수 전 확인된 사실
 
 포크가 실제로 쓰는 건 `packages/{cli,erd-core,schema,ui}` 뿐이고, 후보는 이만큼이다:
@@ -387,7 +456,11 @@ frontend/internal-packages/ agent  configs  db  e2e  figma-to-css-variables
 > `configs`·`neverthrow` 같은 건 남는 패키지가 물고 있을 수 있다.
 
 **정리 후에는 반드시 §4 재검증**(작업 순서 7번) — `npm pack --dry-run` 으로 타르볼에
-`LICENSE`·`NOTICE` 가 여전히 들어가는지, 남긴 파일의 귀속 헤더(86파일)가 안 빠졌는지.
+`LICENSE`·`NOTICE` 가 여전히 들어가는지, 남긴 파일의 귀속 헤더(**92파일**)가 안 빠졌는지.
+
+**같이 처리할 것:** `LiamLogoMark`(본체·`logos/index.ts` 재export·`index.stories.tsx`)와
+`ui/src/components/CookieConsent`(소비자 0, `<h4>Liam ERD Cookie Consent</h4>`) — 둘 다
+`apps/app` 이 나가면 소비자가 0 이 된다.
 
 ---
 
@@ -461,9 +534,8 @@ cd erd-out && python3 -m http.server 5199 --bind 127.0.0.1
   변호사가 아니며 위 내용은 라이선스 본문(§4·§6)을 읽은 결과다
 - **어느 패키지를 버릴지 미결.** 후보 목록과 착수 전 주의사항은 위 "패키지 정리" 절로 옮겼다
 
-- 🔴 **배너 그라디언트 색이 승인 안 된 임시값이다.** `banner.ts:10` 의 `#38BDF8`/`#818CF8` 는
-  **에이전트가 고른 값**이다. 원래 있던 `#1DED83` 이 **Liam 브랜드 그린**이라 그대로 둘 수
-  없어 바꾼 것이고(그 판단 자체는 유효), 무슨 색으로 갈지는 본인 승인 대기 중
+- ✅ ~~**배너 그라디언트 색이 승인 안 된 임시값이다.**~~ **해소됨 (2026-08-06)** — 아래
+  "브랜드 색" 절 참조. `#38BDF8`/`#818CF8` 는 폐기됐다
 
 - **`v0.4.2` 태그가 낡았다.** `82f2db018` 을 가리키는데 master 는 그보다 앞서 있다.
   다만 개명하며 **버전을 0.1.0 으로 리셋**했으므로 이 태그는 `erdkit` 시절 유물이다.
