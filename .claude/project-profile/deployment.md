@@ -32,10 +32,27 @@ The fork's delivery is **npm**, tag-triggered, via Trusted Publishing. Nothing e
 - Build uses `--force` (see the stale-cache trap in `testing.md`).
 - `concurrency` with `cancel-in-progress: false` — never cancel a half-finished publish.
 
-**Owner-only, never delegated:** register the npm Trusted Publisher
-(`crowfoot` / GitHub Actions / `Junjak-Personal` / `crowfoot` / `release-crowfoot.yml`), and
-`npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"`. The old
-`Junjak-Personal/erdkit` repo is **kept archived** as the provenance record — do not delete it.
+### 🔴 First release — nothing has shipped yet
+
+Measured 2026-08-06: `npm view crowfoot` → **404**, `git tag -l` → **empty**, so
+`release-crowfoot.yml` has **never run**. The name is unclaimed. Only `erdkit` (≤ `0.4.1`) is on npm.
+
+**The open question, and it must be answered before anything else:** npm Trusted Publishing is
+configured *per package*, and this package does not exist on the registry. Either npm now permits
+pre-registering a trusted publisher for an unpublished name, or the first `0.1.0` has to go out by
+another route (a granular token, or `npm publish` by hand) and trusted publishing is configured
+afterwards. **UNVERIFIED — check npm's current docs rather than assuming; this changed recently.**
+
+Once that is settled, the mechanical part is small because the workflow already exists:
+1. Owner registers the Trusted Publisher: `crowfoot` / GitHub Actions / `Junjak-Personal` / `crowfoot`
+   / `release-crowfoot.yml`.
+2. `git tag v0.1.0 && git push origin v0.1.0` — the workflow checks the tag against
+   `package.json` version, builds with `--force`, and publishes via OIDC.
+3. Verify: `npm view crowfoot version` and `npx crowfoot@0.1.0 erd build …` from a clean directory.
+4. `npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"`.
+
+**Owner-only, never delegated:** every step above. The old `Junjak-Personal/erdkit` repo is **kept
+archived** as the provenance record — do not delete it.
 
 - Local gate: **lefthook `pre-commit` runs `pnpm lint`** with `stage_fixed: true`.
   ⚠️ On Windows the hook needs a **full** `pnpm install`. Watch `core.autocrlf`.

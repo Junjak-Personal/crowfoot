@@ -10,7 +10,8 @@
 A **fork of [Liam ERD](https://github.com/liam-hq/liam)** (ROUTE06, Inc., Apache-2.0), taken from
 upstream `92156eac5` (2026-06-18) and **not tracking upstream**. It adds six things to the ERD viewer:
 persisted table positions, canvas memos, colour coding, table grouping, an explicit `?edit=1` edit
-mode, and MySQL DDL export. It ships to npm as **`crowfoot`**.
+mode, and MySQL DDL export. It is packaged for npm as **`crowfoot`** — but see below: it is **not
+published yet**.
 
 The repo is standalone — `Junjak-Personal/crowfoot`, public, `isFork: false`, default branch `master`.
 History was rewritten 2026-08-06: upstream's 11,849 commits are squashed into one root (`f4dd6c4`) with
@@ -107,6 +108,9 @@ See `_docs/index.md` for current status. `_docs/active/` holds exactly one docum
   with the upstream packages. Tracked with six other items in
   `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md`; item 3's cost estimate is now
   higher than written.
+- 🔴 **`crowfoot` is NOT on npm.** `npm view crowfoot` → 404, no `v*` tags exist, the release workflow
+  has never run. Only the old name `erdkit` (≤ 0.4.1) is published. The `crowfoot` name is unclaimed.
+  Automating the release is the next task — see `deployment.md` → "First release".
 - **Owner-only, never delegated**: npm Trusted Publisher registration, `npm deprecate erdkit`, keeping
   the `erdkit` repo archived.
 - **Registered, not actioned** (from the 2026-08-06 audit): move `pnpm.overrides` before a pnpm 11
