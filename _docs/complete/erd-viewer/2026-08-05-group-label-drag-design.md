@@ -1,11 +1,11 @@
 ---
 title: 그룹 라벨 드래그 — 라벨을 끌어 그룹 전체 이동
-status: planning
+status: complete
 topic: erd-viewer
 kind: design
 scope: frontend
 created: 2026-08-05
-updated: 2026-08-05
+updated: 2026-08-06
 related:
   - _docs/complete/erd-viewer/2026-08-04-table-grouping.md
   - _docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md

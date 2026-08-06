@@ -99,14 +99,15 @@ Tracked as plans in `_docs/` — see `_docs/index.md` for current status.
   🔴 **This profile is stale as of `444f80d`** — package lists, the `frontend/apps/*` workspace glob,
   `.env.template`, `lint:stylelint`, the Sentry turbo env and the Playwright section all describe a
   tree that no longer exists. Re-run `/team-init`.
-- **carbon delivery automation** (`_docs/active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md`)
-  — blocked on ECR permissions.
 - **No E2E coverage of any fork feature**; unit tests only. Tracked with six other items in
-  `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md`.
+  `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md`. Note the Playwright harness
+  (`@liam-hq/e2e`) was **deleted** in `444f80d` — that work now starts from zero.
 - **Owner-only, never delegated**: npm Trusted Publisher registration, `npm deprecate erdkit`,
   keeping the `erdkit` repo archived.
-- **`turbo.json:33` has a dead `@liam-hq/cli#dev` key** — flagged in `structure.md`, one-line fix,
-  left for the owner to schedule.
+- ✅ ~~`turbo.json` dead `@liam-hq/cli#dev` key~~ — fixed in `444f80d` (`crowfoot#dev`).
+
+> The carbon ERD delivery plan was removed on 2026-08-06: carbon **consumes** this CLI, it is not
+> something this repository delivers. That work belongs in carbon's own repo.
 
 ## Agent Loading Guide
 - **All agents**: read this `index.md` (REQUIRED)

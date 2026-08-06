@@ -1,14 +1,13 @@
 ---
 title: CLI 개인 계정 이전 + npm 공개 배포
-status: planning
+status: complete
 topic: cli-distribution
 kind: plan
 scope: cli
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-06
 related:
   - _docs/complete/erd-viewer/2026-08-03-erd-viewer-impl.md
-  - _docs/active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md
 ---
 
 # CLI 개인 계정 이전 + npm 공개 배포

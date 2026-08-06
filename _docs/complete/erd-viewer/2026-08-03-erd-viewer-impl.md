@@ -119,6 +119,6 @@ ac5b392fa  feat(erd-core): persist table positions across reloads
 carbon stage ERD(86 테이블 · FK 128)가 이 코드로 빌드돼 라이브 동작 중.
 
 Apache-2.0 준수 상태: §4(a) LICENSE 동반 ✅ · §4(b) 변경 파일 헤더 주석 ✅ (수정 18 / 신규 20).
-**§4(d) NOTICE 와 §6 상표는 npm 배포 경로에서만 미충족** — [cli-distribution 계획](../../active/planning/2026-08-03/2026-08-03-cli-distribution.md) 참고.
+**§4(d) NOTICE 와 §6 상표는 npm 배포 경로에서만 미충족** — [cli-distribution 계획](../cli-distribution/2026-08-03-cli-distribution.md) 참고.
 
 코드 컨벤션·스택·함정은 `.claude/project-profile/` 이 SSOT.

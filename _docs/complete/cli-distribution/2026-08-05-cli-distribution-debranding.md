@@ -7,7 +7,7 @@ scope: fullstack
 created: 2026-08-05
 updated: 2026-08-06
 related:
-  - _docs/active/planning/2026-08-03/2026-08-03-cli-distribution.md
+  - _docs/complete/cli-distribution/2026-08-03-cli-distribution.md
   - _docs/complete/erd-viewer/2026-08-04-table-grouping.md
   - _docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md
 ---
@@ -732,11 +732,11 @@ cd erd-out && python3 -m http.server 5199 --bind 127.0.0.1
   다만 개명하며 **버전을 0.1.0 으로 리셋**했으므로 이 태그는 `erdkit` 시절 유물이다.
   정리(삭제) 여부는 본인 판단
 
-- **낡은 문서 2건 — 이 문서 밖이라 손대지 않았다.**
-  - `_docs/active/planning/2026-08-03/2026-08-03-cli-distribution.md` 가 "`npm publish` 만
-    남음" 이라고 하는데 실제로는 배포까지 끝났다. `complete/` 로 옮길지 미결
-  - `_docs/handoff/2026-08-03-erd-viewer-handoff.md` 도 낡았다. 다른 스트림(`erd-viewer`)
-    이라 지시 대기
+- ✅ ~~**낡은 문서 2건**~~ — **2026-08-06 문서 스윕에서 해소.**
+  `2026-08-03-cli-distribution.md` 는 `complete/cli-distribution/` 으로 이동(배포는 이미
+  끝나 있었다). `2026-08-03-erd-viewer-handoff.md` 는 삭제 — 리포명·브랜치·패키지명·버전·
+  로컬 경로가 전부 바뀌었고 인용 커밋은 히스토리 재작성으로 소멸해, 라우팅 대상이 하나도
+  안 남아 있었다
 
 ---
 
@@ -755,7 +755,7 @@ npm 배포는 **Trusted Publishing(OIDC)** 으로 가고(`e094438f2` 로 커밋�
 
 ## Pointers
 
-- `_docs/active/planning/2026-08-03/2026-08-03-cli-distribution.md` — 개명·Apache-2.0 준수·
+- `_docs/complete/cli-distribution/2026-08-03-cli-distribution.md` — 개명·Apache-2.0 준수·
   npm 배포의 원래 계획. §4 의무를 어떻게 충족했는지가 여기 있다 (status 가 낡음 — 위 참조)
 - `_docs/complete/erd-viewer/2026-08-04-table-grouping.md` — 그룹화 구현 기록. "왜 이렇게
   만들었나" 절이 특히 중요하다. 함부로 "정리" 하면 깨지는 것들의 목록이다
