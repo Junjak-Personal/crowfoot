@@ -108,11 +108,9 @@ See `_docs/index.md` for current status. `_docs/active/` holds exactly one docum
   with the upstream packages. Tracked with six other items in
   `_docs/active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md`; item 3's cost estimate is now
   higher than written.
-- 🔴 **`crowfoot` is NOT on npm.** `npm view crowfoot` → 404, no `v*` tags exist, the release workflow
-  has never run. Only the old name `erdkit` (≤ 0.4.1) is published. The `crowfoot` name is unclaimed.
-  Automating the release is the next task — see `deployment.md` → "First release".
-- **Owner-only, never delegated**: npm Trusted Publisher registration, `npm deprecate erdkit`, keeping
-  the `erdkit` repo archived.
+- ✅ **Published.** `crowfoot@0.1.0` shipped 2026-08-06, Trusted Publisher registered, `erdkit`
+  deprecated. Releases are now tag-driven: `git tag v<x> && git push origin v<x>`.
+- **Owner-only, never delegated**: pushing a release tag, and keeping the `erdkit` repo archived.
 - **Registered, not actioned** (from the 2026-08-06 audit): move `pnpm.overrides` before a pnpm 11
   bump · `.npmrc` is tracked but not gitignored for credentials · `route06/actions` reusable-workflow
   dependency · `setEnv.ts` `envName` never resolves to `production` on the detached release checkout ·

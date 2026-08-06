@@ -15,7 +15,7 @@
   },
   "license": "Apache-2.0",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "publishConfig": {
     "access": "public"
@@ -33,7 +33,7 @@
     "neverthrow": "8.2.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "valibot": "1.1.0",
+    "valibot": "1.4.2",
     "yoctocolors": "2.1.2"
   },
   "devDependencies": {

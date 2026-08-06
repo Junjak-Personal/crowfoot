@@ -117,23 +117,21 @@ pnpm exec turbo build --filter=@crowfoot/schema --filter=@crowfoot/ui
 - **Build**: `pnpm exec turbo build --filter=crowfoot --force` → **6 tasks**.
   Artifact: `dist-cli/bin/cli.js` + `dist-cli/html/` (main JS ~2.39 MB, `dist-cli` ~7.6 MB).
 
-## Publishing — 🔴 NOT PUBLISHED YET
+## Publishing — LIVE
 
-**`crowfoot` does not exist on npm.** Verified 2026-08-06: `npm view crowfoot` → **404**, and there
-are **no `v*` tags** in the repo. The name is unclaimed.
+**`crowfoot@0.1.0` published 2026-08-06.** The first release went out by hand, because npm Trusted
+Publishing is configured *per package* and [requires the package to already
+exist](https://docs.npmjs.com/cli/v11/commands/npm-trust/) — there is no way to pre-register a
+publisher for an unclaimed name. The Trusted Publisher was registered immediately after, so
+**every subsequent release is tag-driven** (`git tag v<x> && git push origin v<x>`) through
+`.github/workflows/release-crowfoot.yml` via OIDC, with no token anywhere.
 
-What *was* published is the old name: **`erdkit`** (up to `0.4.1`). The rename reset the version to
-`0.1.0` and nothing has been pushed to the registry since. Any earlier document saying the CLI "ships
-to npm" is describing `erdkit`, or describing intent — do not read it as `crowfoot` being live.
+The old name **`erdkit`** (≤ `0.4.1`) is deprecated on npm, pointing at `crowfoot`.
 
-Packaging itself is ready and verified: `npm pack --dry-run` → **13 files including LICENSE and
-NOTICE** (§4(a)/(d)); `scripts/pack-cli.js` strips `workspace:*` on `prepack` and restores on
-`postpack` — **never remove that step**. The manifest declares no `@radix-ui` at all, since `ui` is a
-workspace dependency that rollup/vite inline.
-
-Release automation is written and committed: tag-triggered (`v*`) via
-`.github/workflows/release-crowfoot.yml` using npm **Trusted Publishing (OIDC)** — no token anywhere.
-It has **never run**. See `deployment.md` for what still has to happen first.
+Packaging: `npm pack --dry-run` → **15 files**, with `LICENSE` and `NOTICE` both at the package root
+(§4(a)/(d) for the package) **and** inside `dist-cli/html/` (so `erd build` output carries them — see
+`deployment.md`). `scripts/pack-cli.js` strips `workspace:*` on `prepack` and restores on `postpack`
+— **never remove that step**. The manifest declares no `@radix-ui`; `@crowfoot/ui` is inlined.
 
 > The root `release` script (`turbo build --filter=crowfoot && pnpm publish`) is a manual fallback and
 > **omits `--force`** — see the stale-cache trap in `testing.md`. The workflow does pin `--force`.
