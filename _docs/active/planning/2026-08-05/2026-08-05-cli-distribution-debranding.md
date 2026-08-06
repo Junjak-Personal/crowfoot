@@ -165,8 +165,8 @@ path  M11.5 12H15                          관계선
    `suggestion?.type === 'command'` 분기, `.module.css` 의 `.image`/`.video` 규칙(+`.d.ts` 재생성).
    `CommandPaletteContent.test.tsx` 의 `command preview` 케이스는 **프리뷰 칸이 비는지 단언하는
    테스트로 교체**했다 — 지우기만 하면 회귀 감지가 사라진다.
-6. **별도 리포 분리** — 히스토리 유지한 채 새 리포로 push (귀속이 커밋 로그에 남아 §4(c) 에
-   유리). 그 다음 미사용 upstream 패키지 정리
+6. **별도 리포 분리** — 히스토리 재작성 완료(아래 "리포 분리" 절). 남은 건 새 리포 push 와
+   미사용 upstream 패키지 정리
 7. **분리 후 §4 재검증** — 정리 과정에서 `LICENSE`/`NOTICE`/파일 헤더가 빠지지 않았는지.
    `npm pack --dry-run` 으로 타르볼에 `LICENSE`·`NOTICE` 가 여전히 들어가는지 확인
 8. **README 귀속 한 줄** — "Based on Liam ERD by ROUTE06, Inc., Apache-2.0"
@@ -226,6 +226,64 @@ path  M11.5 12H15                          관계선
 # 3) 옛 패키지 deprecate
 npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"
 ```
+
+---
+
+## 리포 분리 — 히스토리 재작성 (2026-08-06)
+
+### 먼저 정정: 히스토리 보존은 §4 의무가 아니다
+
+인계 문서에서 물려받은 "히스토리 유지한 채 push (귀속이 커밋 로그에 남아 §4(c) 에 유리)" 는
+**틀린 서술이었다.** §4 는 조건이 정확히 넷이고 버전 관리 히스토리는 어디에도 없다.
+
+| 조항 | 요구 | 어디서 충족되나 |
+|---|---|---|
+| (a) | License 사본 | 루트 `LICENSE` + npm 타르볼 |
+| (b) | 수정 파일에 변경 고지 | **파일 상단 헤더** — 커밋 메타데이터가 아니다 |
+| (c) | Source form 의 notice 보존 | 아래 참조 |
+| (d) | NOTICE 사본 | 루트 `NOTICE` + 타르볼 |
+
+(c) 의 대상을 실측했다 — **upstream 소스에 파일 단위 저작권 헤더가 0건이다**
+(`grep -rl "Copyright" --include="*.ts" --include="*.tsx" frontend/packages` → 없음).
+보존 대상은 루트 `LICENSE` 뿐이고 그건 그대로 있다. 참고로 **upstream 92156eac5 에는 `NOTICE`
+파일이 없다** — 즉 §4(d) 는 upstream Work 에 애초에 걸리지 않고, 우리 `NOTICE` 는 자발적
+귀속 기록이다.
+
+출처 앵커도 로컬 히스토리에 의존하지 않는다. `NOTICE:11` 이 `pinned to upstream commit
+92156eac5` 를 못박고 있고 그 커밋은 공개된 `liam-hq/liam` 에 실재한다.
+
+### 결과 — `crowfoot-history` 브랜치
+
+```
+11,849 커밋  →  37 커밋
+```
+
+분기점 `92156eac5` 기준 포크 커밋은 36개(0.3%)뿐이었고 나머지 99.7% 가 upstream 것이었다.
+upstream 트리를 **orphan 루트 커밋 1개**로 압축하고 그 위에 포크 36개를 replay 했다. 커밋
+메시지·blame 이 살아 있어 "왜 이렇게 만들었나" 가 보존된다.
+
+**판정 기준은 하나였다 — 최종 트리가 `master` 와 동일한가.**
+
+```
+master           68c9cf2e9819647e847556ec1577b1381ae23091
+crowfoot-history 68c9cf2e9819647e847556ec1577b1381ae23091   ← 동일
+```
+
+`erd-core` 302 passed 로 재확인.
+
+> 🔴 **`--rebase-merges` 없이는 안 된다.** 평탄화하면 머지 양쪽이 각각 0.4.1 을 올린 커밋
+> (`791e9f9de` / `642790f91`)이 선형으로 재생되며 충돌한다. 토폴로지를 보존해야 하고, 그래도
+> 머지 커밋 자체에서 `cli/package.json` 충돌이 한 번 난다 —
+> **원본 머지가 기록한 결과(`git show 43ebc7555:<path>`)를 그대로 쓰는 것이 정답**이다.
+> 손으로 고르면 원본과 달라진다.
+
+### 남은 수동 작업 (본인)
+
+1. 새 리포 `Junjak-Personal/crowfoot` 생성 → `crowfoot-history` 를 `master` 로 push
+2. **기존 `Junjak-Personal/erdkit` 은 지우지 말고 아카이브로 유지** — 원본 히스토리가 거기
+   남아 있어야 나중에 출처 다툼이 생겨도 근거가 있다. 공짜 보험이다
+3. Trusted Publisher 등록 (`crowfoot` / `release-crowfoot.yml`)
+4. `npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"`
 
 ---
 
