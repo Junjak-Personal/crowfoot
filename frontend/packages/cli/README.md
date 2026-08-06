@@ -16,13 +16,26 @@ npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 ```
 
 `--format` accepts `postgres`, `schemarb`, `prisma`, `drizzle`, `tbls`, `liam`.
+Use a **relative** `--input` path; an absolute one is parsed as a URL and fails.
+
 The output directory is a static SPA — serve it over HTTP, `file://` will not work:
 
 ```bash
 npx serve dist/
 ```
 
-Parser and format details are documented upstream at https://liambx.com/docs/cli.
+All asset paths are relative, so it can be mounted at a sub-path (`/erd/`) without
+rebuilding. `LICENSE` and `NOTICE` are written alongside it: the generated site
+contains the compiled viewer, so the licence travels with it.
+
+Full documentation — every option, the sidecar file schemas, deployment and
+troubleshooting — is in the repository:
+**[usage guide](https://github.com/Junjak-Personal/crowfoot/blob/master/docs/usage_en.md)**
+(also [한국어](https://github.com/Junjak-Personal/crowfoot/blob/master/docs/usage.md)).
+
+The parser is unchanged from upstream, so its
+[format documentation](https://liambx.com/docs/parser/supported-formats) still
+applies — that link is Liam ERD's, not this project's.
 
 ### Committing an arranged layout
 
@@ -48,8 +61,14 @@ pnpm run test
 node ./dist-cli/bin/cli.js erd build --input ./fixtures/input.schema.rb --format schemarb
 ```
 
-`pnpm dev` builds the CLI, runs it against `fixtures/input.schema.rb`, copies the
-generated `schema.json` into `public/` and starts the Vite dev server.
+`pnpm dev` builds the CLI, runs it against a **remote** schema (mastodon's
+`schema.rb`, fetched over the network — not `fixtures/`), copies the generated
+`schema.json` into `public/` and starts the Vite dev server. Point
+`command:build` at `./fixtures/input.schema.rb` if you want it offline.
+
+⚠️ `turbo build --filter=crowfoot` needs `--force` after an `erd-core`-only
+change: `erd-core` is consumed as TypeScript source, so it is not part of this
+package's cache key and a stale bundle comes back out of cache otherwise.
 
 ## Project File Structure
 
