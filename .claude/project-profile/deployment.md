@@ -85,10 +85,36 @@ CLI and deploy their own output; that delivery lives in their repo, not here.
 ## Build Output
 - Command: `pnpm build` (turbo) → `rollup -c` (CLI bin) + `vite build` (viewer SPA)
 - Output: `dist-cli/bin/cli.js` (erd-core + schema inlined) and `dist-cli/html/`
-  — main JS ~2.39 MB, `dist-cli` ~7.6 MB total
+  — main JS ~2.4 MB, `dist-cli` ~7.6 MB total
 - Type: **SPA, fully static, relative paths** — mountable at any subpath without a rebuild
-- Published tarball: **13 files**, including `LICENSE` and `NOTICE`. Declares **no `@radix-ui`** —
-  `@crowfoot/ui` is a workspace dependency that gets inlined.
+- Published tarball: **15 files**, with `LICENSE` and `NOTICE` at the package root *and* inside
+  `dist-cli/html/`. Declares **no `@radix-ui`** — `@crowfoot/ui` is a workspace dep that gets inlined.
+
+### 🔴 `erd build` output is a redistributable derivative work
+
+`erd build` `cpSync`s `dist-cli/html/` verbatim into the user's `--output-dir`, so the generated site
+is **the compiled fork** — measured: `assets/index-*.js` is ~2.3 MB containing erd-core, schema and ui.
+It is not "just HTML/CSS/JSON".
+
+Two consequences that are easy to miss:
+- Minification **strips the per-file §4(b) notices**. Grep the bundle for `Liam` and you get zero hits.
+- Apache-2.0 **§4(a) and §4(d) attach to any medium, Source *or* Object form** — unlike §4(c), which is
+  Source-only. So a served site needs the License and NOTICE alongside it.
+
+Since 2026-08-06 `vite.config.ts` copies both into `dist-cli/html/` at build time (a `closeBundle`
+plugin that **throws** if either source file is missing), so every `erd build` output carries them with
+no runtime logic. `release-crowfoot.yml` re-checks it after the build, before publishing.
+
+Verify by hand:
+```bash
+node <repo>/frontend/packages/cli/dist-cli/bin/cli.js erd build --input ./schema.sql --format postgres --output-dir ./out
+ls out/            # must list LICENSE and NOTICE next to index.html
+```
+
+> Whether an internal-only deployment (e.g. S3 + CloudFront behind a company domain) counts as
+> "distribution" is a judgement for legal, not for this file — intra-entity use is commonly held not to
+> be. Shipping the two files removes the need to have that argument at all, which is why it is done
+> unconditionally.
 
 ## 🟠 Repository hygiene findings (from the 2026-08-06 security audit)
 - **`.npmrc` is tracked and not gitignored for credential lines.** A `pnpm login` at repo root would

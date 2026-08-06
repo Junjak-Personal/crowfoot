@@ -63,6 +63,19 @@ jobs:
       # restore a stale crowfoot bundle from cache and publish the old code.
       - run: pnpm exec turbo build --filter=crowfoot --force
 
+      # `erd build` copies dist-cli/html verbatim into the user's output, which
+      # then gets served as a site. Apache-2.0 §4(a)/§4(d) attach to that
+      # distribution too, and minification has already stripped the per-file
+      # §4(b) notices from the bundle — so if these two are missing, the
+      # generated site carries no attribution at all. Cheap to check, silent
+      # when it breaks.
+      - name: Verify the generated site will carry its attribution
+        run: |
+          for f in LICENSE NOTICE; do
+            path="frontend/packages/cli/dist-cli/html/$f"
+            test -s "$path" || { echo "::error::$path is missing or empty — erd build output would ship without attribution"; exit 1; }
+          done
+
       # No --provenance flag: trusted publishing generates the attestation on
       # its own, and no token env either — a token would take precedence over
       # the OIDC exchange. A classic Publish token got us EOTP here, because

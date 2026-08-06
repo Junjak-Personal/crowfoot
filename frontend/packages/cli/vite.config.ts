@@ -1,11 +1,20 @@
-import { rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { copyFileSync, existsSync, rmSync, writeFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 import { removeImportWasi, setEnvPlugin } from './vite-plugins/index.js'
 
 const outDir = 'dist-cli/html'
+
+// Apache-2.0 §4(a) and §4(d) attach to distribution in ANY medium, Source or
+// Object form. `erd build` copies this whole directory into the user's output,
+// which is then served as a site — so the attribution has to live here, not
+// only in the npm tarball. The bundle itself cannot carry it: minification
+// strips the per-file §4(b) notices, leaving an artifact with no attribution at
+// all.
+const repoRoot = resolve(import.meta.dirname, '..', '..', '..')
+const licenseFiles = ['LICENSE', 'NOTICE']
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -45,6 +54,22 @@ export default defineConfig({
               join(outDir, 'serve.json'),
               JSON.stringify(serveConfig, null, 2),
             )
+          },
+        },
+        {
+          // Fails the build rather than emitting a site with no attribution —
+          // a silently non-compliant artifact is the outcome worth preventing.
+          name: 'copy-license-files',
+          closeBundle() {
+            for (const file of licenseFiles) {
+              const source = join(repoRoot, file)
+              if (!existsSync(source)) {
+                throw new Error(
+                  `${file} not found at ${source}. \`erd build\` output must carry it (Apache-2.0 §4).`,
+                )
+              }
+              copyFileSync(source, join(outDir, file))
+            }
           },
         },
       ],
