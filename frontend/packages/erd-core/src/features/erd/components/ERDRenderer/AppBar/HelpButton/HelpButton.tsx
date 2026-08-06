@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import {
   BookText,
   CircleHelp,
@@ -6,7 +8,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRoot,
   DropdownMenuTrigger,
-  MessagesSquare,
   TooltipContent,
   TooltipProvider,
   TooltipRoot,
@@ -47,21 +48,15 @@ export const HelpButton = ({ ref }: Props) => {
           className={styles.menuContent}
         >
           <ReleaseVersion />
+          {/* Upstream's docs — the parser and schema formats are unchanged in
+              this fork, so they still apply. Labelled so it does not read as
+              this product's own documentation. */}
           <DropdownMenuItem
             size="sm"
             leftIcon={<BookText />}
             onSelect={handleSelect('https://liambx.com/docs')}
           >
-            Documentation
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            size="sm"
-            leftIcon={<MessagesSquare />}
-            onSelect={handleSelect(
-              'https://github.com/liam-hq/liam/discussions',
-            )}
-          >
-            Community Forum
+            Parser Docs (upstream)
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenuPortal>

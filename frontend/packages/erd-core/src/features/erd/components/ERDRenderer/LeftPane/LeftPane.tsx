@@ -5,9 +5,7 @@ import {
   Eye,
   EyeOff,
   GithubLogo,
-  LiamLogoMark,
   Megaphone,
-  MessagesSquare,
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -48,35 +46,24 @@ export const LeftPane = () => {
     (): MenuItemLinkProps[] => [
       {
         label: 'Release Notes',
-        href: 'https://github.com/liam-hq/liam/releases',
+        href: 'https://github.com/Junjak-Personal/crowfoot/releases',
         noreferrer: true,
         target: '_blank',
         icon: <Megaphone className={styles.icon} />,
       },
+      // Upstream's docs, not ours — the parser and schema formats are unchanged
+      // in this fork, so they are still correct. Labelled so it does not read as
+      // this product's own documentation.
       {
-        label: 'Documentation',
+        label: 'Parser Docs (upstream)',
         href: 'https://liambx.com/docs',
         noreferrer: version.displayedOn === 'cli',
         target: '_blank',
         icon: <BookText className={styles.icon} />,
       },
       {
-        label: 'Community Forum',
-        href: 'https://github.com/liam-hq/liam/discussions',
-        noreferrer: true,
-        target: '_blank',
-        icon: <MessagesSquare className={styles.icon} />,
-      },
-      {
-        label: 'Go to Homepage',
-        href: 'https://liambx.com/',
-        noreferrer: version.displayedOn === 'cli',
-        target: '_blank',
-        icon: <LiamLogoMark className={styles.icon} />,
-      },
-      {
         label: 'Go to GitHub',
-        href: 'https://github.com/liam-hq/liam',
+        href: 'https://github.com/Junjak-Personal/crowfoot',
         noreferrer: true,
         target: '_blank',
         icon: <GithubLogo className={styles.icon} />,

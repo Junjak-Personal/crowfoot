@@ -7,12 +7,7 @@ import { Command } from 'commander'
 import inquirer from 'inquirer'
 import * as yocto from 'yoctocolors'
 import { generateBanner } from '../banner.js'
-import {
-  DbOrmDiscussionUrl,
-  DiscussionUrl,
-  DocsUrl,
-  RepositoryUrl,
-} from '../urls.js'
+import { DiscussionUrl, DocsUrl, RepositoryUrl } from '../urls.js'
 
 const initCommand = new Command('init').description(
   'guide you interactively through the setup',
@@ -154,11 +149,11 @@ To use tbls with crowfoot:
 
 ${yocto.blueBright('   $ tbls out -t json -o schema.json')}
 
-For more details about using tbls with crowfoot, see:
+For the tbls format itself, see upstream Liam ERD's docs:
 ${yocto.blueBright(`${DocsUrl}/parser/supported-formats/tbls`)}
 
 Want direct support without using tbls? Let us know at:
-${yocto.blueBright(DbOrmDiscussionUrl)}
+${yocto.blueBright(DiscussionUrl)}
 `)
   return 'schema.json'
 }
@@ -196,9 +191,9 @@ const displayUnsupportedMessage = () => {
   console.info(`
 💔 ${yocto.yellowBright("For other DBs or ORMs, Sorry we don't support them yet")} 💔
 
-Visit ${yocto.yellowBright(DbOrmDiscussionUrl)} to suggest support for your database or ORM!
+Visit ${yocto.yellowBright(DiscussionUrl)} to suggest support for your database or ORM!
 
-For more details about crowfoot usage and advanced configurations, check out:
+The schema formats are unchanged from upstream Liam ERD, so its docs still apply:
 ${yocto.blueBright(DocsUrl)}
 `)
   exit(0)
@@ -392,7 +387,7 @@ initCommand.action(async () => {
 
   // Show docs link
   console.info(`
-For more details about crowfoot usage and advanced configurations, check out:
+The schema formats are unchanged from upstream Liam ERD, so its docs still apply:
 ${yocto.blueBright(DocsUrl)}
 `)
 

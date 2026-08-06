@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ErrorDisplay } from './ErrorDisplay'
@@ -39,7 +41,7 @@ describe('network error', () => {
 })
 
 describe('non-network error', () => {
-  it('displays the error message with reporting links', () => {
+  it('links to the upstream troubleshooting guide, labelled as upstream', () => {
     const { container } = render(<ErrorDisplay errors={[otherError]} />)
 
     expect(container).toHaveTextContent(
@@ -47,14 +49,22 @@ describe('non-network error', () => {
     )
     expect(
       screen.getByRole('link', {
-        name: 'Check out the troubleshooting guide →',
+        name: 'Check out the upstream troubleshooting guide →',
       }),
     ).toHaveAttribute('href', 'https://liambx.com/docs/parser/troubleshooting')
-    expect(
-      screen.getByRole('link', {
-        name: 'Send Signal →',
-      }),
-    ).toHaveAttribute('href', 'https://github.com/liam-hq/liam/discussions')
+  })
+
+  // The "Send a signal" callout pointed at upstream's discussions, which is the
+  // wrong place to report a bug in this fork. Asserted absent so it cannot come
+  // back unnoticed.
+  it('does not send the user to upstream discussions', () => {
+    render(<ErrorDisplay errors={[otherError]} />)
+
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.getAttribute('href')).not.toContain(
+        'liam-hq/liam/discussions',
+      )
+    }
   })
 })
 

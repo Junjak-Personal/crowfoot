@@ -1,5 +1,7 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import {
-  LiamLogoMark,
+  CrowfootLogoMark,
   TooltipContent,
   TooltipPortal,
   TooltipProvider,
@@ -27,22 +29,24 @@ export const AppBar: FC = () => {
           <TooltipRoot>
             <TooltipTrigger asChild>
               <a
-                href="https://liambx.com"
+                href="https://github.com/Junjak-Personal/crowfoot"
                 target="_blank"
                 rel="noreferrer"
                 className={styles.iconWrapper}
               >
-                <LiamLogoMark className={styles.logo} />
+                <CrowfootLogoMark className={styles.logo} />
               </a>
             </TooltipTrigger>
             <TooltipPortal>
-              <TooltipContent sideOffset={4}>Go to Home page</TooltipContent>
+              <TooltipContent sideOffset={4}>
+                Go to the repository
+              </TooltipContent>
             </TooltipPortal>
           </TooltipRoot>
         </TooltipProvider>
       </div>
 
-      <h1 className={styles.title}>Liam ERD</h1>
+      <h1 className={styles.title}>Crowfoot</h1>
 
       <div className={styles.rightSide}>
         <div className={styles.iconButtonGroup}>

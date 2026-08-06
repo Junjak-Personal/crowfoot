@@ -1,3 +1,5 @@
+// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
+// See the NOTICE file at the repository root for what changed.
 import type { FC } from 'react'
 import styles from './ParseErrorDisplay.module.css'
 
@@ -55,32 +57,15 @@ export const ParseErrorDisplay: FC<Props> = ({ errors }) => {
             unrecognized statements will just be skipped.
           </p>
         </div>
+        {/* Upstream's guide. This fork does not change the parser, so it is
+            still the right place to look. */}
         <a
           href="https://liambx.com/docs/parser/troubleshooting"
           target="_blank"
           className={styles.callout}
           rel="noreferrer"
         >
-          Check out the troubleshooting guide →
-        </a>
-      </div>
-
-      <div className={styles.message3}>
-        <div className={styles.message3Title}>🌟 Send a signal!</div>
-        <div className={styles.message3Sentence}>
-          <p>
-            Your report will help me and the team refine our SQL engines to
-            handle even the most out-of-this-world syntax.
-          </p>
-          <p>Thanks for helping us explore the SQL galaxy together! </p>
-        </div>
-        <a
-          href="https://github.com/liam-hq/liam/discussions"
-          target="_blank"
-          className={styles.callout}
-          rel="noreferrer"
-        >
-          Send Signal →
+          Check out the upstream troubleshooting guide →
         </a>
       </div>
     </div>

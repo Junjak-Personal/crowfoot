@@ -8,7 +8,7 @@ export const TroubleshootingUrl =
 
 // github.com
 export const RepositoryUrl = 'https://github.com/Junjak-Personal/crowfoot'
+// Feature requests and bug reports both land here. Upstream's discussion
+// threads are not the place to ask for a change to this fork.
 export const DiscussionUrl =
   'https://github.com/Junjak-Personal/crowfoot/issues'
-export const DbOrmDiscussionUrl =
-  'https://github.com/liam-hq/liam/discussions/364'
