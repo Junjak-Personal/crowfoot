@@ -27,7 +27,7 @@ const SIDEBAR_WIDTH = '16rem'
 const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
 
-export type SidebarState = 'expanded' | 'collapsed'
+type SidebarState = 'expanded' | 'collapsed'
 type SidebarContext = {
   state: SidebarState
   open: boolean
@@ -205,35 +205,6 @@ const SidebarTrigger = ({
 }
 SidebarTrigger.displayName = 'SidebarTrigger'
 
-const SidebarHeader = ({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'> & {
-  ref?: Ref<HTMLDivElement>
-}) => {
-  return <div ref={ref} data-sidebar="header" {...props} />
-}
-SidebarHeader.displayName = 'SidebarHeader'
-
-const SidebarFooter = ({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'> & {
-  ref?: Ref<HTMLDivElement>
-}) => {
-  return (
-    <div
-      ref={ref}
-      data-sidebar="footer"
-      className={clsx(styles.sidebarFooter, className)}
-      {...props}
-    />
-  )
-}
-SidebarFooter.displayName = 'SidebarFooter'
-
 const SidebarContent = ({
   className,
   ref,
@@ -294,21 +265,6 @@ const SidebarGroupLabel = ({
   )
 }
 SidebarGroupLabel.displayName = 'SidebarGroupLabel'
-
-const SidebarGroupAction = ({
-  className,
-  asChild = false,
-  ref,
-  ...props
-}: ComponentProps<'button'> & {
-  asChild?: boolean
-  ref?: Ref<HTMLButtonElement>
-}) => {
-  const Comp = asChild ? Slot : 'button'
-
-  return <Comp ref={ref} data-sidebar="group-action" {...props} />
-}
-SidebarGroupAction.displayName = 'SidebarGroupAction'
 
 const SidebarGroupContent = ({
   className,
@@ -430,76 +386,16 @@ const SidebarMenuAction = ({
 }
 SidebarMenuAction.displayName = 'SidebarMenuAction'
 
-const SidebarMenuBadge = ({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'> & {
-  ref?: Ref<HTMLDivElement>
-}) => <div ref={ref} data-sidebar="menu-badge" {...props} />
-SidebarMenuBadge.displayName = 'SidebarMenuBadge'
-
-const SidebarMenuSub = ({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'ul'> & {
-  ref?: Ref<HTMLUListElement>
-}) => <ul ref={ref} data-sidebar="menu-sub" {...props} />
-SidebarMenuSub.displayName = 'SidebarMenuSub'
-
-const SidebarMenuSubItem = ({
-  ref,
-  ...props
-}: ComponentProps<'li'> & {
-  ref?: Ref<HTMLLIElement>
-}) => <li ref={ref} {...props} />
-SidebarMenuSubItem.displayName = 'SidebarMenuSubItem'
-
-const SidebarMenuSubButton = ({
-  asChild = false,
-  size = 'md',
-  isActive,
-  className,
-  ref,
-  ...props
-}: ComponentProps<'a'> & {
-  asChild?: boolean
-  size?: 'sm' | 'md'
-  isActive?: boolean
-  ref?: Ref<HTMLAnchorElement>
-}) => {
-  const Comp = asChild ? Slot : 'a'
-
-  return (
-    <Comp
-      ref={ref}
-      data-sidebar="menu-sub-button"
-      data-size={size}
-      data-active={isActive}
-      {...props}
-    />
-  )
-}
-SidebarMenuSubButton.displayName = 'SidebarMenuSubButton'
-
 export {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,

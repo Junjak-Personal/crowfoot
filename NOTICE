@@ -46,8 +46,10 @@ Summary of the changes made to the original work
    shortcut for copying the page link was removed so the key belongs to that
    selection; the command palette still offers "Copy Link".
 
-7. A Windows compatibility fix to an npm script in frontend/apps/app, which
-   otherwise prevented the repository's own lint task from running.
+7. [Retired] A Windows compatibility fix to an npm script in frontend/apps/app,
+   which otherwise prevented the repository's own lint task from running.
+   frontend/apps/app was itself removed as an unused upstream package — see
+   item 12 — so this fix no longer applies to anything in the repository.
 
 8. Table grouping.
    Tables can be gathered into human-authored, named groups, drawn as a
@@ -82,3 +84,15 @@ Summary of the changes made to the original work
     required by section 4(b), the attribution in the banner and --help output,
     and this file are unaffected: what is dropped is trademark use under
     section 6, not attribution under section 4.
+
+12. Unused upstream packages were removed. The fork's shipped CLI and viewer
+    depend on only four packages (schema, erd-core, cli, ui); everything else
+    inherited from upstream — the Next.js apps (frontend/apps/{app,assets,docs,
+    erd-sample}), the inert internal-packages (agent, db, e2e,
+    figma-to-css-variables, github, mcp-server, pglite-server, schema-bench,
+    security, storybook), a package.json-less orphan (packages/db-structure)
+    and dead Turbo generator scaffolding — was deleted. Root tooling (turbo.json,
+    package.json, pnpm-workspace.yaml, knip.jsonc, .syncpackrc, vitest.config.ts)
+    was updated to match. The per-file notices required by section 4(b) that
+    lived in the packages the fork ships are unaffected; none of the 92 files
+    carrying one lived in a deleted package.

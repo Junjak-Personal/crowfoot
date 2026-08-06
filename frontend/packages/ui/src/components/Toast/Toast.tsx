@@ -54,9 +54,7 @@ export const ToastContext = createContext<{
   commandPaletteToast: () => {},
 })
 
-export const HeaderToastViewportProvider = ({
-  children,
-}: PropsWithChildren) => {
+const HeaderToastViewportProvider = ({ children }: PropsWithChildren) => {
   return (
     <RadixToast.Provider>
       {children}
@@ -65,7 +63,7 @@ export const HeaderToastViewportProvider = ({
   )
 }
 
-export const CommandPaletteToastViewportProvider = ({
+const CommandPaletteToastViewportProvider = ({
   children,
 }: PropsWithChildren) => {
   return (

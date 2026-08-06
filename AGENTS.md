@@ -1,22 +1,17 @@
 # Repository Guidelines
 
 ## Project Structure & Modules
-- frontend/apps/*: Next.js apps (e.g., `@liam-hq/app`, `@liam-hq/docs`).
-- frontend/packages/*: Shared libraries and tools (e.g., `schema`, `erd-core`, `cli`, `ui`).
-- frontend/internal-packages/*: Infra and tooling (`e2e`, `configs`, `storybook`, `agent`).
-- assets/: Images and media. docs/: Documentation. scripts/: Repo utilities.
+- frontend/packages/*: Shared libraries and tools (`schema`, `erd-core`, `cli`, `ui`).
+- frontend/internal-packages/*: Shared tooling (`configs`, `neverthrow`).
+- assets/: Images and media. docs/: Documentation.
 
 ## Build, Test, and Development
 - Install: `pnpm install`
-- All apps/packages (Turbo):
-  - Dev: `pnpm dev` (or one app: `pnpm -F @liam-hq/app dev`)
+- All packages (Turbo):
+  - Dev: `pnpm dev` (or one package: `pnpm -F crowfoot dev`)
   - Build: `pnpm build`
   - Test (unit): `pnpm test`
-  - E2E (Playwright): `pnpm test:e2e`
   - Coverage: `pnpm test:coverage`
-- App-only examples:
-  - Run Next dev: `pnpm -F @liam-hq/app dev:next`
-  - Build Next: `pnpm -F @liam-hq/app build`
 
 ## Coding Style & Naming
 - Language: TypeScript/TSX; React components in PascalCase (e.g., `App.tsx`); utilities in camelCase (e.g., `mergeSchema.ts`).
@@ -25,8 +20,7 @@
 
 ## Testing Guidelines
 - Unit tests: Vitest. Place near source as `*.test.ts(x)` or in `__tests__/`.
-- E2E tests: Playwright in `frontend/internal-packages/e2e`.
-- Commands: `pnpm test` for unit, `pnpm test:e2e` for Playwright, `pnpm test:coverage` for V8 coverage.
+- Commands: `pnpm test` for unit, `pnpm test:coverage` for V8 coverage.
 
 ## Commit & Pull Requests
 - Commit style: Conventional Commits (e.g., `feat:`, `fix:`, `chore(deps): ...`).
@@ -36,8 +30,6 @@
 
 ## Security & Configuration
 - Environment: use `.env`/`.env.local` (created automatically by `pnpm prebuild`). Never commit secrets.
-- Sync Vercel envs (optional): `pnpm vercel:env-pull` and link with `pnpm vercel:link`.
-- Common vars: `NEXT_PUBLIC_*`, Sentry keys, and job runner tokens (see `turbo.json` env list).
 
 ## Tips
 - Target a single package with `pnpm -F <package-name> <script>`.

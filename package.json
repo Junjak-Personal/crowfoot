@@ -1,21 +1,16 @@
 {
-  "name": "liam-frontend",
+  "name": "crowfoot-monorepo",
   "private": true,
   "version": "0.0.1",
   "devDependencies": {
-    "@turbo/gen": "2.5.8",
     "@types/node": "22.18.11",
     "@vitest/coverage-v8": "3.2.4",
     "concurrently": "9.2.1",
     "knip": "5.66.0",
     "lefthook": "1.13.6",
-    "stylelint": "16.25.0",
-    "stylelint-config-recess-order": "7.4.0",
-    "stylelint-value-no-unknown-custom-properties": "6.0.1",
     "syncpack": "13.0.4",
     "turbo": "2.5.8",
     "typescript": "5.9.3",
-    "vercel": "41.7.8",
     "vitest": "3.2.4"
   },
   "scripts": {
@@ -27,10 +22,8 @@
     "fmt:syncpack-fix": "syncpack fix-mismatches",
     "fmt:syncpack-format": "syncpack format",
     "fmt:turbo": "turbo fmt",
-    "gen:turbo": "turbo gen",
     "lint": "pnpm lint:turbo && pnpm lint:syncpack && pnpm lint:knip",
     "lint:knip": "knip --treat-config-hints-as-errors",
-    "lint:stylelint": "stylelint \"frontend/**/*.css\" --ignore-path .stylelintignore --max-warnings 0",
     "lint:syncpack": "syncpack lint",
     "lint:turbo": "turbo lint",
     "prebuild": "pnpm create-env-files",
@@ -38,16 +31,10 @@
     "prepare": "lefthook install",
     "release": "pnpm turbo build --filter=crowfoot && pnpm --filter=crowfoot publish --access public",
     "test": "turbo test",
-    "test:coverage": "vitest --coverage",
-    "test:e2e": "turbo test:e2e",
-    "vercel:env-pull": "vercel env pull .env",
-    "vercel:link": "vercel link -p liam-app -S \"liambx\" -y"
+    "test:coverage": "vitest --coverage"
   },
   "packageManager": "pnpm@10.18.3",
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "supabase"
-    ],
     "overrides": {
       "@radix-ui/react-dialog": "1.1.15",
       "cookie": "^0.7.0",

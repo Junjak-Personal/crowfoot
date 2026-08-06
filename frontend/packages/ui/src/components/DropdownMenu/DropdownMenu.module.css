@@ -82,9 +82,3 @@
   width: 12px;
   height: 12px;
 }
-
-.separator {
-  height: 1px;
-  margin: var(--spacing-half) 0;
-  background-color: var(--dropdown-border);
-}

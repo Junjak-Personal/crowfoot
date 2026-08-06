@@ -545,6 +545,89 @@ L15 주석이 `remoteAddOrigin` 을 **Vercel 자동배포 우회책**이라고 �
 
 ---
 
+## 패키지 정리 — 실행 결과 (2026-08-06 완료)
+
+계획 그대로 단일 커밋. **1,415 삭제 · 27 수정.** 게이트 전부 기대값과 일치.
+
+| 검사 | 기대 | 실측 |
+|---|---|---|
+| 워크스페이스 | 7 | ✅ 7 |
+| `schema` / `erd-core` / `cli` 테스트 | 562 / 303+4todo / 31 | ✅ 동일 |
+| `ui` 테스트 | 30 | ✅ 30 (아이콘 테스트 5파일 삭제 — 의도된 감소) |
+| `tsc` (erd-core·cli·ui) | 0 | ✅ 0 |
+| 루트 `pnpm lint` | exit 0 | ✅ exit 0 |
+| `turbo build --filter=crowfoot --force` | 6 | ✅ 6 |
+| `turbo lint` | 10 | ✅ 10 (26에서) |
+| `crowfoot#dev` 의존 | `["crowfoot#build"]` | ✅ 일치 — 죽은 키 수정 증명 |
+| `npm pack --dry-run` | 13파일 + LICENSE·NOTICE | ✅ 동일 |
+| §4(b) 헤더 | 92, diff empty | ✅ 92, diff empty |
+| `pnpm.overrides` | 6개 무손상 | ✅ 무손상 |
+
+### 구현 중 드러난 것 (계획과 어긋난 지점)
+
+1. **lucide 죽은 아이콘이 37이 아니라 38이었다** — `X` 가 누락돼 있었다. grep 재검증 후 38 삭제.
+2. **`Sidebar.tsx` 가 `PanelLeft` 를 `@liam-hq/ui` 가 아니라 내부 상대경로(`'../../icons'`)로
+   import 한다** — 패키지 간 import 만 훑은 최초 스캔이 놓쳤고 `tsc` 가 TS2305 로 잡았다.
+   되돌린 뒤 `ui/src` 내부 상대 import 를 전수 재검토.
+3. **`git rm -r` 는 추적 파일만 지운다** — gitignore 된 `*.module.css.d.ts` 가 남아 디렉터리
+   15개가 안 사라졌다. `rm -rf` 로 정리.
+4. **심볼을 지우면 CSS 클래스가 고아가 된다** — `DropdownMenu.module.css` 의 `.separator`,
+   `Sidebar.module.css` 의 `.sidebarFooter`. `eslint` 의 `css-modules-kit/no-unused-class-names`
+   가 잡아줬다.
+5. **NOTICE 7번은 삭제 대신 `[Retired]` 표시** — 기록을 지우기보다 남기는 쪽. 신규 12번에 정리 사실.
+
+### 🔴 리뷰에서 추가로 잡은 결함 1건
+
+`setEnv.ts` 의 `isReleasedGitHash` 가 `git rev-parse v0.1.0` 로 비교하는데, **릴리즈 태그는
+보통 annotated 라 이건 태그 객체 해시를 돌려준다** — 커밋 해시와 절대 일치하지 않는다.
+즉 upstream 태그명 문제를 고쳐도 **여전히 영원히 0** 이 나올 뻔했다. `^{commit}` 를 붙여
+해결(실측 검증: annotated 태그에서 match=1, 없는 태그는 catch → 0).
+
+### 브라우저 스모크 (Designer 가 안 한 것을 리뷰에서 수행)
+
+UI 컴포넌트 디렉터리 18개를 지웠으므로 단위 테스트만으로는 부족하다(CSS Modules 가
+happy-dom 에 안 닿는다 — 이 문서 "함정" 3번). 빌드 산출물을 띄워 확인:
+
+- 캔버스 렌더 ✅ (`data-loading=false`, 노드 23개, 까마귀발 마커 표시)
+- **Sidebar 토글** ✅ (심볼 8개 제거함) — Tables 목록 정상
+- **Export 드롭다운** ✅ (심볼 4개 제거함) — 4항목, 포크의 MySQL export 포함
+- **Toast** ✅ (뷰포트 provider 2개 제거함) — Copy Link → "Link copied!"
+- **Help 메뉴** ✅ — `v0.1.0 + fa74cef (2026-08-06)`. `setEnv.ts` 가 네트워크 없이 버전·해시·
+  날짜를 채운다는 증명이고, `+해시` 는 아직 릴리즈 태그가 없다는 뜻으로 정상
+
+### Phase 5 보안 감사 — **SHIP** (하드 불변식 4개 전부 증거와 함께 확인)
+
+§4(b) 헤더 92개 목록 byte-identical · `pnpm.overrides` 6개 byte-identical ·
+`LICENSE`/`NOTICE`/`packages-license.md`/`pack-cli.js` 무손상 + 타르볼에 LICENSE·NOTICE 존재 ·
+`setEnv.ts` 네트워크 I/O 0. 추가 의존성 0, `.github/` diff 완전히 비어 있음.
+비밀값 형태 문자열 스캔(+5560줄) 0건.
+
+**의도치 않은 좋은 결과 1건:** `CookieConsent` 제거가 살아있는 트래커를 남기지 않았다 —
+`gtm/utils/pushToDataLayer.ts` 는 in-page `window.dataLayer` 배열에 push 만 하고 네트워크
+송출이 없다. 이 삭제가 프라이버시 회귀를 만들 수 있었던 유일한 경로였는데 아니었다.
+
+### 남은 플래그 (owner 판단)
+- 🔴 **`pnpm.overrides` 가 deprecated 위치에 있다.** pnpm 10.18.3 에서는 적용되지만
+  **pnpm 11 에서는 조용히 무시된다**(실측 확인). `packageManager` 올리는 날 CVE 핀 6개가
+  증발한다 → `pnpm-workspace.yaml` 로 이관 필요 (이미 `minimumReleaseAge` 가 거기 있다)
+- 🟠 **`.npmrc` 가 git 추적 중인데 `.gitignore` 는 `/.env`·`.env*.local` 만 제외한다.**
+  리포 루트에서 `pnpm login` 하면 토큰이 추적 파일에 박힌다
+- 🟠 `.npmrc` 의 `minimum-release-age-exclude` 13개 중 `@electric-sql/pglite`(락파일 0건)와
+  `next`/`@next/swc-*` 가 죽었다. 참고: `nuqs` 의 optional peer 때문에 `next@15.4.8` +
+  `@next/swc-darwin-arm64`(**124MB**)가 아직 설치된다
+- 🟠 `setEnv.ts` 의 `fetchGitBranch` 가 릴리즈 경로에서 안 먹는다 — `release-crowfoot.yml` 은
+  태그를 detached 로 체크아웃하므로 `git rev-parse --abbrev-ref HEAD` 가 `HEAD` 를 반환한다.
+  즉 `main`→`master` 수정이 **릴리즈 빌드에서는 발동하지 않고** 항상 `'preview'` 다.
+  `github.ref_name` 을 쓰거나 `envName` 자체를 없애는 게 맞다 (소비처가 inert dataLayer 뿐)
+- `knip.jsonc` 의 `@swc/core` 주석이 stale ("Required for Vercel deployment" — Vercel 표면 소멸)
+- `.vscode/settings.json` 의 `stylelint.configFile`/`validate` 가 삭제된 `.stylelintrc.json` 참조
+- README 내비게이션 3개 링크가 upstream 인데 `(upstream)` 라벨이 없다 (§4 단계 관행과 불일치)
+- `.github/CODEOWNERS`(`@liam-hq/liam-dev`)·`SECURITY.md`(upstream 취약점 신고 경로) — 기존 문제,
+  이번 diff 와 무관하지만 리포 분리 취지와 어긋남
+- `.claude/project-profile/` 이 이 커밋으로 다시 낡는다 → `/team-init` 재실행 필요
+
+---
+
 ## 패키지 정리 — 착수 전 확인된 사실 (원본 메모)
 
 포크가 실제로 쓰는 건 `packages/{cli,erd-core,schema,ui}` 뿐이고, 후보는 이만큼이다:

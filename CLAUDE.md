@@ -5,52 +5,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Essential Commands
 
 - pnpm dev - Start dev servers
-- cd frontend/apps/app && pnpm dev - Start dev server for specific package
+- pnpm --filter crowfoot dev - Start dev server for the CLI/viewer specifically
 - pnpm build - Build all packages
 - pnpm lint - Run linting and formatting
 - pnpm test - Run tests
 - pnpm fmt - Run format code
 
-### App-specific Commands
+### Package-specific Commands
 
 ```bash
-# Run only the main web app (port 3001)
-pnpm --filter @liam-hq/app dev
+# Run the CLI/viewer dev server
+pnpm --filter crowfoot dev
 
 # Format code
-pnpm --filter @liam-hq/agent fmt
+pnpm --filter @liam-hq/erd-core fmt
 
 # Test
-pnpm --filter @liam-hq/agent test
+pnpm --filter @liam-hq/erd-core test
 ```
 
 ## Architecture
 
 ### Monorepo Structure
 
-#### Applications
-- **frontend/apps/app** - Main Next.js web application (`@liam-hq/app`)
-- **frontend/apps/docs** - Documentation site (`@liam-hq/docs`)
-
 #### Public Packages
-- **frontend/packages/cli** - Command-line tool (`@liam-hq/cli`)
+- **frontend/packages/cli** - Command-line tool (`crowfoot`)
 - **frontend/packages/erd-core** - Core ERD visualization (`@liam-hq/erd-core`)
 - **frontend/packages/schema** - Database schema parser (`@liam-hq/schema`)
 - **frontend/packages/ui** - UI component library (`@liam-hq/ui`)
 
 #### Internal Packages
-- **frontend/internal-packages/agent** - AI agent system using LangGraph (`@liam-hq/agent`)
-- **frontend/internal-packages/db** - Database utilities (`@liam-hq/db`)
-- **frontend/internal-packages/mcp-server** - MCP server implementation (`@liam-hq/mcp-server`)
-
+- **frontend/internal-packages/configs** - Shared biome/tsconfig/eslint presets (`@liam-hq/configs`)
+- **frontend/internal-packages/neverthrow** - Result-type helpers (`@liam-hq/neverthrow`)
 
 ### Key Technologies
 
-- **Frontend**: React 19, Next.js 15, TypeScript
+- **Frontend**: React 19, TypeScript
 - **Styling**: CSS Modules with typed definitions
 - **Visualization**: @xyflow/react (React Flow)
 - **Validation**: Valibot for runtime type validation
-- **Build**: Turborepo, pnpm workspaces
+- **Build**: Turborepo, pnpm workspaces, Vite/Rollup (static SPA — no framework at the fork's work surface)
 
 ## Development Guidelines
 

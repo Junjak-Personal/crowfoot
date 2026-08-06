@@ -7,8 +7,6 @@ import styles from './Drawer.module.css'
 
 export const DrawerRoot = Drawer.Root
 
-export const DrawerTrigger = Drawer.Trigger
-
 export const DrawerPortal = Drawer.Portal
 
 export const DrawerContent = ({

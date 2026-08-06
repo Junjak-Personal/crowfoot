@@ -3,7 +3,6 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     projects: [
-      'frontend/apps/*',
       'frontend/internal-packages/!(e2e)',
       'frontend/packages/*',
     ],

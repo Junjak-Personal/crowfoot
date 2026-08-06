@@ -116,9 +116,3 @@
   font-weight: 500;
   line-height: normal;
 }
-
-.sidebarFooter {
-  padding: var(--spacing-2);
-  color: var(--overlay-70);
-  border-top: 1px solid var(--global-border);
-}

@@ -1,8 +1,0 @@
-{
-  "extends": "@liam-hq/configs/tsconfig/base.json",
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
-  },
-  "include": ["src/**/*"]
-}

@@ -12,18 +12,6 @@ import { loadEnv, type Plugin } from 'vite'
  * These variables are essential for maintaining version consistency and tracking within the deployment environment.
  */
 export function setEnvPlugin(): Plugin {
-  // To enable remote to be acquired because it cannot be acquired in the vercel auto-deployment environment
-  const remoteAddOrigin = () => {
-    try {
-      const remotes = execSync('git remote show').toString().trim().split('\n')
-      if (!remotes.includes('origin')) {
-        execSync('git remote add origin https://github.com/liam-hq/liam.git')
-      }
-    } catch (error) {
-      console.error('Failed to add remote origin:', error)
-    }
-  }
-
   const fetchGitHash = () => {
     try {
       return execSync('git rev-parse HEAD').toString().trim()
@@ -52,47 +40,40 @@ export function setEnvPlugin(): Plugin {
     }
   }
 
-  const versionPrefix = '@liam-hq/cli@'
+  const versionPrefix = 'v'
 
+  // Resolves the release tag locally only — no network I/O. Returns 0 if the
+  // tag doesn't exist yet (e.g. a build made before the release tag is pushed).
+  //
+  // `^{commit}` is load-bearing: release tags are annotated, and a bare
+  // `git rev-parse v0.1.0` yields the tag *object* hash, which never equals a
+  // commit hash — so the comparison would silently never match. Left unquoted
+  // on purpose: `^` is not special to POSIX shells and `{commit}` is not a
+  // brace expansion, while cmd.exe would pass single quotes through literally.
   const isReleasedGitHash = (gitHash: string, packageJsonVersion: string) => {
     const latestTagName = `${versionPrefix}${packageJsonVersion}`
     try {
-      // Setup and fetch tags
-      remoteAddOrigin()
-      execSync('git fetch --tags')
-
-      // First check if the tag exists before trying to resolve it
-      const tagOutput = execSync(`git ls-remote --tags origin ${latestTagName}`)
-        .toString()
-        .trim()
-      if (tagOutput === '') {
-        return 0 // Tag doesn't exist
-      }
-
-      // If tag exists, check if current hash matches the tag
-      const tagCommit = execSync(`git rev-parse ${latestTagName}`)
+      const tagCommit = execSync(`git rev-parse ${latestTagName}^{commit}`)
         .toString()
         .trim()
       return gitHash === tagCommit ? 1 : 0
-    } catch (error) {
-      console.error('Failed during git operations:', error)
-      return 0
+    } catch {
+      return 0 // Tag doesn't exist locally
     }
   }
 
   return {
     name: 'set-env',
     config(_, { mode }) {
-      remoteAddOrigin()
       const env = loadEnv(mode, process.cwd(), '')
 
       const packageJsonVersion = env.npm_package_version
       const gitHash = fetchGitHash()
       const gitBranch = fetchGitBranch()
 
-      // The main branch is considered production, all other branches are treated as previews.
-      // This alignment is done to match the deployment settings to Vercel specified in .github/workflows.
-      const envName = gitBranch === 'main' ? 'production' : 'preview'
+      // The master branch (this repo's default) is considered production, all
+      // other branches are treated as previews.
+      const envName = gitBranch === 'master' ? 'production' : 'preview'
 
       process.env.VITE_CLI_VERSION_VERSION = packageJsonVersion
       process.env.VITE_CLI_VERSION_IS_RELEASED_GIT_HASH = JSON.stringify(

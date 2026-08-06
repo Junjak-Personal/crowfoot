@@ -2,12 +2,10 @@ import {
   Content,
   Item,
   ItemIndicator,
-  Label,
   Portal,
   RadioGroup,
   RadioItem,
   Root,
-  Separator,
   Trigger,
 } from '@radix-ui/react-dropdown-menu'
 import clsx from 'clsx'
@@ -20,7 +18,6 @@ export const DropdownMenuRoot = Root
 export const DropdownMenuTrigger = Trigger
 export const DropdownMenuPortal = Portal
 export const DropdownMenuRadioGroup = RadioGroup
-export const DropdownMenuLabel = Label
 export const DropdownMenuContent = ({
   className,
   ref,
@@ -102,13 +99,3 @@ export const DropdownMenuRadioItem = ({
 }
 
 DropdownMenuRadioItem.displayName = 'DropdownMenuRadioItem'
-
-export const DropdownMenuSeparator = () => {
-  return <Separator className={styles.separator} />
-}
-
-// Re-export for custom implementations
-export {
-  ItemIndicator as DropdownMenuItemIndicator,
-  RadioItem as DropdownMenuPrimitiveRadioItem,
-} from '@radix-ui/react-dropdown-menu'

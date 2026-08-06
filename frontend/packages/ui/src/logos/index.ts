@@ -2,8 +2,3 @@
 // See the NOTICE file at the repository root for what changed.
 export * from './CrowfootLogoMark'
 export * from './GithubLogo'
-export * from './LiamDbLogo'
-export * from './LiamLogo'
-export * from './LiamLogoMark'
-export * from './LinkedInLogo'
-export * from './XLogo'
