@@ -54,9 +54,21 @@ URL (?positions=)  >  localStorage  >  layout.json (shipped with build)  >  ELK 
 Unpinned tables always fall through to ELK, so **a newly added table never breaks an existing layout**.
 ELK runs with `nodePlacement/layering: INTERACTIVE`, so seeded coordinates are honoured as placement hints.
 `localStorage` key namespace: **`crowfoot:*`** (`crowfoot:tableLayout`, `crowfoot:memos`,
-`crowfoot:groups`). These were `liam:*` up to 0.4.0; a value under an old key is moved to the new one
-on first read and the old key deleted — `.../utils/storage/storage.ts`, shared by all three modules.
-Any reset must clear **both** names or the migration resurrects the old value.
+`crowfoot:groups`).
+
+**The migration is now a two-hop chain**, because the package was renamed twice —
+`liam:*` (≤ 0.4.0) → `erdkit:*` → `crowfoot:*`. `readStoredItem(key, legacyKeys)` takes an **array**,
+newest first, so a further rename adds one entry rather than another parameter:
+
+```ts
+const LEGACY_STORAGE_KEYS = ['erdkit:tableLayout', 'liam:tableLayout']  // newest first
+```
+
+A value under any old key is read once, written to the current key, and the old key deleted —
+`.../utils/storage/storage.ts`, shared by `tableLayout` / `memo` / `group`. **Any reset must clear
+every name in the chain** or the migration resurrects the old value. The clipboard marker
+(`crowfoot.memo`) reads old markers the same way — otherwise a memo copied before the rename pastes
+as nothing, silently.
 
 Implementations: `src/features/erd/utils/tableLayout/tableLayout.ts` · `.../utils/memo/memo.ts` ·
 `.../utils/group/group.ts` · `.../utils/storage/storage.ts`

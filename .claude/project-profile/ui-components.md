@@ -22,6 +22,22 @@ switch, radio-group, collapsible, slot. Plus `vaul` (drawer) and `react-resizabl
 - Usage: `import { ChevronDown } from '@liam-hq/ui'` → `<ChevronDown />`
 - Project-specific SVGs live in `@liam-hq/ui/src/icons/` and `src/logos/` — add there, not inline
 
+## Brand mark and colour (fork-owned)
+- **`CrowfootLogoMark`** (`ui/src/logos/CrowfootLogoMark.tsx`) — one table joined to a crow's foot.
+  4 elements, 2 strokes, drawn in **`currentColor`** so `LeftPane`'s `color: var(--overlay-70)` applies.
+  Constraints it was designed against: must read at **12px** (`LeftPane.module.css:73`), single-colour
+  silhouette, **no green** (upstream's `#1DED83` is Liam's brand green — a green mark would inherit the
+  trade dress the rename exists to drop).
+- **Brand colour: `#F59E0B` (amber), flat — no gradient.** Used by `banner.ts` and
+  `cli/public/favicon.ico`. Chosen deliberately over sky→indigo, which is the default palette of
+  generated work; leaving it would have let the product's colour settle by inaction.
+- `LiamLogoMark` still exists but **nothing in the shipped packages imports it** — only `apps/app`
+  does. It is scheduled to be deleted with that package, not before (removing it first only breaks
+  root lint). Same for `CookieConsent`, which has zero consumers and still says "Liam ERD".
+- Regenerating the favicon: render the mark's `rect`/`path` into an SVG wrapped in
+  `translate(2.6 2.4) scale(0.8)` on a 24 grid (content bbox is x 0.5..23, y 4..20, so that centres
+  it), then `sharp` → PNG → hand-assembled ICO. Recorded in the debranding plan under `_docs/`.
+
 ## Styling
 - **CSS Modules only.** `Component.module.css` next to `Component.tsx`.
 - Type definitions are **generated**, not written: `typed-css-modules` → `Component.module.css.d.ts`.
