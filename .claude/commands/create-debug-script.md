@@ -20,10 +20,8 @@ Create a one-off TypeScript debug script for quick testing and debugging. The sc
 
 ### Location Selection
 ```
-IF debugging agent-related code:
-  → frontend/internal-packages/agent/scripts/
-ELSE IF debugging specific package:
-  → [package-root]/scripts/
+IF debugging specific package:
+  → [package-root]/scripts/          e.g. frontend/packages/schema/scripts/
 ELSE:
   → frontend/scripts/
 ```
@@ -99,7 +97,7 @@ ELSE:
 ### Example 1: Simple Value Check
 ```typescript
 // User: "I want to debug the config values"
-// Generated: frontend/internal-packages/agent/scripts/debug-config-values.ts
+// Generated: frontend/packages/schema/scripts/debug-config-values.ts
 
 async function debug() {
   console.log('🔍 Debug execution: config values')
@@ -111,7 +109,7 @@ async function debug() {
 ### Example 2: Async Operation Observation
 ```typescript
 // User: "Check API connection behavior"
-// Generated: frontend/internal-packages/agent/scripts/debug-api-connection.ts
+// Generated: frontend/packages/schema/scripts/debug-api-connection.ts
 
 async function debug() {
   console.log('🔍 Debug execution: API connection')

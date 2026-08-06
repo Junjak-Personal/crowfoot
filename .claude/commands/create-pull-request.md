@@ -51,7 +51,7 @@ This guide explains how to create pull requests using GitHub CLI in our project.
    - Always include an appropriate emoji at the beginning of the title
    - Use the actual emoji character (not the code representation like `:sparkles:`)
    - Examples:
-     - `✨(supabase): Add staging remote configuration`
+     - `✨(erd-core): Add group label drag handle`
      - `🐛(auth): Fix login redirect issue`
      - `📝(readme): Update installation instructions`
 
