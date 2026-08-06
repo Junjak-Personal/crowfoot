@@ -10,79 +10,68 @@
 > The command-line tool is redistributed under a different name,
 > [`crowfoot`](https://www.npmjs.com/package/crowfoot), because section 6 of the
 > License grants no trademark rights. No endorsement by ROUTE06, Inc. is implied.
->
-> Two usage sections follow: [the original Liam ERD](#using-liam-erd-upstream) and
-> [this fork](#using-crowfoot-this-fork).
 
 ---
 
-<h2 align="center">
+<p align="center">
+  <img src="./assets/crowfoot-logo.svg" width="88" height="88" alt="crowfoot" />
+</p>
+
+<h1 align="center">crowfoot</h1>
+
+<h3 align="center">
   Automatically generates beautiful and easy-to-read ER diagrams from your database.
-</h2>
+</h3>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/crowfoot"><img src="https://img.shields.io/npm/v/crowfoot?color=F59E0B&label=npm" alt="npm" /></a>
+  <img src="https://img.shields.io/badge/license-Apache--2.0-F59E0B" alt="Apache-2.0" />
+</p>
 
 <p align="center">
   Based on <a href="https://github.com/liam-hq/liam">Liam ERD</a> by ROUTE06, Inc., Apache-2.0.
 </p>
 
-![demo](./assets/demo.gif)
-
-<p align="center">
-  <a href="https://liambx.com">Website</a> •
-  <a href="https://liambx.com/docs">Documentation</a> •
-  <a href="https://github.com/orgs/liam-hq/projects/1/views/1">Roadmap</a>
-</p>
-
 ---
 
-# Using Liam ERD (upstream)
+[`crowfoot`](https://www.npmjs.com/package/crowfoot) builds a standalone, static ERD
+app from a database schema — plus persisted table positions, canvas memos, colour
+coding, table grouping, an explicit edit mode and MySQL export.
 
-The original tool, published as [`@liam-hq/cli`](https://www.npmjs.com/package/@liam-hq/cli)
-and hosted at [liambx.com](https://liambx.com). Full documentation lives at
-**<https://liambx.com/docs>**; this section is a summary of it.
+> Full reference: **[docs/usage.md](./docs/usage.md)** (한국어) ·
+> **[docs/usage_en.md](./docs/usage_en.md)** (English) — every command and option,
+> the sidecar file schemas, deployment and troubleshooting. What follows is a summary.
 
-## Public repositories — no install
-
-Insert `liambx.com/erd/p/` into your schema file's URL:
-
-```
-# Original: https://github.com/user/repo/blob/master/db/schema.rb
-# Modified: https://liambx.com/erd/p/github.com/user/repo/blob/master/db/schema.rb
-                  👾^^^^^^^^^^^^^^^^👾
-```
-
-Example: <https://liambx.com/erd/p/github.com/docusealco/docuseal/blob/master/db/schema.rb>
-
-## Private repositories — the CLI
-
-Run the interactive setup, which walks you through picking a format and writes
-the command you need:
+## Build and serve
 
 ```bash
-npx @liam-hq/cli init
-```
-
-Or build directly:
-
-```bash
-npx @liam-hq/cli erd build --input db/schema.rb --format schemarb --output-dir dist
+npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
 npx serve dist/
 ```
 
-The output is a static Vite app. It **cannot** be opened over `file://` — serve
-the directory over HTTP.
+The interactive setup is `npx crowfoot init` — it walks you through picking a format
+and prints the command you need.
+
+The output is a static SPA: `file://` will not work, serve it over HTTP. All asset
+paths are relative, so the build can be mounted at a sub-path (`/erd/`, say) without
+rebuilding. `LICENSE` and `NOTICE` are written alongside it, since the generated site
+carries the compiled viewer and therefore the license travels with it.
 
 ### `erd build` options
 
 | Option | Description |
 |---|---|
-| `--input <path\|url>` | Schema file to read. Accepts a local path (glob patterns supported) or a URL. |
+| `--input <path\|url>` | Schema file to read. A local path (glob patterns supported) or a URL. |
 | `--format <format>` | Overrides format auto-detection. |
 | `--output-dir <path>` | Output directory. Defaults to `dist`. |
+
+⚠️ `--input` with an **absolute** path is parsed as a URL and fails with
+`fetch failed`. Use a relative path.
 
 A remote schema works the same way:
 
 ```bash
-npx @liam-hq/cli erd build \
+npx crowfoot erd build \
   --input https://raw.githubusercontent.com/user/repo/main/schema.sql \
   --format postgres
 ```
@@ -96,48 +85,13 @@ npx @liam-hq/cli erd build \
 | Prisma | `prisma` | `schema.prisma` |
 | Drizzle | `drizzle` | schema `.ts` files |
 | tbls | `tbls` | `schema.json` |
-| Liam JSON | `liam` | `schema.json` produced by Liam |
+| Liam JSON | `liam` | `schema.json` in the upstream format |
 
-MySQL, SQLite and BigQuery have no direct parser. The documented workaround is to
-export via [tbls](https://github.com/k1LoW/tbls) (or `pg_dump` to PostgreSQL) and
-feed the result in. See [Supported Formats](https://liambx.com/docs/parser/supported-formats).
-
-## UI features
-
-- [Browsing your schema](https://liambx.com/docs/ui-features) — pan, zoom, filter and highlight.
-- [Command palette](https://liambx.com/docs/ui-features) — `⌘K` to search tables with a live preview.
-- [Sharing & query parameters](https://liambx.com/docs/ui-features) — almost every UI setting is reflected in the URL, so a link reproduces the view.
-
-Reference documentation: [UI Features](https://liambx.com/docs/ui-features) ·
-[Web](https://liambx.com/docs/web) · [CLI](https://liambx.com/docs/cli) ·
-[Parser](https://liambx.com/docs/parser)
-
----
-
-# Using crowfoot (this fork)
-
-[`crowfoot`](https://www.npmjs.com/package/crowfoot) is the CLI of this fork. It builds
-the same kind of standalone ERD app, plus persisted table positions, canvas memos,
-colour coding, an explicit edit mode and MySQL export.
-
-> Full reference: **[docs/usage.md](./docs/usage.md)** (한국어) ·
-> **[docs/usage_en.md](./docs/usage_en.md)** (English) — every command and option,
-> the sidecar file schemas, deployment and troubleshooting. The section below is a summary.
-
-## Build and serve
-
-```bash
-npx crowfoot erd build --input schema.sql --format postgres --output-dir dist
-npx serve dist/
-```
-
-Options are the same as upstream (`--input`, `--format`, `--output-dir`), and
-`--format` accepts `postgres`, `schemarb`, `prisma`, `drizzle`, `tbls`, `liam`.
-The interactive setup is `npx crowfoot init`.
-
-As upstream, the output is a static SPA: `file://` will not work, serve it over HTTP.
-All asset paths are relative, so the build can be mounted at a sub-path
-(`/erd/`, say) without rebuilding.
+MySQL, SQLite and BigQuery have no direct parser. Export via
+[tbls](https://github.com/k1LoW/tbls) (or `pg_dump` to PostgreSQL) and feed the
+result in. The parser is unchanged from upstream, so its
+[format documentation](https://liambx.com/docs/parser/supported-formats) still
+applies — that link is upstream's, not this project's.
 
 ## What this fork adds
 
@@ -196,9 +150,9 @@ without going through a URL. The browser console exposes `crowfootLayout.dump()`
 `crowfootGroups.dump()` / `crowfootGroups.reset()` for the same purpose.
 
 Browser storage lives under `crowfoot:tableLayout`, `crowfoot:memos` and
-`crowfoot:groups`. These were `liam:*` up to 0.4.0 and `erdkit:*` after that; a
-value left under either old name is moved to the current one on the first read,
-so nothing has to be rearranged.
+`crowfoot:groups`. Earlier releases used `liam:*` and then `erdkit:*`; a value left
+under either old name is moved to the current one on first read, so nothing has to
+be rearranged by hand.
 
 ## Query parameters
 
@@ -253,11 +207,14 @@ still does what you expect.
 
 ```bash
 pnpm install
-pnpm dev                       # all dev servers
+pnpm exec turbo build --filter=@crowfoot/schema --filter=@crowfoot/ui   # required first
 pnpm build                     # all packages
 pnpm lint                      # lint and format
 pnpm test                      # tests
 ```
+
+The build of `schema` and `ui` is not optional on a fresh clone: `erd-core` and the
+CLI import them as built packages, and `vitest` fails at collection without it.
 
 Working on the CLI and viewer specifically:
 
@@ -265,14 +222,29 @@ Working on the CLI and viewer specifically:
 cd frontend/packages/cli
 pnpm run build                 # executable at dist-cli/bin/cli.js
 pnpm run test
-pnpm dev                       # builds the CLI against fixtures/ and serves the viewer
 node ./dist-cli/bin/cli.js erd build --input ./fixtures/input.schema.rb --format schemarb
 ```
 
-The fork's work surface is three packages: `frontend/packages/erd-core` (the
-viewer), `frontend/packages/schema` (parsers and deparsers) and
-`frontend/packages/cli` (the `crowfoot` command). See [`CLAUDE.md`](./CLAUDE.md)
-for the monorepo layout and conventions.
+⚠️ `turbo build --filter=crowfoot` needs `--force` after an `erd-core`-only change.
+`erd-core` is consumed as TypeScript source, so it is not part of the CLI's cache
+key and a stale bundle comes back out of cache otherwise.
+
+The workspace is six packages: `crowfoot` (the CLI), `@crowfoot/erd-core` (the
+viewer), `@crowfoot/schema` (parsers and deparsers), `@crowfoot/ui` (components), and
+`@crowfoot/configs` / `@crowfoot/neverthrow` as internal helpers. Only `crowfoot` is
+published; the rest are private workspace packages that get inlined into it.
+See [`CLAUDE.md`](./CLAUDE.md) for conventions.
+
+## Releasing
+
+Tag-driven, through GitHub Actions with npm trusted publishing — no tokens:
+
+```bash
+git tag v0.1.2 && git push origin v0.1.2
+```
+
+The workflow refuses to publish if the tag disagrees with the version in
+`frontend/packages/cli/package.json`.
 
 ---
 
@@ -280,37 +252,15 @@ for the monorepo layout and conventions.
 
 - **[docs/usage.md](./docs/usage.md)** — crowfoot 사용 가이드 (한국어)
 - **[docs/usage_en.md](./docs/usage_en.md)** — crowfoot usage guide (English)
-- [liambx.com/docs](https://liambx.com/docs) — upstream Liam ERD documentation
+- [liambx.com/docs](https://liambx.com/docs) — **upstream Liam ERD's** documentation.
+  The parser and schema formats are unchanged in this fork, so it still applies to
+  those; the UI sections describe upstream's viewer, not this one.
 
 What this fork changes is listed in [`NOTICE`](./NOTICE) and documented under `_docs/`.
 
-## Roadmap
-
-Upstream's roadmap is on [their project board](https://github.com/orgs/liam-hq/projects/1/views/1).
-This fork is pinned to `92156eac5` and does not track upstream.
-
-## Contributing
-
-Refer to our [Code of Conduct for contributors](./CODE_OF_CONDUCT.md).
-
-## Contributors
-
-<a href="https://github.com/liam-hq/liam/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=liam-hq/liam" />
-</a>
-
-## Star History
-
-<a href="https://www.star-history.com/#liam-hq/liam&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=liam-hq/liam&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=liam-hq/liam&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=liam-hq/liam&type=Date" />
- </picture>
-</a>
-
 ## License
 
-Liam ERD is licensed under the [Apache License Version 2.0](LICENSE).
+Apache License, Version 2.0 — see [`LICENSE`](./LICENSE).
+This is a modified fork of Liam ERD, © 2024 ROUTE06, Inc.; changes © 2026 QESG.
 
-Licenses for third-party packages can be found in [docs/packages-license.md](docs/packages-license.md).
+Licenses for third-party packages are in [docs/packages-license.md](docs/packages-license.md).

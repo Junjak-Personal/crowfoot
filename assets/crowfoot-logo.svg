@@ -1,0 +1,11 @@
+<!-- Added in crowfoot; not part of the original Liam ERD source.
+     See the NOTICE file at the repository root.
+
+     Same geometry as CrowfootLogoMark (packages/ui/src/logos), drawn in the
+     brand amber instead of currentColor so it reads on both GitHub themes. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24"
+     fill="none" stroke="#F59E0B" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="crowfoot">
+  <rect x="1.5" y="5" width="10" height="14" rx="1.8"/>
+  <path d="M11.5 12H15M15 12H22M15 12L22 6.8M15 12L22 17.2"/>
+</svg>
