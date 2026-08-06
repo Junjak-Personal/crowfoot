@@ -18,7 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      # write, not read, only so the last step can create the GitHub Release.
+      # Nothing here pushes commits or tags.
+      contents: write
       # The whole authentication story. npm exchanges this workflow's OIDC
       # identity for a short-lived publish token (trusted publishing) and signs
       # the provenance statement with it. There is no npm token anywhere.
@@ -83,3 +85,30 @@ jobs:
       - name: Publish to npm
         working-directory: frontend/packages/cli
         run: npm publish --access public
+
+      # After the publish, never before: a GitHub Release announcing a version
+      # that failed to reach npm is worse than no release at all.
+      #
+      # The notes are the matching CHANGELOG.md section, so there is exactly one
+      # place to write them. A missing section is not fatal — the release still
+      # gets created, pointing at the changelog — because the package is already
+      # public by this point and failing here would only leave the two out of sync.
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          notes=$(awk -v v="$version" '
+            $0 == "## " v { grab = 1; next }
+            grab && /^## / { exit }
+            grab { print }
+          ' CHANGELOG.md)
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "::warning::no CHANGELOG.md section for $version"
+            notes="See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/master/CHANGELOG.md)."
+          fi
+          printf '%s\n\n---\n\n`npm i -g crowfoot@%s` · [demo](https://crowfoot.jun-devlog.win)\n' \
+            "$notes" "$version" > /tmp/notes.md
+          gh release create "$TAG" --title "$TAG" --notes-file /tmp/notes.md --verify-tag

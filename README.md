@@ -24,6 +24,10 @@
 </h3>
 
 <p align="center">
+  <a href="https://crowfoot.jun-devlog.win"><b>Live demo →</b></a>
+</p>
+
+<p align="center">
   <a href="https://www.npmjs.com/package/crowfoot"><img src="https://img.shields.io/npm/v/crowfoot?color=F59E0B&label=npm" alt="npm" /></a>
   <img src="https://img.shields.io/badge/license-Apache--2.0-F59E0B" alt="Apache-2.0" />
 </p>
@@ -37,6 +41,10 @@
 [`crowfoot`](https://www.npmjs.com/package/crowfoot) builds a standalone, static ERD
 app from a database schema — plus persisted table positions, canvas memos, colour
 coding, table grouping, an explicit edit mode and MySQL export.
+
+**[crowfoot.jun-devlog.win](https://crowfoot.jun-devlog.win)** is a live one — a real
+app's schema, grouped and annotated, built by the command below and served as static
+files. The memos on it explain the features as you look at them.
 
 > Full reference: **[docs/usage.md](./docs/usage.md)** (한국어) ·
 > **[docs/usage_en.md](./docs/usage_en.md)** (English) — every command and option,
@@ -240,11 +248,14 @@ See [`CLAUDE.md`](./CLAUDE.md) for conventions.
 Tag-driven, through GitHub Actions with npm trusted publishing — no tokens:
 
 ```bash
-git tag v0.1.2 && git push origin v0.1.2
+# bump frontend/packages/cli/package.json, add a CHANGELOG.md section, then:
+git tag v0.1.4 && git push origin v0.1.4
 ```
 
 The workflow refuses to publish if the tag disagrees with the version in
-`frontend/packages/cli/package.json`.
+`frontend/packages/cli/package.json`. After publishing it creates the GitHub Release,
+taking the notes from the matching [`CHANGELOG.md`](./CHANGELOG.md) section — so the
+notes are written in one place, not two.
 
 ---
 
