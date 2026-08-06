@@ -39,6 +39,7 @@
 | 스트림 | 문서 | 갱신일 |
 |---|---|---|
 | `erd-viewer` (포크 전체) | [2026-08-03-erd-viewer-handoff](./handoff/2026-08-03-erd-viewer-handoff.md) | 2026-08-03 |
+| `cli-distribution` (앱 브랜딩·패키지 정리) | [2026-08-06-cli-distribution-handoff](./handoff/2026-08-06-cli-distribution-handoff.md) | 2026-08-06 |
 
 ---
 
