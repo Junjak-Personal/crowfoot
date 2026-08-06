@@ -1,6 +1,6 @@
 ---
 title: 브랜딩 탈-Liam + 별도 리포 분리
-status: processing
+status: complete
 topic: cli-distribution
 kind: plan
 scope: fullstack
@@ -19,7 +19,9 @@ related:
 > 🔴 **이 문서에서 제일 먼저 읽을 것 — §4 귀속과 §6 상표는 정반대 방향의 의무다.**
 > 파일 상단의 `// Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.)` 와
 > `// Added in crowfoot; not part of the original Liam ERD source.` 는 **§4(b) 가 요구하는
-> 고지**다(현재 86파일). "Liam" 일괄 치환 스크립트를 돌리면 이게 같이 날아가고 그 순간
+> 고지**다(현재 **92파일** — 두 문구를 **다** 세고 `-- frontend/packages` 로 스코프해야 이 수가
+> 나온다. "Modified from" 만 세면 43이 나와 대참사처럼 보인다).
+> "Liam" 일괄 치환 스크립트를 돌리면 이게 같이 날아가고 그 순간
 > 라이선스 위반이 된다. **브랜딩(§6)은 지우고, 귀속(§4)은 남긴다.**
 >
 > 반대로 **`erdkit` → `crowfoot` 류의 치환은 안전했다** — §4 문구에 그 단어가 없기 때문이다.

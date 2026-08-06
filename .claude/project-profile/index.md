@@ -94,10 +94,11 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
 
 Tracked as plans in `_docs/` — see `_docs/index.md` for current status.
 
-- **Debranding, steps 6–8** (`_docs/active/processing/2026-08-05/2026-08-05-cli-distribution-debranding.md`)
-  — app branding, links and favicon are **done**; what remains is removing unused upstream packages
-  (dependency graph first — deleting them wholesale breaks root `pnpm lint`), the README attribution
-  line, and a final §4 re-verification.
+- ✅ **Debranding — COMPLETE** (`_docs/complete/cli-distribution/2026-08-05-cli-distribution-debranding.md`).
+  All 8 steps done, including the unused-package removal: the workspace is now 6 packages, not 20.
+  🔴 **This profile is stale as of `444f80d`** — package lists, the `frontend/apps/*` workspace glob,
+  `.env.template`, `lint:stylelint`, the Sentry turbo env and the Playwright section all describe a
+  tree that no longer exists. Re-run `/team-init`.
 - **carbon delivery automation** (`_docs/active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md`)
   — blocked on ECR permissions.
 - **No E2E coverage of any fork feature**; unit tests only. Tracked with six other items in
