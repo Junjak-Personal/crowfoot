@@ -19,7 +19,7 @@
 |---|---|---|---|
 | planning | `carbon-erd-delivery` | [2026-08-03-carbon-erd-delivery](./active/planning/2026-08-03/2026-08-03-carbon-erd-delivery.md) | carbon ERD 배포 자동화 재개 (npx 전환 + 변경 감지). **차단: ECR 권한 + cli-distribution 선행** |
 | planning | `cli-distribution` | [2026-08-03-cli-distribution](./active/planning/2026-08-03/2026-08-03-cli-distribution.md) | CLI 개명(`erdkit`) · Apache-2.0 준수 · npm 배포. **1~6 완료, `npm publish` 만 남음 (본인 실행)** |
-| planning | `cli-distribution` | [2026-08-05-cli-distribution-debranding](./active/planning/2026-08-05/2026-08-05-cli-distribution-debranding.md) | 브랜딩 탈-Liam + 별도 리포 분리. **이름 `crowfoot` 확정**, 마크 검토 중(링 유지 여부). 1·4 완료, 인벤토리 9파일 남음. §4 귀속 헤더는 보존 |
+| planning | `cli-distribution` | [2026-08-05-cli-distribution-debranding](./active/planning/2026-08-05/2026-08-05-cli-distribution-debranding.md) | 브랜딩 탈-Liam + 별도 리포 분리. **상표 확정 — 이름 `crowfoot`, 마크 테이블+까마귀발.** 1·4 완료, 인벤토리 9파일 + `erdkit`→`crowfoot` 개명 sweep 남음. §4 귀속 헤더는 보존 |
 | planning | `erd-viewer` | [2026-08-05-erd-viewer-backlog](./active/planning/2026-08-05/2026-08-05-erd-viewer-backlog.md) | 그룹화 이후 남은 7건 — E2E · tbls 시드 · 섹션별 표시 · `aria-pressed` 등. **1(노드타입 감사)·2(`liam:*` 개명) 완료.** 번호는 고정 |
 | planning | `erd-viewer` | [2026-08-05-group-label-drag-design](./active/planning/2026-08-05/2026-08-05-group-label-drag-design.md) | 그룹 라벨을 끌어 멤버 전체 이동 — 박스는 계속 파생, 겹친 멤버도 전부 따라옴. 설계 승인됨, 구현 대기 |
 

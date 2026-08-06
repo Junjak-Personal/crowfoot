@@ -4,12 +4,14 @@ import type { ComponentPropsWithoutRef, FC } from 'react'
 
 type Props = ComponentPropsWithoutRef<'svg'>
 
-// The zero-or-many cardinality marker, promoted to a logo mark. The geometry
-// comes from CardinalityZeroOrManyLeftMarker — the ring plus a three-pronged
-// fork — but the marker's stroke is ~4% of its viewBox, which disappears at
-// the 12px the LeftPane renders an icon at. Stroke is 3/24 here so the mark
-// survives down to 12px; the prong spread is widened from the marker's 26-30
-// degrees to 35 so a wide-short mark still carries a square slot.
+// A table joined to a crow's foot — the smallest thing that is still an ERD.
+// The second table is left out on purpose: the crow's foot already says "many
+// on the other end", so the relationship reads as continuing off-canvas, and
+// one table gets the whole 24 grid instead of two splitting it. That matters
+// because LeftPane renders this at 12px (LeftPane.module.css:73), where a
+// 24-unit grid is half a pixel per unit and a second box would collapse the
+// prongs into each other. Drawn in currentColor so that pane's
+// `color: var(--overlay-70)` still applies.
 export const CrowfootLogoMark: FC<Props> = (props) => {
   return (
     <svg
@@ -20,13 +22,13 @@ export const CrowfootLogoMark: FC<Props> = (props) => {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={3}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       {...props}
     >
-      <circle cx={7} cy={12} r={4} />
-      <path d="M12.5 12h9M12.5 12l9-6.3M12.5 12l9 6.3" />
+      <rect x={1.5} y={5} width={10} height={14} rx={1.8} />
+      <path d="M11.5 12H15M15 12H22M15 12L22 6.8M15 12L22 17.2" />
     </svg>
   )
 }
