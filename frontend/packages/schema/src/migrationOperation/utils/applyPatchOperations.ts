@@ -1,4 +1,4 @@
-import { fromThrowable } from '@liam-hq/neverthrow'
+import { fromThrowable } from '@crowfoot/neverthrow'
 import pkg, { type Operation } from 'fast-json-patch'
 import type { Result } from 'neverthrow'
 

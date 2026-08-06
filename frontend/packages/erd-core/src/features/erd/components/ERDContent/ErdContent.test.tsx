@@ -1,7 +1,7 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { aSchema, aTable } from '@liam-hq/schema'
-import { ToastProvider } from '@liam-hq/ui'
+import { aSchema, aTable } from '@crowfoot/schema'
+import { ToastProvider } from '@crowfoot/ui'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { type Node, ReactFlowProvider } from '@xyflow/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'

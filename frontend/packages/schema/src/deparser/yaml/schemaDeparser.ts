@@ -1,4 +1,4 @@
-import { fromThrowable } from '@liam-hq/neverthrow'
+import { fromThrowable } from '@crowfoot/neverthrow'
 import yaml from 'yaml'
 import type { Schema } from '../../schema/index.js'
 import type { SchemaDeparser } from '../type.js'

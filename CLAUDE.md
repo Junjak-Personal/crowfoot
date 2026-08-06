@@ -18,10 +18,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm --filter crowfoot dev
 
 # Format code
-pnpm --filter @liam-hq/erd-core fmt
+pnpm --filter @crowfoot/erd-core fmt
 
 # Test
-pnpm --filter @liam-hq/erd-core test
+pnpm --filter @crowfoot/erd-core test
 ```
 
 ## Architecture
@@ -30,13 +30,13 @@ pnpm --filter @liam-hq/erd-core test
 
 #### Public Packages
 - **frontend/packages/cli** - Command-line tool (`crowfoot`)
-- **frontend/packages/erd-core** - Core ERD visualization (`@liam-hq/erd-core`)
-- **frontend/packages/schema** - Database schema parser (`@liam-hq/schema`)
-- **frontend/packages/ui** - UI component library (`@liam-hq/ui`)
+- **frontend/packages/erd-core** - Core ERD visualization (`@crowfoot/erd-core`)
+- **frontend/packages/schema** - Database schema parser (`@crowfoot/schema`)
+- **frontend/packages/ui** - UI component library (`@crowfoot/ui`)
 
 #### Internal Packages
-- **frontend/internal-packages/configs** - Shared biome/tsconfig/eslint presets (`@liam-hq/configs`)
-- **frontend/internal-packages/neverthrow** - Result-type helpers (`@liam-hq/neverthrow`)
+- **frontend/internal-packages/configs** - Shared biome/tsconfig/eslint presets (`@crowfoot/configs`)
+- **frontend/internal-packages/neverthrow** - Result-type helpers (`@crowfoot/neverthrow`)
 
 ### Key Technologies
 
@@ -83,8 +83,8 @@ function saveUser(data: UserData, userId: string) {
 - Use named exports only (no default exports)
 - Event handlers should be prefixed with "handle" (e.g., `handleClick`)
 - Use CSS Modules for all styling
-- Import UI components from `@liam-hq/ui` when available
-- Import icons from `@liam-hq/ui`
+- Import UI components from `@crowfoot/ui` when available
+- Import icons from `@crowfoot/ui`
 
 ### File Organization
 
@@ -101,7 +101,7 @@ function saveUser(data: UserData, userId: string) {
 
 ### CSS
 
-- Use CSS Variables from `@liam-hq/ui` package
+- Use CSS Variables from `@crowfoot/ui` package
 - Generate CSS type definitions with `pnpm gen:css`
 - Use CSS variables according to their intended purpose. Spacing variables should be used exclusively for margins and padding, while height and width specifications should use appropriate units (rem, px, etc.)
 

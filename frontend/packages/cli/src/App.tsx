@@ -21,8 +21,8 @@ import {
   setBaseTableLayout,
   VersionProvider,
   versionSchema,
-} from '@liam-hq/erd-core'
-import { type Schema, schemaSchema } from '@liam-hq/schema'
+} from '@crowfoot/erd-core'
+import { type Schema, schemaSchema } from '@crowfoot/schema'
 import { ResultAsync } from 'neverthrow'
 import { useEffect, useState } from 'react'
 import * as v from 'valibot'

@@ -3,7 +3,7 @@ import {
   getTableChangeStatus,
   getTableCommentChangeStatus,
   type MigrationOperation,
-} from '@liam-hq/schema'
+} from '@crowfoot/schema'
 
 type Params = {
   tableId: string

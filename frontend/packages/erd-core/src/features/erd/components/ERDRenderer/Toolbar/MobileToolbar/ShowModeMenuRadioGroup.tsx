@@ -1,4 +1,4 @@
-import { RadioGroup, RadioGroupItem } from '@liam-hq/ui'
+import { RadioGroup, RadioGroupItem } from '@crowfoot/ui'
 import { type FC, useCallback } from 'react'
 import { safeParse } from 'valibot'
 import { useVersionOrThrow } from '../../../../../../providers'

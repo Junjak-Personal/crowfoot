@@ -29,7 +29,7 @@ four files — see `structure.md`.
 - **Package manager**: pnpm 10.18.3 (Node 22.21.0, `save-exact=true`)
 - **Test framework**: Vitest 3.2.4 — **no E2E framework at all**
 - **State management**: React Context + `nuqs` URL params — no store library
-- **API layer**: no HTTP API — a file-based parse/deparse contract (`@liam-hq/schema`)
+- **API layer**: no HTTP API — a file-based parse/deparse contract (`@crowfoot/schema`)
 - **CI/CD**: 7 GitHub Actions workflows; the fork's own is `release-crowfoot.yml` (tag → npm, OIDC)
 
 ## Profile Files
@@ -55,8 +55,8 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
    **Branding is removed; attribution stays.** Count with BOTH wordings scoped to `frontend/packages`,
    or you get 43 and a false alarm. Detail: `structure.md`.
 2. **🔴 A fresh clone needs a build before tests will collect.** `pnpm install` alone leaves test files
-   failing on `Failed to resolve entry for package "@liam-hq/schema"` — a missing `dist`, not a
-   regression. Run `pnpm exec turbo build --filter=@liam-hq/schema --filter=@liam-hq/ui`.
+   failing on `Failed to resolve entry for package "@crowfoot/schema"` — a missing `dist`, not a
+   regression. Run `pnpm exec turbo build --filter=@crowfoot/schema --filter=@crowfoot/ui`.
 3. **🔴 `git rm` leaves directories behind.** Gitignored `*.module.css.d.ts` survive deletion, the
    directory persists, and knip then fails root lint on the residue. Sweep for zero-tracked-file
    directories after any removal — never with `git clean -xdf`. Recipe in `structure.md`.
@@ -69,7 +69,7 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
    No backward-compat shims — update all call sites together.
 6. **CSS Modules + `pnpm gen:css`.** A missing `*.module.css.d.ts` surfaces as `TS2307 Cannot find
    module './X.module.css'` — a stale generated file, not a type error. Colours come from
-   `@liam-hq/ui` design tokens — never a raw hex.
+   `@crowfoot/ui` design tokens — never a raw hex.
 7. **`console.log` fails lint** (`noConsole: error`; only `warn`/`error`/`info`/`debug`). So does an
    incomplete hook dep array (`useExhaustiveDependencies: error`).
 8. **URL is the state transport.** Use the existing `nuqs` parsers; `history: 'push'` for navigation,
@@ -78,7 +78,7 @@ Relevance: REQUIRED (always read) > HIGH (read if related) > MEDIUM (optional) >
 10. **Exact versions only** (`save-exact=true`) — never write `^` or `~` into a `package.json`.
 11. **Deleting a feature? Replace its test, don't just delete it.** House precedent applied twice —
     a deleted assertion removes the regression detector.
-12. **`@liam-hq/ui` has 10 components with no consumer**, kept for future work. knip cannot flag them
+12. **`@crowfoot/ui` has 10 components with no consumer**, kept for future work. knip cannot flag them
     (entry-file exports), so nothing verifies them. Treat the first real use as new code.
 
 ## Known gotchas (all hit for real)
@@ -129,7 +129,7 @@ See `_docs/index.md` for current status. `_docs/active/` holds exactly one docum
   20 → 6; `frontend/apps/` and all but two internal packages are gone, as are Playwright, storybook,
   stylelint, `.env.template` and `CONTRIBUTING.md`. Root package renamed `crowfoot-monorepo`. Added:
   the `git rm` residue trap, the knip half-oracle limitation, the pnpm 11 overrides hazard, the CI
-  test gap, and the un-consumed `@liam-hq/ui` surface. `testing.md`'s agentic adapter now records
+  test gap, and the un-consumed `@crowfoot/ui` surface. `testing.md`'s agentic adapter now records
   **no spec dir** rather than a deleted one.
 - 2026-08-06 (`3865cc0`): Full regeneration at `04dff30`. Previous profile was pinned to `d2fb6638c`,
   a commit the history rewrite erased.

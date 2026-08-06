@@ -1,4 +1,4 @@
-import type { ChangeStatus } from '@liam-hq/schema'
+import type { ChangeStatus } from '@crowfoot/schema'
 import { useMemo } from 'react'
 import { match } from 'ts-pattern'
 import diffStyles from '../styles/Diff.module.css'

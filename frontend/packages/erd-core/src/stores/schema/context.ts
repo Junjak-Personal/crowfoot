@@ -1,4 +1,4 @@
-import { migrationOperationsSchema, schemaSchema } from '@liam-hq/schema'
+import { migrationOperationsSchema, schemaSchema } from '@crowfoot/schema'
 import { createContext } from 'react'
 import * as v from 'valibot'
 

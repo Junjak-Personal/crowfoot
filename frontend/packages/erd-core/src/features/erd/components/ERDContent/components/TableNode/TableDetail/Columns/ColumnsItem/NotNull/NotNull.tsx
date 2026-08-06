@@ -1,10 +1,10 @@
-import type { Column } from '@liam-hq/schema'
+import type { Column } from '@crowfoot/schema'
 import {
   DiamondFillIcon,
   DiamondIcon,
   GridTableItem,
   GridTableRow,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

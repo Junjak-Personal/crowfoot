@@ -1,5 +1,5 @@
-import type { PrimaryKeyConstraint } from '@liam-hq/schema'
-import { KeyRound } from '@liam-hq/ui'
+import type { PrimaryKeyConstraint } from '@crowfoot/schema'
+import { KeyRound } from '@crowfoot/ui'
 import clsx from 'clsx'
 import type { FC } from 'react'
 import styles from '../Constraints.module.css'

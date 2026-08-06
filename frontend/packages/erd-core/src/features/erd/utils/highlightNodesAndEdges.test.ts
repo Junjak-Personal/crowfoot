@@ -1,4 +1,4 @@
-import { aTable } from '@liam-hq/schema'
+import { aTable } from '@crowfoot/schema'
 import type { Edge } from '@xyflow/react'
 import { describe, expect, it } from 'vitest'
 import { zIndex } from '../constants'

@@ -12,8 +12,8 @@ The fork's delivery is **npm**, tag-triggered, via Trusted Publishing. Nothing e
 | `frontend-ci.yml` | `pnpm lint` + `erd-core` and `crowfoot` tests on PR | active (see gap below) |
 | `codeql · dependency_review · ghalint · license · license-report-update` | inherited hygiene | inert |
 
-> ⚠️ **CI test gap:** `frontend-ci.yml` runs only `pnpm --filter @liam-hq/erd-core test` and
-> `pnpm --filter crowfoot test`. **`@liam-hq/schema` (562 tests) and `@liam-hq/ui` (30) never run in
+> ⚠️ **CI test gap:** `frontend-ci.yml` runs only `pnpm --filter @crowfoot/erd-core test` and
+> `pnpm --filter crowfoot test`. **`@crowfoot/schema` (562 tests) and `@crowfoot/ui` (30) never run in
 > CI.** Run them locally.
 
 > ⚠️ **Supply chain:** `codeql.yml` and `dependency_review.yml` call reusable workflows from
@@ -88,7 +88,7 @@ CLI and deploy their own output; that delivery lives in their repo, not here.
   — main JS ~2.39 MB, `dist-cli` ~7.6 MB total
 - Type: **SPA, fully static, relative paths** — mountable at any subpath without a rebuild
 - Published tarball: **13 files**, including `LICENSE` and `NOTICE`. Declares **no `@radix-ui`** —
-  `@liam-hq/ui` is a workspace dependency that gets inlined.
+  `@crowfoot/ui` is a workspace dependency that gets inlined.
 
 ## 🟠 Repository hygiene findings (from the 2026-08-06 security audit)
 - **`.npmrc` is tracked and not gitignored for credential lines.** A `pnpm login` at repo root would

@@ -23,11 +23,28 @@
 | Package | Path | Role |
 |---|---|---|
 | **`crowfoot`** | `frontend/packages/cli` | ★ the published CLI + viewer host |
-| `@liam-hq/erd-core` | `frontend/packages/erd-core` | the ERD viewer (React + xyflow) |
-| `@liam-hq/schema` | `frontend/packages/schema` | parsers + deparsers (incl. the fork's MySQL deparser) |
-| `@liam-hq/ui` | `frontend/packages/ui` | design system (Radix + CSS Modules + tokens) |
-| `@liam-hq/configs` | `frontend/internal-packages/configs` | shared biome/tsconfig/eslint presets |
-| `@liam-hq/neverthrow` | `frontend/internal-packages/neverthrow` | Result-type helpers |
+| `@crowfoot/erd-core` | `frontend/packages/erd-core` | the ERD viewer (React + xyflow) |
+| `@crowfoot/schema` | `frontend/packages/schema` | parsers + deparsers (incl. the fork's MySQL deparser) |
+| `@crowfoot/ui` | `frontend/packages/ui` | design system (Radix + CSS Modules + tokens) |
+| `@crowfoot/configs` | `frontend/internal-packages/configs` | shared biome/tsconfig/eslint presets |
+| `@crowfoot/neverthrow` | `frontend/internal-packages/neverthrow` | Result-type helpers |
+
+### 🔴 `crowfoot` is the ONLY publishable package
+
+The other five are `private: true` with no `publishConfig`. They exist purely as workspace links —
+the CLI inlines them at build time, and the published tarball declares none of them.
+
+They were `@liam-hq/*` until 2026-08-06 and were **`private: false` with `access: public`** — a
+footgun, since a stray `pnpm publish -r` would have tried to publish fork code under ROUTE06's npm
+scope. Renaming alone would have made that *worse* (an owned scope means the accidental publish
+**succeeds**), which is why the rename and `private: true` landed together.
+
+> To be clear about the licence: the rename was **not** required by Apache-2.0. §6 explicitly permits
+> using the licensor's names "as required for reasonable and customary use in describing the origin
+> of the Work", and an unpublished workspace identifier is exactly that. The rename is for the
+> readability of a public repo; the `private: true` is the part that removes real risk. §4(b) is
+> unaffected either way — the per-file notices say "Liam ERD source", never `@liam-hq/`, which is
+> what made the string replacement safe (same reasoning as the `erdkit` rename).
 
 ## Framework
 - Framework: **none** — the shipped artifact is a Vite-built static SPA emitted by the CLI.
@@ -48,7 +65,7 @@
 | `commander` | 13.1.0 | CLI arg parsing |
 | `ink` / `inquirer` | 6.0.1 / 12.6.3 | CLI TUI + prompts |
 | `@prisma/internals` | 6.8.2 | Prisma schema parsing |
-| `lucide-react` | 0.511.0 | Icons (via `@liam-hq/ui`) |
+| `lucide-react` | 0.511.0 | Icons (via `@crowfoot/ui`) |
 | `rollup` | 4.52.5 | Bundles the CLI (`dist-cli/bin/cli.js`) |
 | `vite` | 6.4.1 | Builds the viewer SPA into `dist-cli/html` |
 
@@ -72,15 +89,15 @@ what a security pin looks like.
 A clean clone that installs and runs `vitest` gets test files failing at collection:
 
 ```
-Error: Failed to resolve entry for package "@liam-hq/schema".
+Error: Failed to resolve entry for package "@crowfoot/schema".
 ```
 
-`erd-core` and `cli` import the *built* `@liam-hq/schema` / `@liam-hq/ui`. This looks exactly like a
+`erd-core` and `cli` import the *built* `@crowfoot/schema` / `@crowfoot/ui`. This looks exactly like a
 product regression and is not one. Always:
 
 ```bash
 pnpm install
-pnpm exec turbo build --filter=@liam-hq/schema --filter=@liam-hq/ui
+pnpm exec turbo build --filter=@crowfoot/schema --filter=@crowfoot/ui
 ```
 
 (`pnpm test` via turbo works from cold because its task declares `dependsOn: ["^build", "gen"]`.)

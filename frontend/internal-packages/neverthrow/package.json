@@ -1,15 +1,13 @@
 {
-  "name": "@liam-hq/neverthrow",
+  "name": "@crowfoot/neverthrow",
   "repository": {
     "type": "git",
     "url": "https://github.com/liam-hq/liam.git"
   },
   "license": "Apache-2.0",
+  "private": true,
   "version": "0.0.1",
   "type": "module",
-  "publishConfig": {
-    "access": "public"
-  },
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts"
@@ -20,7 +18,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.6",
-    "@liam-hq/configs": "workspace:*",
+    "@crowfoot/configs": "workspace:*",
     "@types/node": "22.18.11",
     "concurrently": "9.2.1",
     "eslint": "9.38.0",

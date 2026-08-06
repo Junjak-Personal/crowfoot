@@ -1,4 +1,4 @@
-import { Ellipsis } from '@liam-hq/ui'
+import { Ellipsis } from '@crowfoot/ui'
 import * as ToolbarPrimitive from '@radix-ui/react-toolbar'
 import clsx from 'clsx'
 import { type FC, useEffect, useRef, useState } from 'react'

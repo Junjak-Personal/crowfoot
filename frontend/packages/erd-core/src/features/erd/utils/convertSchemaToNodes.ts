@@ -1,5 +1,5 @@
-import type { Cardinality, Schema } from '@liam-hq/schema'
-import { constraintsToRelationships } from '@liam-hq/schema'
+import type { Cardinality, Schema } from '@crowfoot/schema'
+import { constraintsToRelationships } from '@crowfoot/schema'
 import type { Edge, Node } from '@xyflow/react'
 import type { ShowMode } from '../../../schemas/showMode'
 import { NON_RELATED_TABLE_GROUP_NODE_ID, zIndex } from '../constants'

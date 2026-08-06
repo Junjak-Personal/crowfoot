@@ -3,8 +3,8 @@ import {
   type Column,
   isPrimaryKey,
   type Table,
-} from '@liam-hq/schema'
-import { DiamondFillIcon, DiamondIcon, KeyRound, Link } from '@liam-hq/ui'
+} from '@crowfoot/schema'
+import { DiamondFillIcon, DiamondIcon, KeyRound, Link } from '@crowfoot/ui'
 import { Handle, Position } from '@xyflow/react'
 import clsx from 'clsx'
 import { type FC, useMemo } from 'react'

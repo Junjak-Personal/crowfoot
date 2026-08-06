@@ -1,5 +1,5 @@
-import type { ForeignKeyConstraint } from '@liam-hq/schema'
-import { Link } from '@liam-hq/ui'
+import type { ForeignKeyConstraint } from '@crowfoot/schema'
+import { Link } from '@crowfoot/ui'
 import clsx from 'clsx'
 import type { FC } from 'react'
 import styles from '../Constraints.module.css'

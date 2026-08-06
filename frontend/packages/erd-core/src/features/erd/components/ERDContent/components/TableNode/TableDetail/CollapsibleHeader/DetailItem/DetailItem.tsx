@@ -1,4 +1,4 @@
-import { Link } from '@liam-hq/ui'
+import { Link } from '@crowfoot/ui'
 import clsx from 'clsx'
 import type { ComponentProps, FC } from 'react'
 import { BlinkCircle } from '../../BlinkCircle/BlinkCircle'

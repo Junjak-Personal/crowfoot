@@ -1,5 +1,5 @@
-import type { Table } from '@liam-hq/schema'
-import { DrawerDescription } from '@liam-hq/ui'
+import type { Table } from '@crowfoot/schema'
+import { DrawerDescription } from '@crowfoot/ui'
 import clsx from 'clsx'
 import { type FC, useMemo } from 'react'
 import {

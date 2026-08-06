@@ -1,5 +1,5 @@
-import type { ForeignKeyConstraint } from '@liam-hq/schema'
-import { GridTableHeader } from '@liam-hq/ui'
+import type { ForeignKeyConstraint } from '@crowfoot/schema'
+import { GridTableHeader } from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

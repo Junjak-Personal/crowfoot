@@ -23,21 +23,21 @@ is silently dropped by vitest as long as at least one glob matches.)
 ```bash
 # 🔴 On a fresh clone these two come FIRST, or test files fail at collection. See stack.md.
 pnpm install
-pnpm exec turbo build --filter=@liam-hq/schema --filter=@liam-hq/ui
+pnpm exec turbo build --filter=@crowfoot/schema --filter=@crowfoot/ui
 ```
 
 - All: `pnpm test` (turbo; `dependsOn: ["^build", "gen"]` — which is why the turbo path works from cold)
-- Per package: `pnpm --filter @liam-hq/erd-core test` etc.
+- Per package: `pnpm --filter @crowfoot/erd-core test` etc.
 - Coverage: `pnpm test:coverage` (v8 → `./coverage`)
 
 ## Verified baseline (measured 2026-08-06 @ `be485b4`, macOS)
 
 | Package | Result |
 |---|---|
-| `@liam-hq/schema` | **562 passed** |
-| `@liam-hq/erd-core` | **303 passed, 4 todo** |
+| `@crowfoot/schema` | **562 passed** |
+| `@crowfoot/erd-core` | **303 passed, 4 todo** |
 | `crowfoot` | **31 passed** |
-| `@liam-hq/ui` | **30 passed** |
+| `@crowfoot/ui` | **30 passed** |
 
 Type-check exit 0 on `erd-core`, `crowfoot`, `ui`; root `pnpm lint` exit 0. Gate on net-new against this.
 
@@ -46,15 +46,15 @@ Type-check exit 0 on `erd-core`, `crowfoot`, `ui`; root `pnpm lint` exit 0. Gate
 > parses it as a URL. On macOS/Linux the suite is green. **Never report a macOS run as evidence about
 > the Windows path.**
 
-> ⚠️ **CI does not run everything.** `frontend-ci.yml` runs `pnpm lint` plus `@liam-hq/erd-core` and
-> `crowfoot` tests only — **`@liam-hq/schema` (562) and `@liam-hq/ui` (30) never run in CI.** Run
+> ⚠️ **CI does not run everything.** `frontend-ci.yml` runs `pnpm lint` plus `@crowfoot/erd-core` and
+> `crowfoot` tests only — **`@crowfoot/schema` (562) and `@crowfoot/ui` (30) never run in CI.** Run
 > them locally before claiming a change is safe.
 
 ## Patterns
 - File naming: `*.test.ts(x)`, **colocated** with the subject
 - `globals: true` is configured, **but every fork-owned suite imports explicitly anyway** —
   `import { describe, expect, it } from 'vitest'`. Follow the code, not the config.
-- Test data: **builder factories** from `@liam-hq/schema` — `aSchema`, `aTable`, `aColumn`, `anIndex`,
+- Test data: **builder factories** from `@crowfoot/schema` — `aSchema`, `aTable`, `aColumn`, `anIndex`,
   `aPrimaryKeyConstraint`, `aForeignKeyConstraint`, `aUniqueConstraint`. Do not hand-roll schema literals.
 - Mocks: `vi.mock` inline. (The old workspace-level `frontend/packages/__mocks__/*` no longer exists.)
 - String assertions: prefer `toMatchInlineSnapshot()` over stacked `toContain`
@@ -71,7 +71,7 @@ CSS Modules are not injected into happy-dom, so `pointer-events`, z-index and cu
 as *class names present*. Real behaviour needs a browser — two real defects were found that way
 (`6c112432a`, `68e37114c`). **Do not claim a CSS-dependent fix is verified from unit tests.**
 
-### `@liam-hq/ui` has un-exercised surface
+### `@crowfoot/ui` has un-exercised surface
 Many components (`Modal`, `Popover`, `Select`, `Input`, `Callout`, `Skeleton`, `RoundBadge`, `Switch`,
 `Tabs`, `Collapsible`) have **no consumer in `erd-core` or `cli`** — they are kept for future feature
 work. Consequences: `tsc` never checks them against real usage, there is no storybook to preview them,

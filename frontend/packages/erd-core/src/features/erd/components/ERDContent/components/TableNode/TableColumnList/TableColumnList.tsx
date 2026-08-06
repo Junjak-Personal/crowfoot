@@ -1,4 +1,4 @@
-import { type Column, isPrimaryKey, type Table } from '@liam-hq/schema'
+import { type Column, isPrimaryKey, type Table } from '@crowfoot/schema'
 import type { FC } from 'react'
 import type { TableNodeData } from '../../../../../types'
 import { columnHandleId } from '../../../../../utils'

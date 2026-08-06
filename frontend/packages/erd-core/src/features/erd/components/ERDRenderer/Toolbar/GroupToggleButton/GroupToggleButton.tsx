@@ -1,6 +1,6 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { Group, type IconButton, Ungroup } from '@liam-hq/ui'
+import { Group, type IconButton, Ungroup } from '@crowfoot/ui'
 import {
   type ComponentProps,
   type FC,

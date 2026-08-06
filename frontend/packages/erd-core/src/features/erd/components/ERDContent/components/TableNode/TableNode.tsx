@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipRoot,
   TooltipTrigger,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import type { NodeProps } from '@xyflow/react'
 import clsx from 'clsx'
 import type { FC } from 'react'

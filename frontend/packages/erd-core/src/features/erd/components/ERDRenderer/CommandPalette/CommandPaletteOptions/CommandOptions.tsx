@@ -7,7 +7,7 @@ import {
   RectangleHorizontal,
   Scan,
   TidyUpIcon,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { Command } from 'cmdk'
 import type { FC } from 'react'
 import { useUserEditingOrThrow } from '../../../../../../stores'

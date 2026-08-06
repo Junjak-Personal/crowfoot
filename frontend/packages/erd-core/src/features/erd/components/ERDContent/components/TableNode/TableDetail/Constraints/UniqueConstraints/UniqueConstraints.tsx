@@ -1,5 +1,5 @@
-import type { UniqueConstraint } from '@liam-hq/schema'
-import { Fingerprint } from '@liam-hq/ui'
+import type { UniqueConstraint } from '@crowfoot/schema'
+import { Fingerprint } from '@crowfoot/ui'
 import type { FC } from 'react'
 import styles from '../Constraints.module.css'
 import { UniqueConstraintsItem } from './UniqueConstraintsItem'

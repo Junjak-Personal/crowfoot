@@ -1,6 +1,6 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { aTable } from '@liam-hq/schema'
+import { aTable } from '@crowfoot/schema'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { zIndex } from '../../constants'
 import type { TableNodeData, TableNodeType } from '../../types'

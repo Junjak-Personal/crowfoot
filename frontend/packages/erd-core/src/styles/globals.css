@@ -3,7 +3,7 @@
  * See the NOTICE file at the repository root for what changed.
  */
 
-@import url('@liam-hq/ui/src/styles/globals.css');
+@import url('@crowfoot/ui/src/styles/globals.css');
 @import './variables.css';
 
 /* https://github.com/radix-ui/primitives/issues/2908 */

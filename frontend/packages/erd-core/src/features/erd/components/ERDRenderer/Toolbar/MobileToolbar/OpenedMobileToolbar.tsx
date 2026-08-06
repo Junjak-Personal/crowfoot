@@ -1,6 +1,6 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
-import { ChevronDown, Minus, Plus } from '@liam-hq/ui'
+import { ChevronDown, Minus, Plus } from '@crowfoot/ui'
 import { useStore } from '@xyflow/react'
 import { type FC, useCallback } from 'react'
 import { useVersionOrThrow } from '../../../../../../providers'

@@ -1,4 +1,4 @@
-import { aColumn, aPrimaryKeyConstraint } from '@liam-hq/schema'
+import { aColumn, aPrimaryKeyConstraint } from '@crowfoot/schema'
 import { render, screen } from '@testing-library/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'

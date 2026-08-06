@@ -7,7 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuRoot,
   DropdownMenuTrigger,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { type FC, useCallback } from 'react'
 import { safeParse } from 'valibot'
 import { useVersionOrThrow } from '../../../../../../providers'

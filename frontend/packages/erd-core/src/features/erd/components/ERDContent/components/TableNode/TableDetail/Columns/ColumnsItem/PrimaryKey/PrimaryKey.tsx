@@ -1,4 +1,4 @@
-import { GridTableItem, GridTableRow, KeyRound } from '@liam-hq/ui'
+import { GridTableItem, GridTableRow, KeyRound } from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

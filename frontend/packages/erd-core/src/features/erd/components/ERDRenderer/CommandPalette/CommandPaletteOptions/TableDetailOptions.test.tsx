@@ -1,4 +1,4 @@
-import { aColumn, anIndex, aTable } from '@liam-hq/schema'
+import { aColumn, anIndex, aTable } from '@crowfoot/schema'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ReactFlowProvider } from '@xyflow/react'

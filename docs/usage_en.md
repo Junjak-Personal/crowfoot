@@ -326,7 +326,7 @@ text is ignored rather than turned into a memo.
 
 ### Colour palette
 
-Twelve fixed colours, all lifted from the existing `@liam-hq/ui` design tokens.
+Twelve fixed colours, all lifted from the existing `@crowfoot/ui` design tokens.
 
 | Key | Colour | Key | Colour |
 |---|---|---|---|

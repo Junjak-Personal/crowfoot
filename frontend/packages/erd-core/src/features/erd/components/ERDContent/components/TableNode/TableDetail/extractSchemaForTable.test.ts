@@ -1,5 +1,5 @@
-import type { Schema } from '@liam-hq/schema'
-import { aColumn, aTable } from '@liam-hq/schema'
+import type { Schema } from '@crowfoot/schema'
+import { aColumn, aTable } from '@crowfoot/schema'
 import { describe, expect, it } from 'vitest'
 import { extractSchemaForTable } from './extractSchemaForTable'
 

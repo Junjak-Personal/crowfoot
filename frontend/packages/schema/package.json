@@ -1,21 +1,19 @@
 {
-  "name": "@liam-hq/schema",
+  "name": "@crowfoot/schema",
   "repository": {
     "type": "git",
     "url": "https://github.com/liam-hq/liam.git"
   },
   "license": "Apache-2.0",
+  "private": true,
   "version": "0.6.1",
   "type": "module",
-  "publishConfig": {
-    "access": "public"
-  },
   "exports": {
     ".": "./dist/index.js",
     "./parser": "./dist/parser.js"
   },
   "dependencies": {
-    "@liam-hq/neverthrow": "workspace:*",
+    "@crowfoot/neverthrow": "workspace:*",
     "@prisma/internals": "6.8.2",
     "@ruby/prism": "1.5.2",
     "@swc/core": "1.12.11",
@@ -28,7 +26,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.6",
-    "@liam-hq/configs": "workspace:*",
+    "@crowfoot/configs": "workspace:*",
     "@pgsql/types": "15.1.1",
     "@prisma/generator-helper": "6.8.2",
     "@types/node": "22.18.11",

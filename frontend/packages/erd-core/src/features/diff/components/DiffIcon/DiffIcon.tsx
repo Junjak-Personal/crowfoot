@@ -1,5 +1,5 @@
-import type { ChangeStatus } from '@liam-hq/schema'
-import { Dot, Minus, Plus } from '@liam-hq/ui'
+import type { ChangeStatus } from '@crowfoot/schema'
+import { Dot, Minus, Plus } from '@crowfoot/ui'
 import clsx from 'clsx'
 import type { FC } from 'react'
 import { match } from 'ts-pattern'

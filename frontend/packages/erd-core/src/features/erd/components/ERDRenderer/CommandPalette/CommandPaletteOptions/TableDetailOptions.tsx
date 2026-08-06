@@ -5,7 +5,7 @@ import {
   KeyRound,
   Link,
   Table2,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import clsx from 'clsx'
 import { Command } from 'cmdk'
 import { type ComponentProps, type FC, useMemo } from 'react'

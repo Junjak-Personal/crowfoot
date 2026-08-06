@@ -1,6 +1,6 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
-import type { Cardinality, Table } from '@liam-hq/schema'
+import type { Cardinality, Table } from '@crowfoot/schema'
 import type { Node } from '@xyflow/react'
 import type { ShowMode } from '../../schemas/showMode/types'
 import type { ViewColorKey } from './utils/viewColor'

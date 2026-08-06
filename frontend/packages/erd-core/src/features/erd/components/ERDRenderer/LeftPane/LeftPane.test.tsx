@@ -1,7 +1,7 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { aTable } from '@liam-hq/schema'
-import { SidebarProvider } from '@liam-hq/ui'
+import { aTable } from '@crowfoot/schema'
+import { SidebarProvider } from '@crowfoot/ui'
 import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { type Node, ReactFlowProvider } from '@xyflow/react'

@@ -1,4 +1,4 @@
-import { InfoIcon } from '@liam-hq/ui'
+import { InfoIcon } from '@crowfoot/ui'
 import type { FC } from 'react'
 import styles from './ErrorDisplay.module.css'
 import { NetworkErrorDisplay } from './NetworkErrorDisplay'

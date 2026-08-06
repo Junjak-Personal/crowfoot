@@ -1,4 +1,4 @@
-import { Menu, useSidebar, XIcon } from '@liam-hq/ui'
+import { Menu, useSidebar, XIcon } from '@crowfoot/ui'
 import { type Ref, useCallback } from 'react'
 import styles from './MenuButton.module.css'
 

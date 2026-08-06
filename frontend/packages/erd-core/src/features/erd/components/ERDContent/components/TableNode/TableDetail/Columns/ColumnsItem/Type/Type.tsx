@@ -1,5 +1,5 @@
-import type { Column } from '@liam-hq/schema'
-import { GridTableDd, GridTableDt, GridTableItem } from '@liam-hq/ui'
+import type { Column } from '@crowfoot/schema'
+import { GridTableDd, GridTableDt, GridTableItem } from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

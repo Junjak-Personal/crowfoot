@@ -1,4 +1,4 @@
-import { IconButton } from '@liam-hq/ui'
+import { IconButton } from '@crowfoot/ui'
 import { ToolbarButton } from '@radix-ui/react-toolbar'
 import type { ComponentProps, FC, MouseEventHandler, ReactNode } from 'react'
 import styles from './ToolbarIconButton.module.css'

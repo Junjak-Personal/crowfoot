@@ -4,7 +4,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   Table2,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import clsx from 'clsx'
 import {
   type FC,

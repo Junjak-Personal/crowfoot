@@ -7,12 +7,12 @@ crowfoot/
 ├── frontend/
 │   ├── packages/
 │   │   ├── cli/            crowfoot            ★ the published CLI + viewer host
-│   │   ├── erd-core/       @liam-hq/erd-core   the ERD viewer (React + xyflow)
-│   │   ├── schema/         @liam-hq/schema     parsers + deparsers (incl. fork's MySQL deparser)
-│   │   └── ui/             @liam-hq/ui         design system (Radix + CSS Modules + tokens)
+│   │   ├── erd-core/       @crowfoot/erd-core   the ERD viewer (React + xyflow)
+│   │   ├── schema/         @crowfoot/schema     parsers + deparsers (incl. fork's MySQL deparser)
+│   │   └── ui/             @crowfoot/ui         design system (Radix + CSS Modules + tokens)
 │   └── internal-packages/
-│       ├── configs/        @liam-hq/configs    shared biome/tsconfig/eslint presets
-│       └── neverthrow/     @liam-hq/neverthrow Result-type helpers
+│       ├── configs/        @crowfoot/configs    shared biome/tsconfig/eslint presets
+│       └── neverthrow/     @crowfoot/neverthrow Result-type helpers
 ├── _docs/                  ★ project docs — plans, findings. Start at `_docs/index.md`.
 ├── _note/                  human-owned scratch notes — agent READ-ONLY
 ├── docs/                   upstream documentation. Only 4 files survive; see below.
@@ -98,7 +98,7 @@ src/
 └── index.ts                     # package entry, re-exports
 ```
 - Utilities: `src/features/<feature>/utils/<name>/` — **one directory per util, colocated test, `index.ts`**
-- Shared components: `@liam-hq/ui`
+- Shared components: `@crowfoot/ui`
 
 ## Naming Conventions
 - Directories (components): `PascalCase/` · (utils/features/stores): `camelCase/`

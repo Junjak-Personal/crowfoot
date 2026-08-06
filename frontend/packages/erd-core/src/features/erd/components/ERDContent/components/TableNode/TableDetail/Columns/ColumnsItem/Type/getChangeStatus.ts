@@ -4,7 +4,7 @@ import {
   getColumnTypeChangeStatus,
   getTableRelatedChangeStatus,
   type MigrationOperation,
-} from '@liam-hq/schema'
+} from '@crowfoot/schema'
 
 type Params = {
   tableId: string

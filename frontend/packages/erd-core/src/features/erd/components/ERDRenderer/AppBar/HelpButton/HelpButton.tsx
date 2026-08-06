@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipRoot,
   TooltipTrigger,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import type { Ref } from 'react'
 import styles from './HelpButton.module.css'
 import { ReleaseVersion } from './ReleaseVersion'

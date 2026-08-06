@@ -1,5 +1,5 @@
-import type { CheckConstraint } from '@liam-hq/schema'
-import { Check } from '@liam-hq/ui'
+import type { CheckConstraint } from '@crowfoot/schema'
+import { Check } from '@crowfoot/ui'
 import type { FC } from 'react'
 import styles from '../Constraints.module.css'
 import { CheckConstraintsItem } from './CheckConstraintsItem'

@@ -21,7 +21,7 @@
       "dependsOn": ["^gen"],
       "outputLogs": "errors-only"
     },
-    "@liam-hq/schema#gen": {
+    "@crowfoot/schema#gen": {
       "dependsOn": ["^gen"],
       "outputs": ["src/parser/tbls/schema.generated.ts"],
       "outputLogs": "errors-only"

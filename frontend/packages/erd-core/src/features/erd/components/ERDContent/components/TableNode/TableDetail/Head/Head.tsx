@@ -1,11 +1,11 @@
-import { getTableChangeStatus, type Table } from '@liam-hq/schema'
+import { getTableChangeStatus, type Table } from '@crowfoot/schema'
 import {
   DrawerClose,
   DrawerTitle,
   IconButton,
   Table2,
   XIcon,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import clsx from 'clsx'
 import { type FC, useMemo } from 'react'
 import { useVersionOrThrow } from '../../../../../../../../providers'

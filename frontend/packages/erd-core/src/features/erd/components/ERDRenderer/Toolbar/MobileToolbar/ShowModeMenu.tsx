@@ -1,4 +1,4 @@
-import { ChevronLeft } from '@liam-hq/ui'
+import { ChevronLeft } from '@crowfoot/ui'
 import type { FC } from 'react'
 import styles from './ShowModeMenu.module.css'
 import { ShowModeMenuRadioGroup } from './ShowModeMenuRadioGroup'

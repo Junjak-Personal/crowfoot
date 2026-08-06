@@ -13,7 +13,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { useNodes } from '@xyflow/react'
 import clsx from 'clsx'
 import { Fragment, useCallback, useMemo, useSyncExternalStore } from 'react'

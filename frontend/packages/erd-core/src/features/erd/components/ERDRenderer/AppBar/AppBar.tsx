@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipRoot,
   TooltipTrigger,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import type { FC } from 'react'
 import { CommandPaletteTriggerButton } from '../CommandPalette'
 import styles from './AppBar.module.css'

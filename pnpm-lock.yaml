@@ -86,7 +86,7 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.6
         version: 2.2.6
-      '@liam-hq/configs':
+      '@crowfoot/configs':
         specifier: workspace:*
         version: link:../configs
       '@types/node':
@@ -141,13 +141,13 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.6
         version: 2.2.6
-      '@liam-hq/configs':
+      '@crowfoot/configs':
         specifier: workspace:*
         version: link:../../internal-packages/configs
-      '@liam-hq/erd-core':
+      '@crowfoot/erd-core':
         specifier: workspace:*
         version: link:../erd-core
-      '@liam-hq/schema':
+      '@crowfoot/schema':
         specifier: workspace:*
         version: link:../schema
       '@rollup/plugin-commonjs':
@@ -198,10 +198,10 @@ importers:
 
   frontend/packages/erd-core:
     dependencies:
-      '@liam-hq/neverthrow':
+      '@crowfoot/neverthrow':
         specifier: workspace:*
         version: link:../../internal-packages/neverthrow
-      '@liam-hq/ui':
+      '@crowfoot/ui':
         specifier: workspace:*
         version: link:../ui
       '@radix-ui/react-dialog':
@@ -244,10 +244,10 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.6
         version: 2.2.6
-      '@liam-hq/configs':
+      '@crowfoot/configs':
         specifier: workspace:*
         version: link:../../internal-packages/configs
-      '@liam-hq/schema':
+      '@crowfoot/schema':
         specifier: workspace:*
         version: link:../schema
       '@testing-library/jest-dom':
@@ -286,7 +286,7 @@ importers:
 
   frontend/packages/schema:
     dependencies:
-      '@liam-hq/neverthrow':
+      '@crowfoot/neverthrow':
         specifier: workspace:*
         version: link:../../internal-packages/neverthrow
       '@prisma/internals':
@@ -320,7 +320,7 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.6
         version: 2.2.6
-      '@liam-hq/configs':
+      '@crowfoot/configs':
         specifier: workspace:*
         version: link:../../internal-packages/configs
       '@pgsql/types':
@@ -414,7 +414,7 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.6
         version: 2.2.6
-      '@liam-hq/configs':
+      '@crowfoot/configs':
         specifier: workspace:*
         version: link:../../internal-packages/configs
       '@testing-library/jest-dom':

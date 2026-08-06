@@ -1,5 +1,5 @@
-import type { Index } from '@liam-hq/schema'
-import { GridTableRoot } from '@liam-hq/ui'
+import type { Index } from '@crowfoot/schema'
+import { GridTableRoot } from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

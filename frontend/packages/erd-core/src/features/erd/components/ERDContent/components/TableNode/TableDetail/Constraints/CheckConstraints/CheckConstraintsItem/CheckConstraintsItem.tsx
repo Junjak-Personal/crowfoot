@@ -1,11 +1,11 @@
-import type { CheckConstraint } from '@liam-hq/schema'
+import type { CheckConstraint } from '@crowfoot/schema'
 import {
   GridTableDd,
   GridTableDt,
   GridTableHeader,
   GridTableItem,
   GridTableRoot,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

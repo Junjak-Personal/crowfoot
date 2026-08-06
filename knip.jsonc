@@ -23,7 +23,7 @@
     "destyle.css", // Used by CSS imports in ui package
     "json-refs", // Used by schema npm scripts
     "json-schema-to-zod", // Used by schema npm scripts
-    "@liam-hq/configs", // Used by tsconfig and biome configuration files
+    "@crowfoot/configs", // Used by tsconfig and biome configuration files
     "@biomejs/biome", // Referenced in settings.json to enable Biome's "format on save" in VSCode
     "@swc/core" // Required for Vercel deployment to prevent native binding errors
   ],

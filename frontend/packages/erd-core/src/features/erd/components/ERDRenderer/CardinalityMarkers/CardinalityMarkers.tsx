@@ -2,7 +2,7 @@ import {
   CardinalityZeroOrManyLeftMarker,
   CardinalityZeroOrOneLeftMarker,
   CardinalityZeroOrOneRightMarker,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import type { FC } from 'react'
 import styles from './CardinalityMarkers.module.css'
 

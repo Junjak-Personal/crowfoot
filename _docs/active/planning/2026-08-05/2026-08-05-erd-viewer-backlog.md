@@ -48,7 +48,7 @@ tbls 는 **이미 거의 동일한 그룹 개념을 갖고 있고 이 저장소�
 carbon ERD 의 실제 ingest 경로가 tbls 이므로, `.tbls.yml` 에 viewpoint 그룹이 이미 있다면
 `groups.json` 을 손으로 다시 쓰는 건 중복 작업이다.
 
-**구현 위치는 CLI 이지 `@liam-hq/schema` 가 아니다.** 세 가지 이유 모두 검증됨:
+**구현 위치는 CLI 이지 `@crowfoot/schema` 가 아니다.** 세 가지 이유 모두 검증됨:
 - `Schema` 에 필드를 추가하면 `deparser/yaml/schemaDeparser.ts` 가 스키마 객체 **전체를 stringify**
   하므로 YAML export 바이트가 조용히 바뀐다
 - `dist/schema.json` 은 `erd build` 가 매번 소스에서 재생성하므로 손으로 넣은 그룹이 덮어써진다

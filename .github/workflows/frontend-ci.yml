@@ -68,5 +68,5 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/pnpm-setup
-      - run: pnpm --filter @liam-hq/erd-core test
+      - run: pnpm --filter @crowfoot/erd-core test
       - run: pnpm --filter crowfoot test

@@ -24,7 +24,7 @@ with `stage_fixed: true`.
 - Type imports use the inline form: `import { type FC, useCallback } from 'react'`,
   `import type { TableNodeType } from '../../features/erd/types'`
 - Paths: **relative** within a package (`'../viewColor'`, `'./context'`); **package specifiers**
-  across packages (`'@liam-hq/ui'`, `'@liam-hq/schema/parser'`)
+  across packages (`'@crowfoot/ui'`, `'@crowfoot/schema/parser'`)
 - `@/` alias exists in `erd-core`'s vitest config but source code uses relative paths — **follow the
   relative-path convention**
 - Node builtins are prefixed: `import { cpSync } from 'node:fs'`

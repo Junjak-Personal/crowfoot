@@ -7,7 +7,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
   ToastProvider,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { ReactFlowProvider } from '@xyflow/react'
 import {
   type ComponentProps,

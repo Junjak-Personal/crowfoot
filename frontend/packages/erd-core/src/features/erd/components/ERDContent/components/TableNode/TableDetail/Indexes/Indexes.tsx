@@ -1,5 +1,5 @@
-import type { Indexes as IndexesType } from '@liam-hq/schema'
-import { FileText } from '@liam-hq/ui'
+import type { Indexes as IndexesType } from '@crowfoot/schema'
+import { FileText } from '@crowfoot/ui'
 import type { FC } from 'react'
 import { CollapsibleHeader } from '../CollapsibleHeader'
 import { IndexesItem } from './IndexesItem'

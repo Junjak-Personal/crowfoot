@@ -1,4 +1,4 @@
-import { SidebarMenuButton, SidebarMenuItem } from '@liam-hq/ui'
+import { SidebarMenuButton, SidebarMenuItem } from '@crowfoot/ui'
 import type { FC, ReactNode } from 'react'
 import styles from './MenuItemLink.module.css'
 

@@ -1,4 +1,4 @@
-import { aTable } from '@liam-hq/schema'
+import { aTable } from '@crowfoot/schema'
 import { Dialog } from '@radix-ui/react-dialog'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'

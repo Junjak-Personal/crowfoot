@@ -1,4 +1,4 @@
-import { isPrimaryKey, type Table } from '@liam-hq/schema'
+import { isPrimaryKey, type Table } from '@crowfoot/schema'
 
 export type ColumnType = 'PRIMARY_KEY' | 'FOREIGN_KEY' | 'NOT_NULL' | 'NULLABLE'
 

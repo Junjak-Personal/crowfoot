@@ -14,7 +14,7 @@
 - Base URL config: **none** — all artifact paths are relative, which is what lets the build mount
   under any subpath (`/erd/`) without a rebuild
 
-## The data contract (`@liam-hq/schema`)
+## The data contract (`@crowfoot/schema`)
 
 ```
 source (DDL / schema.rb / prisma / drizzle / tbls JSON)
@@ -25,7 +25,7 @@ source (DDL / schema.rb / prisma / drizzle / tbls JSON)
 
 - Model + validation: `frontend/packages/schema/src/schema/` — `schemaSchema`, `Schema`, `Table`,
   `Column`, `Constraint`, `Index`, plus `aSchema`/`aTable`/`aColumn` builders used as test factories
-- Package entry points: `@liam-hq/schema` (`.`) and `@liam-hq/schema/parser` (`./parser`)
+- Package entry points: `@crowfoot/schema` (`.`) and `@crowfoot/schema/parser` (`./parser`)
 - Validation library: **Valibot 1.1.0** (`zod` 4.0.0 is present only for the tbls JSON-Schema→zod
   codegen path, see below)
 - Errors: `neverthrow` `Result` — parsers return `ProcessError[]` rather than throwing
@@ -48,7 +48,7 @@ All deparsers implement the shared `SchemaDeparser` / `OperationDeparser` types 
 ## Generated Code
 - Generator: `json-schema-to-zod` — the **only** codegen in the repo
 - Output: `frontend/packages/schema/src/parser/tbls/schema.generated.ts` (declared as a turbo output)
-- Regen command: `pnpm --filter @liam-hq/schema gen` (turbo task `@liam-hq/schema#gen`)
+- Regen command: `pnpm --filter @crowfoot/schema gen` (turbo task `@crowfoot/schema#gen`)
 - Spec source: the tbls JSON Schema (committed; no running backend required)
 - Hand-maintained overrides inside the generated tree: **None**
 - Post-regen fixups: **None**

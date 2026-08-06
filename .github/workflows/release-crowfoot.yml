@@ -53,7 +53,7 @@ jobs:
 
       - run: pnpm lint
 
-      - run: pnpm --filter @liam-hq/erd-core test
+      - run: pnpm --filter @crowfoot/erd-core test
 
       - run: pnpm --filter crowfoot test
 

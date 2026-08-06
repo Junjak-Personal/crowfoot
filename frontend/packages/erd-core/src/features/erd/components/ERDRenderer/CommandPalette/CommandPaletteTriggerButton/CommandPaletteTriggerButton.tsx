@@ -1,4 +1,4 @@
-import { Search } from '@liam-hq/ui'
+import { Search } from '@crowfoot/ui'
 import type { FC } from 'react'
 import { useCommandPaletteOrThrow } from '../CommandPaletteProvider'
 import styles from './CommandPaletteTriggerButton.module.css'

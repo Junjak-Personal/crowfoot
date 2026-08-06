@@ -1,4 +1,4 @@
-import { Eye, EyeClosed, SidebarMenuAction } from '@liam-hq/ui'
+import { Eye, EyeClosed, SidebarMenuAction } from '@crowfoot/ui'
 import { type FC, type MouseEvent, useCallback } from 'react'
 import { useVersionOrThrow } from '../../../../../../providers'
 import { useUserEditingOrThrow } from '../../../../../../stores'

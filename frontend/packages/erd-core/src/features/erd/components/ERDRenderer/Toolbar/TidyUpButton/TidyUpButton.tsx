@@ -1,4 +1,4 @@
-import { type IconButton, TidyUpIcon } from '@liam-hq/ui'
+import { type IconButton, TidyUpIcon } from '@crowfoot/ui'
 import { useReactFlow } from '@xyflow/react'
 import {
   type ComponentProps,

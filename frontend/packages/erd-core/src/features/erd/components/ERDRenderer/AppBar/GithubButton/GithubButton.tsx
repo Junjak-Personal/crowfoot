@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipRoot,
   TooltipTrigger,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import type { FC } from 'react'
 import styles from './GithubButton.module.css'
 

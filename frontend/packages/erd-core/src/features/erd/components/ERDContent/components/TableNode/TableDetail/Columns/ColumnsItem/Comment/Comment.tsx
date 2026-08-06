@@ -1,4 +1,4 @@
-import { type Column, getColumnCommentChangeStatus } from '@liam-hq/schema'
+import { type Column, getColumnCommentChangeStatus } from '@crowfoot/schema'
 import clsx from 'clsx'
 import { type FC, useMemo } from 'react'
 import {

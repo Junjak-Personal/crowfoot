@@ -1,4 +1,4 @@
-import { Table2 } from '@liam-hq/ui'
+import { Table2 } from '@crowfoot/ui'
 import { Command } from 'cmdk'
 import type { FC } from 'react'
 import { useSchemaOrThrow } from '../../../../../../stores'

@@ -3,7 +3,7 @@ import {
   mergeSchemas,
   type Schema,
   schemaSchema,
-} from '@liam-hq/schema'
+} from '@crowfoot/schema'
 import { type FC, type PropsWithChildren, useMemo } from 'react'
 import * as v from 'valibot'
 import { SchemaContext, type SchemaContextValue } from './context'

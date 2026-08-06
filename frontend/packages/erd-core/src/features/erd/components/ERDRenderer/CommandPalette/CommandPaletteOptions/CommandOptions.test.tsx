@@ -1,4 +1,4 @@
-import { ToastProvider } from '@liam-hq/ui'
+import { ToastProvider } from '@crowfoot/ui'
 import { render, screen } from '@testing-library/react'
 import { type Node, ReactFlowProvider } from '@xyflow/react'
 import { Command } from 'cmdk'

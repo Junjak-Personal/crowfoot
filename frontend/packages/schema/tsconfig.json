@@ -1,5 +1,5 @@
 {
-  "extends": "@liam-hq/configs/tsconfig/base.json",
+  "extends": "@crowfoot/configs/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,

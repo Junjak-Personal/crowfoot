@@ -86,7 +86,7 @@ export function createBaseConfig(options = {}) {
 							{
 								name: "neverthrow",
 								importNames: ["fromThrowable", "fromAsyncThrowable"],
-								message: "Use @liam-hq/neverthrow instead for consistent error handling",
+								message: "Use @crowfoot/neverthrow instead for consistent error handling",
 							},
 						],
 					},

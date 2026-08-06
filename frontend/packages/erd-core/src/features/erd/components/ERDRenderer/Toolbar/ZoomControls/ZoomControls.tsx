@@ -1,4 +1,4 @@
-import { Minus, Plus } from '@liam-hq/ui'
+import { Minus, Plus } from '@crowfoot/ui'
 import { useStore } from '@xyflow/react'
 import { type FC, useCallback } from 'react'
 import { useVersionOrThrow } from '../../../../../../providers'

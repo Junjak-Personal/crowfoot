@@ -3,7 +3,7 @@
 /**
  * Colour pool for tinting tables and memos.
  *
- * Every value is lifted from the design tokens in @liam-hq/ui
+ * Every value is lifted from the design tokens in @crowfoot/ui
  * (styles/Dark/variables.css) rather than invented, so the ERD keeps looking
  * like the rest of the product. `--primary-accent` (green-400) is deliberately
  * absent: it means "highlighted/hovered" and must not double as a user colour.

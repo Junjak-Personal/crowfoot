@@ -1,11 +1,11 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
-import { fromPromise } from '@liam-hq/neverthrow'
+import { fromPromise } from '@crowfoot/neverthrow'
 import {
   mysqlSchemaDeparser,
   postgresqlSchemaDeparser,
   yamlSchemaDeparser,
-} from '@liam-hq/schema'
+} from '@crowfoot/schema'
 import {
   Button,
   ChevronDown,
@@ -17,7 +17,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuTrigger,
   useToast,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import type { FC } from 'react'
 import {
   useSchemaOrThrow,

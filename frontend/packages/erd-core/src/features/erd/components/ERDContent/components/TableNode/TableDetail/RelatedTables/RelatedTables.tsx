@@ -1,4 +1,4 @@
-import { GotoIcon, IconButton, Waypoints as WaypointsIcon } from '@liam-hq/ui'
+import { GotoIcon, IconButton, Waypoints as WaypointsIcon } from '@crowfoot/ui'
 import { type Edge, type Node, ReactFlowProvider } from '@xyflow/react'
 import { type FC, type MouseEvent, useCallback } from 'react'
 import { useUserEditingOrThrow } from '../../../../../../../../stores'

@@ -1,4 +1,4 @@
-import { Search } from '@liam-hq/ui'
+import { Search } from '@crowfoot/ui'
 import { Command } from 'cmdk'
 import {
   type ComponentProps,

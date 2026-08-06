@@ -1,4 +1,4 @@
-import { type IconButton, Scan } from '@liam-hq/ui'
+import { type IconButton, Scan } from '@crowfoot/ui'
 import {
   type ComponentProps,
   type FC,

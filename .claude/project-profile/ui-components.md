@@ -1,11 +1,11 @@
 # UI Components
 
 ## Component Library
-- Name: **`@liam-hq/ui`** — workspace-internal design system built on **Radix UI primitives**
-- Import pattern: **manual, named, from the package root** — `import { Button, DropdownMenuRoot } from '@liam-hq/ui'`
+- Name: **`@crowfoot/ui`** — workspace-internal design system built on **Radix UI primitives**
+- Import pattern: **manual, named, from the package root** — `import { Button, DropdownMenuRoot } from '@crowfoot/ui'`
   (`src/index.ts` barrels `components`, `icons`, `logos`, `markers`, `styles`)
-- Hooks entry: `@liam-hq/ui/hooks`
-- CLAUDE.md rule: **import UI components and icons from `@liam-hq/ui` when available** — do not
+- Hooks entry: `@crowfoot/ui/hooks`
+- CLAUDE.md rule: **import UI components and icons from `@crowfoot/ui` when available** — do not
   hand-roll a button, modal, dropdown, or context menu.
 
 ### The 22 components
@@ -34,12 +34,12 @@ select, slot, switch, tabs, toast, tooltip. Plus `vaul` (drawer) and `react-resi
 git checkout 444f80d^ -- frontend/packages/ui/src/components/<Name>/
 git rm frontend/packages/ui/src/components/<Name>/<Name>.stories.tsx   # no storybook hosts these
 # then: add its @radix-ui dep to ui/package.json, re-export from components/index.ts,
-#       pnpm install && pnpm --filter @liam-hq/ui gen:css
+#       pnpm install && pnpm --filter @crowfoot/ui gen:css
 ```
 
 ## Icons
-- Library: **`lucide-react` 0.511.0**, re-exported through `@liam-hq/ui` (`src/icons/`)
-- Usage: `import { ChevronDown } from '@liam-hq/ui'` → `<ChevronDown />`
+- Library: **`lucide-react` 0.511.0**, re-exported through `@crowfoot/ui` (`src/icons/`)
+- Usage: `import { ChevronDown } from '@crowfoot/ui'` → `<ChevronDown />`
 - The re-export list was pruned to what is actually used — **adding an icon means adding it to
   `icons/index.ts`**, it is not a blanket re-export of lucide.
 - ⚠️ Some components import icons by **internal relative path** (`Sidebar.tsx` → `'../../icons'`,
@@ -70,7 +70,7 @@ git rm frontend/packages/ui/src/components/<Name>/<Name>.stories.tsx   # no stor
   `ui/eslint-suppressions.json` for it. If you add a variant-indexed component, expect the same.
 
 ## Design Tokens
-CSS custom properties in `@liam-hq/ui/src/styles/variables.css` (`:root`) and
+CSS custom properties in `@crowfoot/ui/src/styles/variables.css` (`:root`) and
 `styles/Dark/variables.css` (the colour/spacing palette — the fork's source of truth for colour).
 
 | Family | Examples |

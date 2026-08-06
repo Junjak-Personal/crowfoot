@@ -1,11 +1,11 @@
-import type { PrimaryKeyConstraint } from '@liam-hq/schema'
+import type { PrimaryKeyConstraint } from '@crowfoot/schema'
 import {
   GridTableDd,
   GridTableDt,
   GridTableHeader,
   GridTableItem,
   GridTableRoot,
-} from '@liam-hq/ui'
+} from '@crowfoot/ui'
 import { type FC, useMemo } from 'react'
 import {
   useSchemaOrThrow,

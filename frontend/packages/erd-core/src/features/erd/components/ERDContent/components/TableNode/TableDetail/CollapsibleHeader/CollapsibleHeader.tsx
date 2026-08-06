@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, IconButton } from '@liam-hq/ui'
+import { ChevronDown, ChevronUp, IconButton } from '@crowfoot/ui'
 import clsx from 'clsx'
 import {
   type ComponentProps,

@@ -1,5 +1,5 @@
-import { aSchema, aTable } from '@liam-hq/schema'
-import { ToastProvider } from '@liam-hq/ui'
+import { aSchema, aTable } from '@crowfoot/schema'
+import { ToastProvider } from '@crowfoot/ui'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
