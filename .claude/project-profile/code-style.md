@@ -11,8 +11,10 @@ in `erd-core` / `schema` / `cli`.
 - Self-closing elements: required (`useSelfClosingElements`)
 - Import organization: **on** (Biome assist `source.organizeImports`) — do not hand-sort
 - `package.json` and `eslint-suppressions.json` are excluded from the formatter (syncpack owns them)
-- CSS: `cssModules: true` parser; Stylelint additionally enforces `stylelint-config-recess-order`
-  (property ordering) and `value-no-unknown-custom-properties` (**a typo'd CSS var fails lint**)
+- CSS: `cssModules: true` parser. **Stylelint was removed in `444f80d`** — property ordering and
+  `value-no-unknown-custom-properties` are no longer enforced anywhere. What does still apply is
+  eslint's `css-modules-kit/no-unused-class-names`, which cannot see dynamic `styles[variant]`
+  access; those files are listed in `<pkg>/eslint-suppressions.json`.
 
 Commands: `pnpm fmt` (write) · `pnpm lint` (check). `lefthook` runs `pnpm lint` on **pre-commit**
 with `stage_fixed: true`.

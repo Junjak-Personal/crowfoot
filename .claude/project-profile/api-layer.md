@@ -5,8 +5,8 @@
 > This document records the **file-based data contract** that plays the same role — it is what
 > Architect-BE and Designers need instead.
 >
-> (Upstream `frontend/apps/app` does have Supabase + Server Actions. The fork does not touch it;
-> if a task ever reaches into `frontend/apps/app`, re-scan first — nothing here applies there.)
+> (Upstream's Next.js app had Supabase + Server Actions. It was **deleted** in `444f80d`, so there is
+> no longer any HTTP/auth surface anywhere in this repository.)
 
 ## Client
 - Type: framework-free — a single `fetch('./schema.json')` from the viewer at runtime

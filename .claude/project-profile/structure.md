@@ -5,58 +5,47 @@
 ```
 crowfoot/
 ├── frontend/
-│   ├── apps/
-│   │   ├── app/            @liam-hq/app        Next.js 15 web app (upstream — fork does NOT touch)
-│   │   ├── docs/           @liam-hq/docs       docs site (upstream)
-│   │   ├── assets/                             shared static assets
-│   │   └── erd-sample/     @liam-hq/erd-sample smoke target; depends on `crowfoot` via workspace:*
 │   ├── packages/
-│   │   ├── cli/            crowfoot            ★ the publishable CLI
-│   │   ├── erd-core/       @liam-hq/erd-core   ★ the ERD viewer (React + xyflow)
-│   │   ├── schema/         @liam-hq/schema     ★ parsers + deparsers (incl. fork's MySQL deparser)
-│   │   ├── ui/             @liam-hq/ui         ★ design system (Radix + CSS Modules + tokens)
-│   │   └── db-structure/
+│   │   ├── cli/            crowfoot            ★ the published CLI + viewer host
+│   │   ├── erd-core/       @liam-hq/erd-core   the ERD viewer (React + xyflow)
+│   │   ├── schema/         @liam-hq/schema     parsers + deparsers (incl. fork's MySQL deparser)
+│   │   └── ui/             @liam-hq/ui         design system (Radix + CSS Modules + tokens)
 │   └── internal-packages/
-│       ├── agent/  db/  github/  mcp-server/  security/  pglite-server/
 │       ├── configs/        @liam-hq/configs    shared biome/tsconfig/eslint presets
-│       ├── e2e/            @liam-hq/e2e        Playwright — targets the Next.js app (upstream)
-│       ├── storybook/  schema-bench/  neverthrow/  figma-to-css-variables/
-├── _docs/                  ★ fork's project docs — plans, specs, handoff. Start at `_docs/index.md`.
+│       └── neverthrow/     @liam-hq/neverthrow Result-type helpers
+├── _docs/                  ★ project docs — plans, findings. Start at `_docs/index.md`.
 ├── _note/                  human-owned scratch notes — agent READ-ONLY
-├── docs/                   upstream documentation — do NOT add fork docs here.
-│                           Two exceptions the fork owns and may edit: `usage.md` and `usage_en.md`.
-│                           Everything else in `docs/` is upstream's.
+├── docs/                   upstream documentation. Only 4 files survive; see below.
+├── config/                 license_finder config (dependency_decisions.yml)
+├── scripts/                (empty of upstream helpers — the Supabase scripts were removed)
 ├── .github/workflows/      7 workflows — `release-crowfoot.yml` is the fork's; rest inherited
-├── NOTICE                  ★ Apache-2.0 §4(d) attribution + numbered change summary — keep in sync
+├── NOTICE                  ★ Apache-2.0 §4(d) attribution + numbered change summary (12 items)
 ├── LICENSE                 Apache-2.0
 ├── biome.jsonc  turbo.json  vitest.config.ts  lefthook.yml  knip.jsonc  .syncpackrc
 └── pnpm-workspace.yaml  .npmrc  .node-version
 ```
 
-No `.gitmodules` — this is a plain monorepo, not a submodule-monorepo. `submodule-worktree` does not apply.
+**No `.gitmodules`** — plain monorepo, `submodule-worktree` does not apply.
+**There is no `frontend/apps/`.** All four upstream apps were deleted in `444f80d`.
 
-## Fork work surface (read this before touching anything)
+`docs/` retains exactly four files, all deliberately: `test-principles.md` (CLAUDE.md references it),
+`packages-license.md` (§4 reference), `usage.md` + `usage_en.md` (fork-owned). Everything else in
+`docs/` was upstream-product documentation and is gone. **Do not add fork docs to `docs/` — use `_docs/`.**
 
-**Base commit: `f4dd6c4`** ("Liam ERD at 92156eac5, the base this fork was taken from") — the squashed
-upstream root left by the 2026-08-06 history rewrite. `git diff f4dd6c4..HEAD` is the authoritative
-list of what the fork owns: **110 files, ~7,200 insertions**, across 42 total commits.
+## Fork work surface
 
-| Package | Fork's role |
-|---|---|
-| `frontend/packages/erd-core` | Table-position persistence, memos, colour coding, grouping, edit mode, `?show=` param, MySQL export entry, **app debranding** |
-| `frontend/packages/schema` | `src/deparser/mysql/` — the MySQL DDL deparser (new) |
-| `frontend/packages/cli` | `src/App.tsx` wiring, banner, urls, init command, **favicon + brand colour** |
-| `frontend/packages/ui` | `src/logos/CrowfootLogoMark.tsx` — the fork's own mark |
+**Base commit `f4dd6c4`** ("Liam ERD at 92156eac5, the base this fork was taken from") — the squashed
+upstream root. `git diff f4dd6c4..HEAD` is the authoritative diff.
 
-Everything else is inherited upstream code. `frontend/apps/app` (Next.js + Supabase) is upstream and
-out of scope — if a task reaches it, **stop and re-scan** rather than assuming this profile applies.
+Every one of the 6 packages is now the fork's work surface — there is no longer an "upstream half"
+to stay out of. What remains of upstream is *inside* these packages, marked by the §4(b) headers.
 
 ### 🔴 Apache-2.0 — attribution (§4) and trademark (§6) pull in OPPOSITE directions
 
-This is the single most dangerous thing to get wrong in this repo.
+The single most dangerous thing to get wrong here.
 
-**§4(b) headers are MANDATORY and must survive.** Every file the fork creates or modifies carries one
-(currently **92 files**). Agents MUST add it when creating or modifying a file here.
+**§4(b) headers are MANDATORY and must survive** — currently **92 files**. Add one to any file you
+create or modify.
 
 Modified upstream file (TS/TSX):
 ```ts
@@ -68,26 +57,32 @@ New fork-only file:
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 ```
-CSS uses the same text in a `/* … */` block. When the *nature* of a change shifts, update the numbered
-change summary in `NOTICE` too.
+CSS uses the same text in `/* … */`. When the *nature* of a change shifts, update `NOTICE` too.
 
-> **A blanket "Liam" find-and-replace turns a §6 cleanup into a §4 violation** — it would strip those
-> headers. **Branding gets removed; attribution stays.** `LICENSE`, `NOTICE`,
-> `docs/packages-license.md` and `scripts/pack-cli.js` are preserved for the same reason.
+**Counting them correctly matters** — the gate is a diff, not a number:
+```bash
+git grep -lE "Modified from the original Liam ERD source|Added in crowfoot; not part of the original Liam ERD source" \
+  -- frontend/packages | sort            # => 92 files
+```
+Both wordings, scoped to `frontend/packages`. Grepping only `"Modified from"` returns **43** and looks
+like catastrophic loss.
+
+> **A blanket "Liam" find-and-replace turns a §6 cleanup into a §4 violation** — it strips these
+> headers. **Branding is removed; attribution stays.** `LICENSE`, `NOTICE`, `docs/packages-license.md`
+> and `frontend/packages/cli/scripts/pack-cli.js` are preserved for the same reason.
 >
-> The `erdkit` → `crowfoot` rename was safe for the opposite reason: the §4 wording never contained
-> that word. **Do not generalise from it.**
+> The `erdkit` → `crowfoot` rename was safe only because the §4 wording never contained that word.
+> **Do not generalise from it.**
 
-Legitimate remaining `Liam` references, all of which must stay:
-attribution headers · banner + `--help` attribution strings · upstream doc links that are still
-accurate (labelled `(upstream)`) · upstream issue citations in `schema` parser comments.
+Legitimate remaining `Liam` references, all of which must stay: attribution headers · the banner and
+`--help` attribution strings · upstream doc links that are still accurate (labelled `(upstream)`) ·
+upstream issue citations in `schema` parser comments.
 
 ## Routing Pattern
-- **Fork surface**: no router. The viewer is a single-page canvas; **URL query params are the state
-  transport** (`?positions=`, `?colors=`, `?memos=`, `?hidden=`, `?active=`, `?show=`, `?edit=`).
-- Upstream `frontend/apps/app`: Next.js App Router (`app/` dir, `[id]` dynamic segments) — out of scope.
-- Artifact paths are all relative (`./assets/…`, `fetch("./schema.json")`), so the build mounts under any
-  subpath (e.g. `/erd/`) **without a rebuild**.
+- No router. The viewer is a single-page canvas; **URL query params are the state transport**
+  (`?positions=`, `?colors=`, `?memos=`, `?hidden=`, `?active=`, `?show=`, `?edit=`).
+- Artifact paths are all relative (`./assets/…`, `fetch("./schema.json")`), so the build mounts under
+  any subpath (e.g. `/erd/`) **without a rebuild**.
 
 ## Module Organization (erd-core — the pattern to mirror)
 ```
@@ -99,27 +94,29 @@ src/
 │   └── types.ts
 ├── stores/<store>/              # context.ts + Provider.tsx + hooks.ts + index.ts
 ├── schemas/                     # valibot schemas (queryParam, hash, showMode, version)
-├── styles/                      # globals.css, variables.css
-├── hooks/  providers/  utils/  types/
+├── styles/  hooks/  providers/  utils/  types/  nextjs/
 └── index.ts                     # package entry, re-exports
 ```
-- Page logic: N/A (no pages in the fork surface)
+- Utilities: `src/features/<feature>/utils/<name>/` — **one directory per util, colocated test, `index.ts`**
 - Shared components: `@liam-hq/ui`
-- Utilities: `src/features/<feature>/utils/<name>/` — **one directory per util, with a colocated test and an `index.ts`**
-- Types: `src/features/<feature>/types.ts` or colocated with the module
 
 ## Naming Conventions
-- Directories (components): `PascalCase/` (`MemoNode/`, `ViewColorMenu/`, `TableNode/`)
-- Directories (utils/features/stores): `camelCase/` (`tableLayout/`, `viewColor/`, `userEditing/`)
-- Component files: `PascalCase.tsx` + `PascalCase.module.css` (+ generated `PascalCase.module.css.d.ts`)
-- Util files: `camelCase.ts`
+- Directories (components): `PascalCase/` · (utils/features/stores): `camelCase/`
+- Component files: `PascalCase.tsx` + `PascalCase.module.css` (+ generated `.d.ts`)
 - Barrels: every module dir has an `index.ts` re-exporting the public surface (named exports only)
-- Tests: `*.test.ts` / `*.test.tsx`, **colocated** next to the subject (no `__tests__/`)
-- Providers: `Provider.tsx` (erd-core) — note `stores/schema/` uses `SchemaProvider.tsx`; prefer the
-  local convention of the store you are editing
+- Tests: `*.test.ts(x)`, **colocated** (no `__tests__/`, except upstream's `schema/src/parser/__tests__/`)
 
-## Known config defect (flagged, not fixed)
-`turbo.json:33` still declares **`"@liam-hq/cli#dev"`**, but that package was renamed to `crowfoot`.
-The key is dead: its `dependsOn: ["build"]` no longer binds, so the CLI's dev task falls through to the
-generic `dev` task with no build dependency. Partially masked because the package's own `dev` script
-runs `pnpm command:build` first. **One-line fix, deliberately left for the owner to schedule.**
+## 🔴 `git rm` leaves directories behind
+
+Deleting a component or package removes only **tracked** files. The gitignored `*.module.css.d.ts`
+generated next to each stylesheet stays, so the directory survives and every tool still sees it —
+knip will report the residue as unused files and root lint fails. This bit twice during `444f80d`.
+
+After any deletion, check for directories with zero tracked files and `rm -rf` them:
+```bash
+find frontend -type d -not -path "*/node_modules/*" -not -path "*/dist*" | while read -r d; do
+  [ -z "$(ls -A "$d" 2>/dev/null)" ] && continue
+  [ "$(git ls-files "$d" | wc -l)" -eq 0 ] && echo "$d"
+done
+```
+Never reach for `git clean -xdf` here — it also removes `node_modules` and `.claude/session-state/`.

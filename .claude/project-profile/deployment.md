@@ -1,85 +1,83 @@
 # Deployment
 
-> Two distinct realities. **Upstream CI** is inherited and largely inert for this fork. **The fork's
-> own delivery is npm** (tag-triggered, Trusted Publishing) plus a **manual** S3/CloudFront push for
-> the carbon ERD. Do not assume a workflow run means something shipped.
+The fork's delivery is **npm**, tag-triggered, via Trusted Publishing. Nothing else here deploys.
 
 ## CI/CD
-- Platform: GitHub Actions — **7 workflows** (down from upstream's 17; the rest were dropped with the repo split)
+- Platform: GitHub Actions — **7 workflows**
 - Repo: `Junjak-Personal/crowfoot` (PUBLIC, `isFork: false`), default + working branch **`master`**
 
-| Workflow | Purpose | Fork status |
+| Workflow | Purpose | Status |
 |---|---|---|
-| `release-crowfoot.yml` | **the fork's release path** — tag `v*` → npm publish via OIDC | ★ active |
-| `frontend-ci.yml` | `pnpm lint` + build/test on PR; `dorny/paths-filter` gates on `frontend/**` | usable |
-| `codeql · ghalint · dependency_review · license · license-report-update` | inherited hygiene | inert |
+| `release-crowfoot.yml` | **the release path** — tag `v*` → npm publish via OIDC | ★ active |
+| `frontend-ci.yml` | `pnpm lint` + `erd-core` and `crowfoot` tests on PR | active (see gap below) |
+| `codeql · dependency_review · ghalint · license · license-report-update` | inherited hygiene | inert |
 
-### `release-crowfoot.yml` — how publishing actually works
-- **Trigger is a tag (`v*`), not a push to master** — the tag is both the release record and the
-  deliberate act, so merging a version bump ships nothing on its own.
-- **No npm token exists anywhere.** npm exchanges the workflow's OIDC identity (`id-token: write`)
-  for a short-lived publish token and signs provenance with it.
+> ⚠️ **CI test gap:** `frontend-ci.yml` runs only `pnpm --filter @liam-hq/erd-core test` and
+> `pnpm --filter crowfoot test`. **`@liam-hq/schema` (562 tests) and `@liam-hq/ui` (30) never run in
+> CI.** Run them locally.
+
+> ⚠️ **Supply chain:** `codeql.yml` and `dependency_review.yml` call reusable workflows from
+> **`route06/actions`** — upstream's org — pinned by full commit SHA. The SHA pin is the right control,
+> so tampering is not the risk; availability and transitive resolution are. This is the last runtime
+> tie to the upstream org after the repo split. Inlining them is ~25 lines. **Registered, not actioned.**
+
+### `release-crowfoot.yml` — how publishing works
+- **Trigger is a tag (`v*`), not a push** — the tag is both the release record and the deliberate act,
+  so merging a version bump ships nothing on its own.
+- **No npm token exists.** npm exchanges the workflow's OIDC identity (`id-token: write`) for a
+  short-lived publish token and signs provenance with it.
 - Node 22.21 ships npm 10.9, which predates trusted publishing — the workflow upgrades to
-  `npm@^11.5.1` first. Do not remove that step.
-- The tag is checked against `package.json` version; a disagreement fails the run.
-- Build uses `--force` (see `testing.md` → stale-bundle trap).
-- `concurrency` is set with `cancel-in-progress: false` — never cancel a half-finished publish.
+  `npm@^11.5.1` first. **Do not remove that step.**
+- The tag is checked against `package.json` version; a mismatch fails the run.
+- Build uses `--force` (see the stale-cache trap in `testing.md`).
+- `concurrency` with `cancel-in-progress: false` — never cancel a half-finished publish.
 
-**Remaining manual step (owner, not agent):** register the npm Trusted Publisher —
-`crowfoot` / GitHub Actions / `Junjak-Personal` / `crowfoot` / `release-crowfoot.yml`.
-Also `npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"`.
-The old `Junjak-Personal/erdkit` repo is **kept as an archive** — original history is the provenance
-record. Do not delete it.
+**Owner-only, never delegated:** register the npm Trusted Publisher
+(`crowfoot` / GitHub Actions / `Junjak-Personal` / `crowfoot` / `release-crowfoot.yml`), and
+`npm deprecate erdkit "renamed to crowfoot; install crowfoot instead"`. The old
+`Junjak-Personal/erdkit` repo is **kept archived** as the provenance record — do not delete it.
 
-- Local gate: **lefthook `pre-commit` runs `pnpm lint`** with `stage_fixed: true` (skipped on merge/rebase).
-  ⚠️ On Windows the hook needs a **full `pnpm install`**, not a filtered one. Watch `core.autocrlf`.
+- Local gate: **lefthook `pre-commit` runs `pnpm lint`** with `stage_fixed: true`.
+  ⚠️ On Windows the hook needs a **full** `pnpm install`. Watch `core.autocrlf`.
 
 ## Environments
-| Env | Branch | URL/Config |
-|-----|--------|------------|
-| Local | any | build → `erd build` → serve over HTTP (see `testing.md` → E2E Fixtures) |
+| Env | Trigger | Notes |
+|-----|---------|-------|
+| Local | — | build → `erd build` → serve over HTTP (see `testing.md` → E2E Fixtures) |
 | npm | tag `v*` | `crowfoot@0.1.0`, public, `bin=crowfoot` |
-| carbon **stage** | manual | **https://carbon-stage.qesg.co.kr/erd/** — S3 `s3://carbon-estimate-dev/erd-stage/` behind CloudFront. Deployed by hand; 86 tables / 128 FKs. |
-| carbon **dev** | — | **not configured** — CloudFront origin path is pinned to `/erd-stage`, so the dev domain shows the stage ERD |
-| Production | — | none |
 
-### CloudFront subpath mounting — the traps (all hit for real)
-- CloudFront **does not strip the path-pattern prefix** before hitting the origin. `/erd/assets/x.js`
-  + origin path `/erd-stage` → looks up `erd-stage/erd/assets/x.js`. A CF Function must remove the prefix.
-- **Default root object applies only to the distribution root**, not `/erd/`. The function must append
-  `index.html` itself.
-- **S3 without `ListBucket` returns AccessDenied instead of 404** for missing keys — an apparent
-  permissions error is usually a wrong path. Check the behavior's target origin first.
-- **301 redirects drop the query string.** `/erd?edit=1` → `/erd/` loses `edit=1`. CF Functions expose
-  `request.querystring` only as an object, so it must be reassembled by hand — lossless here because
-  every param value is URL-safe base64 (verified).
-- Invalidate **`/erd/*`, never `/*`** when the distribution is shared with the web app.
-
-### carbon CI integration — reverted
-Added to the backend repo as PR#368, fully reverted by PR#369 because it broke stage deploys.
-- Direct cause: `COPY --from=amazon/aws-cli:2` — **the `:2` tag does not exist** (only `2.34.x` / `latest`).
-- Root cause: the ERD image build sat on the deployment critical path (`docker/flyway.Dockerfile`),
-  so an ERD failure halted migrations and the ECS deploy.
-- Resume gate: **ECR permissions** (requested from infra) **+ the npm publish above**, which removes
-  the clone-and-build chain entirely.
-- Planned change-detection (measured, not implemented): fingerprint =
-  `sha256(schema.json) + sha256(layout.json/memos.json) + CLI version`, stored at
-  `<prefix>/_build/erd.fingerprint`. tbls output is deterministic (verified: identical sha256 across
-  two extractions, zero timestamp fields). The fingerprint does **not** cover row counts, and
-  "run only when flyway applied a migration" is explicitly rejected — the seed CLI mutates schema
-  outside migrations.
+There is **no hosted environment owned by this repo.** Consumers (e.g. the carbon project) take the
+CLI and deploy their own output; that delivery lives in their repo, not here.
 
 ## Environment Variables
-- Access pattern: `process.env` (CLI/Node), `import.meta.env` (Vite viewer)
-- Config files: `.env`, `.env.local` (both gitignored; `.env.template` is committed).
-  `pnpm create-env-files` touches them and runs automatically via `prebuild` / `prelint`.
-- Turbo-declared build env: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_DSN`,
-  `NEXT_PUBLIC_ENV_NAME` (upstream app only)
-- The fork's viewer needs **no runtime env** — everything is a query param or a shipped JSON file
+- The viewer needs **no runtime env** — everything is a query param or a shipped JSON file.
+- `turbo.json` `build.env` is **`[]`**. The Sentry / `NEXT_PUBLIC_ENV_NAME` variables went with the
+  upstream app.
+- `.env.template` was deleted (all 21 variables were upstream-app credentials). `pnpm create-env-files`
+  still `touch`es `.env` / `.env.local` via `prebuild`/`prelint`; both are gitignored.
+- Build-time only: `cli/vite-plugins/setEnv.ts` injects `VITE_CLI_VERSION_*` from local git —
+  version, commit hash, commit date, branch-derived env name, and whether the local tag `v<version>`
+  points at HEAD. **It performs no network I/O**; that was removed in `444f80d` along with an
+  upstream git remote it used to add during builds.
+
+> ⚠️ Known limit: `fetchGitBranch` uses `git rev-parse --abbrev-ref HEAD`, which returns `HEAD` on the
+> detached tag checkout the release workflow performs — so published builds stamp `envName: 'preview'`,
+> never `'production'`. Harmless (`envName` only reaches an in-page `dataLayer` array with no network
+> egress) but the branch check never fires on the release path. Registered.
 
 ## Build Output
-- Command: `pnpm build` (turbo) → per package `rollup -c` (CLI bin) + `vite build` (viewer SPA)
-- Output dirs: `dist-cli/bin/cli.js` (~3.4MB, erd-core + schema inlined) and `dist-cli/html/`
-  (the SPA, copied over the user's `--output-dir` at `erd build` time)
+- Command: `pnpm build` (turbo) → `rollup -c` (CLI bin) + `vite build` (viewer SPA)
+- Output: `dist-cli/bin/cli.js` (erd-core + schema inlined) and `dist-cli/html/`
+  — main JS ~2.39 MB, `dist-cli` ~7.6 MB total
 - Type: **SPA, fully static, relative paths** — mountable at any subpath without a rebuild
-- Deployed set: the whole `erd build` output including `dist/schema.json`, plus `LICENSE` and `NOTICE`
+- Published tarball: **13 files**, including `LICENSE` and `NOTICE`. Declares **no `@radix-ui`** —
+  `@liam-hq/ui` is a workspace dependency that gets inlined.
+
+## 🟠 Repository hygiene findings (from the 2026-08-06 security audit)
+- **`.npmrc` is tracked and not gitignored for credential lines.** A `pnpm login` at repo root would
+  write an auth token straight into a tracked file. Add credential lines to `.gitignore`, or keep
+  registry auth in `~/.npmrc` only.
+- `.npmrc` `minimum-release-age-exclude` still lists `@electric-sql/pglite` (0 lockfile entries) and
+  `next` / `@next/swc-*`. Note `next@15.4.8` + a ~124 MB swc binary are still **installed**, pulled by
+  `nuqs`'s optional `next` peer under `autoInstallPeers`.
+- `.github/CODEOWNERS` (`* @liam-hq/liam-dev`) and `SECURITY.md` still point at upstream. Pre-existing.

@@ -2,68 +2,86 @@
 
 ## Component Library
 - Name: **`@liam-hq/ui`** — workspace-internal design system built on **Radix UI primitives**
-- Import pattern: **manual, named, from the package root** — `import { Button, DropdownMenu } from '@liam-hq/ui'`
-  (no auto-import; `src/index.ts` barrels `components`, `icons`, `logos`, `markers`, `styles`, `types`)
+- Import pattern: **manual, named, from the package root** — `import { Button, DropdownMenuRoot } from '@liam-hq/ui'`
+  (`src/index.ts` barrels `components`, `icons`, `logos`, `markers`, `styles`)
 - Hooks entry: `@liam-hq/ui/hooks`
 - CLAUDE.md rule: **import UI components and icons from `@liam-hq/ui` when available** — do not
   hand-roll a button, modal, dropdown, or context menu.
 
-Available components (`frontend/packages/ui/src/components/`):
-`ArrowTooltip · Avatar · BaseAppBar · BaseGlobalNav · BaseLayout · Button · Callout · Code ·
-Collapsible · ContextMenu · CookieConsent · Drawer · DropdownMenu · GridTable · IconButton · Input ·
-Modal · Popover · RadioGroup · RemoveButton · Resizable · RoundBadge · Select · Sidebar · Skeleton ·
-Spinner · Switch · Tabs · Toast · Tooltip`
+### The 22 components
 
-Radix primitives in use: dialog, dropdown-menu, context-menu, popover, select, tabs, toast, tooltip,
-switch, radio-group, collapsible, slot. Plus `vaul` (drawer) and `react-resizable-panels`.
+**Consumed by `erd-core` / `cli` today** (change these carefully — they render):
+`Button · ContextMenu · Drawer · DropdownMenu · GridTable · IconButton · RadioGroup · Resizable ·
+Sidebar · Spinner · Toast · Tooltip`
+
+**Kept for future feature work, zero consumers** (restored deliberately in `be485b4`):
+`Callout · Collapsible · Input · Modal · Popover · RoundBadge · Select · Skeleton · Switch · Tabs`
+
+> 🔴 The second group is **unverified surface**. `tsc` never checks it against real usage, there is no
+> storybook to preview it, and **knip cannot flag it** — `ui/src/index.ts` is an entry file, so unused
+> exports are invisible without `includeEntryExports`, which the gate does not set. The first time you
+> use one of these, treat it as new code: read it, don't trust it.
+
+**Deleted with the upstream app** (`444f80d`) — do not resurrect without reason:
+`Avatar · ArrowTooltip · BaseAppBar · BaseGlobalNav · BaseLayout · Code · CookieConsent · RemoveButton`
+(`CookieConsent` additionally carried Liam branding in its heading.)
+
+Radix primitives in use (12): context-menu, collapsible, dialog, dropdown-menu, popover, radio-group,
+select, slot, switch, tabs, toast, tooltip. Plus `vaul` (drawer) and `react-resizable-panels`.
+
+**Restoring something from history** is one command — the components live in `444f80d^`:
+```bash
+git checkout 444f80d^ -- frontend/packages/ui/src/components/<Name>/
+git rm frontend/packages/ui/src/components/<Name>/<Name>.stories.tsx   # no storybook hosts these
+# then: add its @radix-ui dep to ui/package.json, re-export from components/index.ts,
+#       pnpm install && pnpm --filter @liam-hq/ui gen:css
+```
 
 ## Icons
 - Library: **`lucide-react` 0.511.0**, re-exported through `@liam-hq/ui` (`src/icons/`)
 - Usage: `import { ChevronDown } from '@liam-hq/ui'` → `<ChevronDown />`
-- Project-specific SVGs live in `@liam-hq/ui/src/icons/` and `src/logos/` — add there, not inline
+- The re-export list was pruned to what is actually used — **adding an icon means adding it to
+  `icons/index.ts`**, it is not a blanket re-export of lucide.
+- ⚠️ Some components import icons by **internal relative path** (`Sidebar.tsx` → `'../../icons'`,
+  `Select.tsx` → `'../..'`). A cross-package usage scan will miss those; `tsc` catches it as TS2305.
 
 ## Brand mark and colour (fork-owned)
 - **`CrowfootLogoMark`** (`ui/src/logos/CrowfootLogoMark.tsx`) — one table joined to a crow's foot.
-  4 elements, 2 strokes, drawn in **`currentColor`** so `LeftPane`'s `color: var(--overlay-70)` applies.
-  Constraints it was designed against: must read at **12px** (`LeftPane.module.css:73`), single-colour
-  silhouette, **no green** (upstream's `#1DED83` is Liam's brand green — a green mark would inherit the
-  trade dress the rename exists to drop).
-- **Brand colour: `#F59E0B` (amber), flat — no gradient.** Used by `banner.ts` and
-  `cli/public/favicon.ico`. Chosen deliberately over sky→indigo, which is the default palette of
-  generated work; leaving it would have let the product's colour settle by inaction.
-- `LiamLogoMark` still exists but **nothing in the shipped packages imports it** — only `apps/app`
-  does. It is scheduled to be deleted with that package, not before (removing it first only breaks
-  root lint). Same for `CookieConsent`, which has zero consumers and still says "Liam ERD".
+  4 elements, 2 strokes, **`currentColor`** so `LeftPane`'s `color: var(--overlay-70)` applies.
+  Constraints: must read at **12px** (`LeftPane.module.css:73`), single-colour silhouette, **no green**
+  (upstream's `#1DED83` is Liam's brand green — a green mark inherits the trade dress).
+- **Brand colour `#F59E0B` (amber), flat — no gradient.** Used by `banner.ts` and `cli/public/favicon.ico`.
+  Chosen deliberately over sky→indigo, the default palette of generated work.
+- Remaining logos: `CrowfootLogoMark`, `GithubLogo`. The Liam marks, `LinkedInLogo` and `XLogo` are gone.
+- **`markers/` (3) are load-bearing** — `erd-core`'s `CardinalityMarkers.tsx` renders them on edges.
+  The matching *icons* were deleted; the markers were not. Do not confuse them.
 - Regenerating the favicon: render the mark's `rect`/`path` into an SVG wrapped in
-  `translate(2.6 2.4) scale(0.8)` on a 24 grid (content bbox is x 0.5..23, y 4..20, so that centres
-  it), then `sharp` → PNG → hand-assembled ICO. Recorded in the debranding plan under `_docs/`.
+  `translate(2.6 2.4) scale(0.8)` on a 24 grid (content bbox x 0.5..23, y 4..20 centres it), then
+  `sharp` → PNG → hand-assembled ICO. Recipe in the completed debranding plan under `_docs/complete/`.
 
 ## Styling
 - **CSS Modules only.** `Component.module.css` next to `Component.tsx`.
-- Type definitions are **generated**, not written: `typed-css-modules` → `Component.module.css.d.ts`.
-  Run `pnpm gen:css` (per package: `tcm src`, watch: `tcm src --watch`) after any class change,
-  or `lint:tsc` will fail on the missing class.
+- Type definitions are **generated**: `typed-css-modules` → `Component.module.css.d.ts`. Run
+  `pnpm gen:css` after any class change, or `lint:tsc` fails on the missing class.
 - Class composition via `clsx`.
-- Stylelint enforces `stylelint-config-recess-order` (property order) and
-  `value-no-unknown-custom-properties` — **a misspelled CSS variable is a lint failure**.
+- **stylelint is gone** (`444f80d`) — it was never in the root gate and had ~79 standing findings.
+- ⚠️ `eslint`'s `css-modules-kit/no-unused-class-names` cannot see **dynamic** access
+  (`styles[variant]`). `Callout` and `RoundBadge` do exactly that, and are listed in
+  `ui/eslint-suppressions.json` for it. If you add a variant-indexed component, expect the same.
 
 ## Design Tokens
-All tokens are CSS custom properties. Two files:
-- `@liam-hq/ui/src/styles/variables.css` — structural tokens (`:root`)
-- `@liam-hq/ui/src/styles/Dark/variables.css` — the colour/spacing palette (this is the fork's source
-  of truth for colour; also a `Mode 1/` set exists)
+CSS custom properties in `@liam-hq/ui/src/styles/variables.css` (`:root`) and
+`styles/Dark/variables.css` (the colour/spacing palette — the fork's source of truth for colour).
 
-Token families:
 | Family | Examples |
 |---|---|
-| Spacing | `--spacing-half`, `--spacing-1`, `--spacing-1half`, `--spacing-2` … `--spacing-30` |
-| Colour | `--color-green-milk-100/200`, `--color-blue-milk-100/200`, `--color-yellow-milk-100/200`, `--color-gold-300/600`, `--color-teal-600`, `--color-vermilion-900`, `--color-red-milk-200`, `--color-gray-400`, `--overlay-20`, `--global-border`, `--primary-accent` |
+| Spacing | `--spacing-half`, `--spacing-1` … `--spacing-30` |
+| Colour | `--color-green-milk-100/200`, `--color-gold-300/600`, `--overlay-20`, `--global-border`, `--primary-accent` |
 | Z-index | `--z-index-toolbar-closed` 800 → `--z-index-cookie-consent` 4000 (**use these, never a literal**) |
-| Motion | `--default-timing-function: ease-out`, `--default-animation-duration: 300ms`, `--default-hover-animation-duration: 100ms` |
+| Motion | `--default-timing-function`, `--default-animation-duration` |
 | Type | `--main-font`, `--code-font` |
-| Scrollbar | `--scrollbar-*` |
 
-**CLAUDE.md rule:** use tokens for their intended purpose — `--spacing-*` is for margin/padding only;
+**CLAUDE.md rule:** use tokens for their intended purpose — `--spacing-*` for margin/padding only;
 widths and heights use `rem`/`px`.
 
 ## Common Patterns
@@ -77,14 +95,13 @@ Colours are applied as a **`data-view-color` attribute**, not an inline style:
 ```tsx
 <div data-view-color={color}> … </div>   /* CSS reads var(--view-tint) */
 ```
-Rationale (from the source comment): declared once centrally so components just use `var(--view-tint)`,
-avoiding per-component duplication and inline style objects that would need a type assertion for a
-custom property.
+Declared once centrally so components just use `var(--view-tint)` — no per-component duplication and
+no inline style object needing a type assertion for a custom property.
 
 The palette is `VIEW_COLORS` in `erd-core/src/features/erd/utils/viewColor/viewColor.ts` — 12 keys,
 **every value lifted from an existing design token**, declared `as const` with the type derived from it.
-`--primary-accent` is deliberately excluded: it means "highlighted/hovered" and must not double as a
-user-selectable colour. **If you add a colour, take it from the token file — do not invent a hex.**
+`--primary-accent` is deliberately excluded: it means "highlighted/hovered". **If you add a colour,
+take it from the token file — do not invent a hex.**
 
 ### Component file shape
 ```
@@ -92,22 +109,16 @@ ComponentName/
 ├── ComponentName.tsx          // 'use client' when it uses hooks/DOM; named export only
 ├── ComponentName.module.css
 ├── ComponentName.module.css.d.ts   // generated — do not hand-edit
-├── ComponentName.test.tsx     // colocated
 └── index.ts                   // export { ComponentName } from './ComponentName'
 ```
+**No `.stories.tsx`** — storybook was removed; an unhostable story file is reported as an unused file
+and breaks root lint.
 
 ### Canvas elements (memos, colour menu)
-`MemoNode` and `ViewColorMenu` live under
-`features/erd/components/ERDContent/components/`. Interactions gate on `editMode` from the
-`userEditing` store — see `state-management.md`.
+`MemoNode` and `ViewColorMenu` live under `features/erd/components/ERDContent/components/`.
+Interactions gate on `editMode` from the `userEditing` store — see `state-management.md`.
 
-Memos are **React Flow nodes** (`nodeTypes.memo`), not an overlay, so selection,
-multi-selection, dragging and `NodeResizer` come from React Flow. Anything that adds a
-non-table node has to keep it out of two places: the ELK pass
-(`computeAutoLayout` skips `node.type === 'memo'`) and the saved table positions
-(`tableLayout.ts` filters to `type === 'table'`). Storage and `?memos=` are mirrors of the
-node state, refreshed by `useMemoNodes().commitMemos`.
-
-### Storybook
-`frontend/internal-packages/storybook` (Storybook 9.1.15, `@storybook/nextjs`). Upstream-maintained;
-the fork has not added stories.
+Memos are **React Flow nodes** (`nodeTypes.memo`), not an overlay, so selection, multi-selection,
+dragging and `NodeResizer` come from React Flow. Anything adding a non-table node must keep it out of
+two places: the ELK pass (`computeAutoLayout` skips `node.type === 'memo'`) and the saved table
+positions (`tableLayout.ts` filters to `type === 'table'`).
