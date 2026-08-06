@@ -1,0 +1,82 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":automergeRequireAllStatusChecks",
+    "helpers:pinGitHubActionDigestsToSemver",
+    "schedule:monthly"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on tuesday"]
+  },
+  "minimumReleaseAge": "14 days",
+  "packageRules": [
+    {
+      "groupName": "fumadocs",
+      "matchPackageNames": [
+        "/^fumadocs-core$/",
+        "/^fumadocs-mdx$/",
+        "/^fumadocs-ui$/"
+      ],
+      "enabled": false  // Temporarily disabled due to Zod v4 dependency conflicts. See route06/liam-internal#5606
+    },
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Automerge dependencies only used by internal packages",
+      "matchPackageNames": [
+        "@modelcontextprotocol/sdk",
+        "style-dictionary"
+      ],
+      "matchFileNames": ["frontend/internal-packages/**"],
+      "automerge": true
+    },
+    {
+      "groupName": "dev-tools",
+      "description": "Automerge development tools that only need CI to pass",
+      "matchPackageNames": [
+        "eslint",
+        "/^eslint-/",
+        "/^@eslint/",
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "biome",
+        "@biomejs/biome",
+        "typescript",
+        "turbo",
+        "@types/node",
+        "/^@types/",
+        "vitest",
+        "/^@vitest/",
+        "playwright",
+        "@playwright/test",
+        "pnpm",
+        "concurrently",
+        "node",
+        "knip",
+        "anthropics/claude-code-action",
+        "anthropics/claude-code-security-review",
+        "esbuild"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "automerge": true
+    },
+    {
+      // Restrict updates for @huggingface/transformers due to https://github.com/huggingface/transformers.js/issues/1228
+      "description": "Allow updates for @huggingface/transformers up to version 3.3.3 due to transformers.js compatibility issues",
+      "matchPackageNames": ["@huggingface/transformers"],
+      "allowedVersions": "<=3.3.3"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+name: Dependency Review
+
+on:
+  merge_group:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency_review:
+    uses: route06/actions/.github/workflows/dependency_review.yml@cf674a8d68a24bd75ac63171dc8e976e53024bbf # v2.7.5

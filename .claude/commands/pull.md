@@ -1,0 +1,1 @@
+Pull the latest changes from branch: $ARGUMENTS (default: origin main). Resolve conflicts if any occur. Run `pnpm install` if lint errors occur after conflict resolution.

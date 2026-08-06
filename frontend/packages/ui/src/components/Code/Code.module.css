@@ -1,0 +1,51 @@
+.code {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  border-radius: var(--border-radius-base);
+}
+
+/* Sizes */
+.sm {
+  padding: 4px;
+  font-size: var(--font-size-2);
+}
+
+.md {
+  padding: 6px;
+  font-size: var(--font-size-3);
+}
+
+.lg {
+  padding: 8px;
+  font-size: var(--font-size-4);
+}
+
+/* Style: Outline */
+.outline.default {
+  color: var(--global-mute-text);
+  background-color: var(--overlay-10);
+  border: 1px solid var(--overlay-20);
+}
+
+.outline.primary {
+  color: var(--primary-color);
+  background-color: var(--primary-overlay-10);
+  border: 1px solid var(--primary-overlay-20);
+}
+
+/* Style: Fill */
+.fill.default {
+  color: var(--global-foreground);
+  background-color: var(--overlay-20);
+  border: 1px solid transparent;
+}
+
+.fill.primary {
+  color: var(--primary-color);
+  background-color: var(--primary-overlay-20);
+  border: 1px solid transparent;
+}

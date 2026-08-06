@@ -1,0 +1,29 @@
+.wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: 300px;
+  height: 100%;
+  font-family: var(--main-font);
+  word-break: break-all;
+  list-style-position: outside;
+  background-color: var(--pane-background, #232526);
+  border-left: 1px solid var(--pane-border, #383a3b);
+  box-shadow: 0px 4px 20px 0px var(--shadow-basic-shadow, #000);
+}
+
+.body {
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
+.relatedTables {
+  position: sticky;
+  bottom: 0;
+  background-color: var(--pane-background, #232526);
+}
+
+@media screen and (max-width: 767px) {
+  .relatedTables {
+    position: initial;
+  }
+}

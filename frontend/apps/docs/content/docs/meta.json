@@ -1,0 +1,11 @@
+{
+  "pages": [
+    "index",
+    "ui-features",
+    "web",
+    "cli",
+    "parser",
+    "contributing",
+    "community-resources"
+  ]
+}

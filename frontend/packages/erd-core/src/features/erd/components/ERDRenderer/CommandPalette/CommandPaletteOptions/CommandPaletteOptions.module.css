@@ -1,0 +1,64 @@
+.item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-3);
+  line-height: 16px;
+  border-radius: var(--border-radius-base);
+}
+
+.item.indent {
+  position: relative;
+  padding-left: var(--spacing-6);
+}
+
+.item.indent:before {
+  position: absolute;
+  top: 0;
+  left: var(--spacing-4);
+  width: 1px;
+  height: 100%;
+  content: '';
+  background-color: var(--overlay-10);
+}
+
+.item .itemText {
+  display: inline-block;
+  flex-grow: 1;
+  font-size: var(--font-size-5);
+  word-break: break-word;
+  text-wrap: wrap;
+}
+
+.item .itemIcon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-right: var(--spacing-2);
+  color: var(--overlay-40);
+}
+
+.item .keyIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  font-size: var(--font-size-2);
+  color: var(--global-mute-text);
+  background-color: var(--overlay-5);
+}
+
+.item .keyIcon + .keyIcon {
+  margin-left: var(--spacing-1);
+}
+
+.item[data-selected='true'] /* when setting the styles.item class to the Command.Item component */,
+[data-selected='true']
+  .item /* when setting the styles.item class on the children of the Command.Item component */ {
+  background: var(--overlay-5);
+}
+
+.item[data-selected='true'] .itemIcon,
+[data-selected='true'] .item .itemIcon {
+  color: var(--global-foreground);
+}

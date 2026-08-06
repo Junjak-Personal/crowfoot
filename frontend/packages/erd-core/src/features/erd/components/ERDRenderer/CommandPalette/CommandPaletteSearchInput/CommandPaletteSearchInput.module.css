@@ -1,0 +1,68 @@
+.container {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+}
+
+.inputContainer {
+  display: flex;
+  width: 100%;
+  margin-left: var(--spacing-2);
+}
+
+.inputWithSuggestion {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: var(--spacing-2) 0;
+  border-radius: var(--border-radius-smbase);
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.modePrefix {
+  flex-shrink: 0;
+  max-width: 220px;
+  padding: var(--spacing-2) 0;
+  margin-right: var(--spacing-1);
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+.modePrefixSeparator {
+  flex-shrink: 0;
+  padding: var(--spacing-2) 0;
+  margin-right: var(--spacing-1);
+}
+
+.suggestion {
+  position: absolute;
+  top: 0;
+  max-width: 100%;
+  padding: var(--spacing-2) 0;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  color: var(--overlay-60);
+  text-wrap: nowrap;
+}
+
+.suggestion .inputValue {
+  color: transparent;
+}
+
+.suggestion .completionSuffix {
+  text-wrap: nowrap;
+}
+
+.searchIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--overlay-60);
+}

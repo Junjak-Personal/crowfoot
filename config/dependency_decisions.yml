@@ -1,0 +1,148 @@
+---
+- - :permit
+  - MIT
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/MIT
+    :versions: []
+    :when: 2024-11-22 08:47:26.167960000 Z
+- - :permit
+  - Apache 2.0
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/apache-2-0
+    :versions: []
+    :when: 2024-11-22 08:49:11.117254000 Z
+- - :permit
+  - ISC
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/isc-license-txt
+    :versions: []
+    :when: 2024-11-22 08:51:11.110071000 Z
+- - :permit
+  - BSD 0-Clause
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/0BSD
+    :versions: []
+    :when: 2024-11-28 07:37:37.471617000 Z
+- - :permit
+  - BSD 2-Clause
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/BSD-2-Clause
+    :versions: []
+    :when: 2024-11-28 07:38:25.201366000 Z
+- - :permit
+  - BSD 3-Clause
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/BSD-3-Clause
+    :versions: []
+    :when: 2024-11-28 07:39:06.925601000 Z
+- - :permit
+  - BlueOak-1.0.0
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/blue-oak-model-license
+    :versions: []
+    :when: 2024-11-28 07:42:02.017807000 Z
+- - :permit
+  - The Unlicense
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/Unlicense
+    :versions: []
+    :when: 2024-11-28 07:44:45.338620000 Z
+- - :permit
+  - CC-BY-4.0
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://creativecommons.org/licenses/by/4.0/
+    :versions: []
+    :when: 2024-11-28 07:45:51.500569000 Z
+- - :approve
+  - argparse
+  - :who: OSPO @masutaka
+    :why: Python 2.0 license is compatible with Apache-2.0. But License Finder does
+      not support the name "Python-2.0". See https://github.com/pivotal/LicenseFinder/pull/1053
+    :versions:
+    - 2.0.1
+    :when: 2024-11-28 08:54:56.971593000 Z
+- - :approve
+  - jsonify
+  - :who: OSPO @masutaka
+    :why: Public Domain is compatible with Apache-2.0. But it is not a software license.
+      See https://github.com/liam-hq/liam/issues/111
+    :versions:
+    - 0.0.1
+    :when: 2024-11-29 03:35:11.884802000 Z
+- - :permit
+  - LGPL-3.0-or-later
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/LGPL-3.0
+    :versions: []
+    :when: 2024-11-29 08:54:34.886267000 Z
+- - :permit
+  - CC0 1.0 Universal
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://creativecommons.org/publicdomain/zero/1.0/
+    :versions: []
+    :when: 2024-11-29 08:56:44.903744000 Z
+- - :approve
+  - spawndamnit
+  - :who: OSPO @masutaka
+    :why: Its license is MIT, but it is mis-detected as a "SEE LICENSE IN LICENSE"
+      license. See https://github.com/jamiebuilds/spawndamnit/pull/11
+    :versions:
+    - 3.0.1
+    :when: 2024-11-29 09:06:33.106701000 Z
+- - :permit
+  - Mozilla Public License 2.0
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/mpl-2-0
+    :versions: []
+    :when: 2024-11-29 09:12:22.146432000 Z
+- - :permit
+  - Eclipse 2.0
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/epl-2-0
+    :versions: []
+    :when: 2024-12-09 09:29:53.604007000 Z
+- - :approve
+  - "@browserbasehq/sdk"
+  - :who: OSPO @masutaka
+    :why: The license is Apache-2.0. License Finder failed to identify the license.
+    :versions: []
+    :when: 2025-03-04 07:55:29.625648000 Z
+- - :approve
+  - "@vercel/gatsby-plugin-vercel-builder"
+  - :who: Liam @MH4GF
+    :why: The license is Apache-2.0.
+    :versions: []
+    :when: 2025-03-13 06:08:23.596952000 Z
+- - :approve
+  - url-template
+  - :who: Liam @hoshinotsuyoshi
+    :why: The package uses BSD-3-Clause license but is incorrectly labeled as BSD
+      at version 2.0.8. See https://github.com/bramstein/url-template/pull/27
+    :versions:
+    - 2.0.8
+    :when: 2025-04-02 05:45:00.000000000 Z
+- - :permit
+  - Zlib
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/Zlib
+    :versions: []
+    :when: 2025-05-08 05:22:54.982520000 Z
+- - :permit
+  - Artistic-2.0
+  - :who: OSPO @masutaka
+    :why: Compatible with Apache-2.0 license. See https://opensource.org/license/artistic-2-0
+    :versions: []
+    :when: 2025-05-08 05:24:20.998252000 Z
+- - :permit
+  - CC-BY-3.0
+  - :who: Devin AI @MH4GF
+    :why: Compatible with Apache-2.0 license. See https://creativecommons.org/licenses/by/3.0/
+    :versions: []
+    :when: 2025-07-04 11:06:54.000000000 Z
+- - :permit
+  - MIT-0
+  - :who: Devin AI @MH4GF
+    :why: Compatible with Apache-2.0 license. MIT No Attribution license is a permissive
+      license. See https://opensource.org/license/mit-0
+    :versions: []
+    :when: 2025-10-29 05:30:00.000000000 Z

@@ -1,0 +1,9 @@
+.version {
+  padding: var(--spacing-1) var(--spacing-2);
+  margin: var(--spacing-2);
+  font-family: var(--code-font);
+  font-size: var(--font-size-1);
+  color: var(--global-mute-text);
+  background: var(--pane-muted-background);
+  border-radius: var(--border-radius-full);
+}

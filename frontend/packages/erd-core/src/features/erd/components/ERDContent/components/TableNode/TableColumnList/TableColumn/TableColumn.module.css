@@ -1,0 +1,118 @@
+.wrapper {
+  background: var(--node-background);
+  transition: background-color var(--default-hover-animation-duration)
+    var(--default-timing-function);
+}
+
+.wrapper:not(:last-child) {
+  border-bottom: 1px solid var(--node-border);
+}
+
+.wrapper:last-child {
+  border-bottom-right-radius: var(--border-radius-md);
+  border-bottom-left-radius: var(--border-radius-md);
+}
+
+.wrapper:hover {
+  background-color: var(--pane-background-hover);
+}
+
+.wrapper.highlightRelatedColumn {
+  background-color: var(--primary-overlay-10);
+  transition: background-color var(--default-hover-animation-duration)
+    var(--default-timing-function);
+}
+
+.wrapper.highlightRelatedColumn:hover {
+  background-color: var(--primary-overlay-15);
+}
+
+.wrapperWithDiff {
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.columnWrapper {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-1half);
+  align-items: center;
+  padding: var(--spacing-2);
+  overflow-x: hidden;
+  font-size: var(--font-size-3);
+  line-height: normal;
+  color: var(--global-foreground);
+}
+
+.diffBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 100%;
+  background-color: var(--global-muted-background);
+}
+
+.wrapper:last-child .diffBox {
+  border-bottom-left-radius: var(--border-radius-md);
+}
+
+.primaryKeyIcon {
+  color: var(--primary-accent);
+}
+
+.linkIcon {
+  color: var(--primary-accent);
+}
+
+.diamondIcon {
+  color: var(--overlay-70);
+}
+
+.columnNameWrapper {
+  display: inline-flex;
+  gap: var(--spacing-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wrapper:last-child .columnNameWrapper {
+  border-bottom-right-radius: var(--border-radius-md);
+}
+
+.columnType {
+  font-family: var(--code-font);
+  font-size: var(--font-size-1);
+  font-weight: 400;
+  line-height: normal;
+  color: var(--overlay-70, rgba(255, 255, 255, 0.7));
+  text-align: right;
+  opacity: 0;
+  transition: opacity 300ms var(--default-timing-function);
+}
+
+:global([data-erd='table-node-highlighted']) .columnType {
+  opacity: 1;
+}
+
+.handle {
+  top: auto;
+  opacity: 0;
+}
+
+.handle[data-handlepos='right'] {
+  right: -17px;
+  pointer-events: none;
+  transform: translate(50%, 0%);
+}
+
+.handle[data-handlepos='left'] {
+  left: -20px;
+  pointer-events: none;
+  transform: translate(-50%, 0%);
+}
+
+.handleWithDiff[data-handlepos='left'] {
+  left: -56px; /* diffBox width (36px) + original left position (-20px) = -56px */
+}

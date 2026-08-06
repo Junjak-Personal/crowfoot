@@ -1,0 +1,94 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 8px);
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--spacing-2, 8px);
+}
+
+.zoomLevelText {
+  display: flex;
+  gap: var(--spacing-1, 4px);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-1, 4px);
+}
+
+.zoom {
+  font-size: var(--font-size-3, 12px);
+  color: var(--overlay-60, rgba(255, 255, 255, 0.6));
+}
+
+.zoomPercent {
+  font-family: var(--code-font, 'IBM Plex Mono');
+  font-size: var(--font-size-3, 12px);
+  color: var(--global-foreground, #fff);
+  text-align: center;
+}
+
+.divider {
+  width: 141px;
+  height: 1px;
+  color: var(--global-border, #383a3b);
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+}
+
+.showMode {
+  display: flex;
+  gap: var(--spacing-1, 4px);
+  align-items: center;
+  padding-left: var(--spacing-1, 4px);
+}
+
+.showModeMenuButton {
+  display: flex;
+  gap: var(--spacing-1half, 6px);
+  align-items: center;
+  width: 102px;
+  padding: var(--spacing-1, 4px) var(--spacing-2, 8px);
+  font-size: var(--font-size-3, 12px);
+  color: var(--button-secondary-foreground, #fff);
+  border-radius: var(--border-radius-base);
+}
+
+.showModeMenuButton:focus-visible {
+  outline: 1px solid var(--primary-color);
+}
+
+.cheveron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.text {
+  font-size: var(--font-size-3, 12px);
+  color: var(--overlay-60, rgba(255, 255, 255, 0.6));
+}
+
+.closeButton {
+  display: flex;
+  gap: var(--spacing-1half, 6px);
+  justify-content: center;
+  width: 100%;
+  height: 23px;
+  padding: var(--spacing-1, 4px) var(--spacing-2, 8px);
+  font-size: var(--font-size-3, 12px);
+  color: var(--button-secondary-foreground, #fff);
+  border: 1px solid var(--button-border, #434546);
+  border-radius: var(--border-radius-base, 4px);
+}
+
+.closeButton:focus-visible {
+  outline: 1px solid var(--primary-color);
+}

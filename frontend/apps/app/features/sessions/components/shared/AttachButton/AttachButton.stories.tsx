@@ -1,0 +1,14 @@
+import type { Meta, StoryObj } from '@storybook/nextjs'
+import { AttachButton } from './AttachButton'
+
+const meta = {
+  component: AttachButton,
+  parameters: {
+    layout: 'centered',
+  },
+} satisfies Meta<typeof AttachButton>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Default: Story = {}

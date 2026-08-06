@@ -1,0 +1,16 @@
+.diffIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.addedIcon {
+  color: var(--diff-new-foreground);
+}
+
+.removedIcon {
+  color: var(--diff-deleted-foreground);
+}
+
+.modifiedIcon {
+  color: var(--diff-modified-foreground);
+}

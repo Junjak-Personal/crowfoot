@@ -1,0 +1,11 @@
+.addedBg {
+  background-color: var(--diff-new-background) !important;
+}
+
+.removedBg {
+  background-color: var(--diff-deleted-background) !important;
+}
+
+.modifiedBg {
+  background-color: var(--diff-modified-background) !important;
+}

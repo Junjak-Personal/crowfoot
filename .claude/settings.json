@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": [
+      "Bash(git commit --no-verify:*)",
+      "Edit(frontend/internal-packages/db/supabase/schemas/schema.sql)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "@liam-hq/configs/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["@testing-library/jest-dom"]
+  },
+  "include": ["src/**/*"]
+}

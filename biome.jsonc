@@ -1,0 +1,13 @@
+{
+  "extends": ["./frontend/internal-packages/configs/biome.jsonc"],
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUndeclaredDependencies": "off"
+      },
+      "complexity": {
+        "noImportantStyles": "off"
+      }
+    }
+  }
+}

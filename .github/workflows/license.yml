@@ -1,0 +1,52 @@
+name: License Compliance
+
+# ## Summary
+#
+# This workflow runs the license_finder CLI only when it detects an update to files related to the License Finder.
+
+on:
+  pull_request:
+  merge_group:
+
+jobs:
+  license_finder:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      # To make the success of this job a prerequisite for merging into the main branch,
+      # set a filter here instead of on: to determine whether or not to proceed to the next step.
+      - name: Cache dependency files
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: cache
+        with:
+          path: |
+            .github/workflows/license.yml
+            config/dependency_decisions.yml
+            config/license_finder.yml
+            package.json
+            pnpm-lock.yaml
+          key: license-${{ runner.os }}-${{ hashFiles('.github/workflows/license.yml', 'config/dependency_decisions.yml', 'config/license_finder.yml', 'package.json', 'pnpm-lock.yaml') }}
+      - name: Determine if files changed
+        id: determine
+        run: |
+          if [ "${{ steps.cache.outputs.cache-hit }}" = 'true' ]; then
+            echo "files_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "files_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: ./.github/actions/pnpm-setup
+        if: steps.determine.outputs.files_changed == 'true'
+      - name: Install License Finder
+        if: steps.determine.outputs.files_changed == 'true'
+        run: sudo gem install -N license_finder
+      - name: Run License Finder
+        if: steps.determine.outputs.files_changed == 'true'
+        run: license_finder

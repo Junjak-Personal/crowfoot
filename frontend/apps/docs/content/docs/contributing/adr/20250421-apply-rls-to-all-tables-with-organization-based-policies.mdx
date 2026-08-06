@@ -1,0 +1,80 @@
+---
+title: 20250421 - Apply RLS to All Tables with Organization-based Policies
+---
+
+## Status
+
+- [ ] Proposed
+- [x] Accepted
+- [ ] Rejected
+- [ ] Deprecated
+- [ ] Superseded
+
+## Context
+
+We have considered enhancing the security of our application by leveraging Supabase's Row-Level Security (RLS) feature.  
+Currently, the application accesses Supabase using the anon key on the client side, which poses a risk: tables without RLS enabled can be accessed regardless of user authentication.
+
+Furthermore, the application is built with a multi-tenant architecture, requiring **authorization control based on organizations**.  
+Many tables are several relationships away from the central organization_id. This creates a challenge where RLS policies must traverse multiple tables through foreign key relationships to reach the organization_id.
+
+For example, a policy might need to include multiple nested SELECT statements to verify that a record belongs to the user's organization.
+
+As a result, authorization policies can become complex. If RLS is only partially applied, alternative access paths through related tables may remain, creating potential security loopholes.
+
+## Decision
+
+**Enable Row-Level Security (RLS) on all tables** and apply **organization-based policies** by default.
+
+- **Basic rules**:
+  - Each authorized table must have an organization_id column used as a condition in the RLS policy
+  - Authenticated users should only access data associated with their own organization
+
+- **Tables requiring special treatment**:
+  - Tables like user information, which may relate to multiple organizations, will have flexible, custom policies
+  - For external service integrations (e.g., GitHub), where edits or deletions should be restricted, access will be limited to read-only as necessary
+
+- **Backend exceptions**:
+  - For system jobs or backend operations that do not go through user authentication, access beyond RLS restrictions will be needed. This will be handled by using specific authorization tokens or dedicated connection roles, allowing restricted access.
+
+### Example Implementation
+
+The projects table already implements this approach with the following policies:
+
+```sql
+-- Enable RLS on the projects table
+ALTER TABLE "public"."projects" ENABLE ROW LEVEL SECURITY;
+
+-- Policy for SELECT operations
+CREATE POLICY "authenticated_users_can_select_org_projects" ON "public"."projects" 
+FOR SELECT TO "authenticated" 
+USING (("organization_id" IN ( 
+  SELECT "organization_members"."organization_id"
+  FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"())
+)));
+
+-- Similar policies exist for INSERT, UPDATE, and DELETE operations
+```
+
+These policies ensure that users can only access projects belonging to organizations they are members of, by joining through the organization_members table.
+
+## Consequences
+
+### Positive
+
+- Greatly reduces security risks by consistently enforcing RLS on all tables
+- Prevents configuration oversights at the table level and eliminates dependency on manual enforcement
+- Unified authorization policy simplifies development and operations, improving implementation efficiency
+
+### Negative
+
+- **Increased implementation cost on the application side**:
+  - All INSERT/UPDATE operations must accurately inject the correct organization_id
+  - Requires architectural review and standardization to consistently access organization_id when needed
+
+- Some tables will require custom policy design (e.g., external integrations, user data)
+
+### Neutral
+
+- Performance impact is expected to be minimal. PostgreSQL's RLS evaluation is relatively fast (milliseconds to tens of milliseconds), and deep JOINs are unlikely to pose significant issues

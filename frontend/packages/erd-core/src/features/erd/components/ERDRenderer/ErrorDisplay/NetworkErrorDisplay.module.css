@@ -1,0 +1,70 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--spacing-5, 20px);
+  background-color: var(--global-background);
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5, 20px);
+  align-items: center;
+  justify-content: center;
+  padding-top: var(--spacing-10, 40px);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 8px);
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+}
+
+.silentHere {
+  align-self: stretch;
+  font-family: var(--message-font, Montserrat);
+  font-size: var(--font-size-18, 48px);
+  color: var(--primary-color, #1ded83);
+  text-align: center;
+}
+
+.errorMessage {
+  align-self: stretch;
+  font-family: var(--message-font-en, Montserrat);
+  font-size: var(--font-size-10, 24px);
+  font-weight: 500;
+  line-height: 120%;
+  color: var(--global-foreground, #fff);
+  text-align: center;
+}
+
+.instruction {
+  align-self: stretch;
+  overflow: hidden;
+  font-size: var(--font-size-6, 16px);
+  line-height: 160%;
+  color: var(--overlay-70, rgba(255, 255, 255, 0.7));
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media screen and (max-width: 768px) {
+  .silentHere {
+    font-size: var(--font-size-10, 24px);
+  }
+
+  .errorMessage {
+    font-size: var(--font-size-4, 13px);
+  }
+
+  .instruction {
+    font-size: var(--font-size-4, 13px);
+  }
+}

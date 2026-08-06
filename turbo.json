@@ -1,0 +1,67 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "concurrency": "15",
+  "tasks": {
+    "@liam-hq/storybook#build": {
+      "dependsOn": ["^build", "@liam-hq/schema#build"],
+      "outputs": ["storybook-static"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/frontend/**/*.{ts,tsx,js,jsx,css}"
+      ]
+    },
+    "build": {
+      "dependsOn": ["^build", "gen"],
+      "outputs": ["dist", "dist-cli"],
+      "env": [
+        "SENTRY_AUTH_TOKEN",
+        "SENTRY_ORG",
+        "SENTRY_PROJECT",
+        "SENTRY_DSN",
+        "NEXT_PUBLIC_ENV_NAME"
+      ],
+      "outputLogs": "errors-only"
+    },
+    "@liam-hq/docs#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "@liam-hq/cli#dev": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@liam-hq/app#dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "gen": {
+      "dependsOn": ["^gen"],
+      "outputLogs": "errors-only"
+    },
+    "@liam-hq/schema#gen": {
+      "dependsOn": ["^gen"],
+      "outputs": ["src/parser/tbls/schema.generated.ts"],
+      "outputLogs": "errors-only"
+    },
+    "lint": {
+      "dependsOn": ["gen", "^build", "^lint"],
+      "outputLogs": "errors-only"
+    },
+    "fmt": {
+      "outputLogs": "errors-only"
+    },
+    "test": {
+      "dependsOn": ["^build", "gen"],
+      "outputs": []
+    },
+    "test:e2e": {
+      "dependsOn": ["^build"]
+    }
+  }
+}

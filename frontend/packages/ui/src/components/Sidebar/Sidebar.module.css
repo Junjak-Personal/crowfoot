@@ -1,0 +1,124 @@
+.sidebarProvider {
+  position: relative;
+  min-height: 100%;
+}
+
+.sidebarTrigger {
+  padding: var(--spacing-2);
+  color: var(--overlay-70);
+  border-radius: var(--border-radius-base);
+  transition: background-color var(--default-hover-animation-duration)
+    var(--default-timing-function);
+}
+
+.sidebarTrigger:hover {
+  background: var(--pane-background-active, #2e3031);
+}
+
+.sidebarGap {
+  width: 100%;
+  height: 100%;
+  transition-duration: 200ms;
+  transition-property: width;
+  animation-timing-function: linear;
+}
+
+[data-collapsible='offcanvas'] .sidebarGap {
+  width: 0;
+}
+
+.sidebarWrapper {
+  left: 0;
+  z-index: var(--z-index-sidebar);
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  color: var(--global-foreground);
+  border-right: 1px solid var(--pane-border);
+  transition-duration: 200ms;
+  transition-property: left, right, width;
+  animation-timing-function: linear;
+}
+
+[data-collapsible='offcanvas'] .sidebarWrapper {
+  /* stylelint-disable-next-line csstools/value-no-unknown-custom-properties */
+  left: calc(var(--sidebar-width) * -1);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100svh;
+  background: var(--pane-background);
+}
+
+.sidebarContent {
+  flex: 1 1 0%;
+  padding-bottom: var(--spacing-10);
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+.sidebarMenuItem {
+  position: relative;
+}
+
+.sidebarMenuButton {
+  display: flex;
+  gap: var(--spacing-1);
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-2);
+  font-size: var(--font-size-2);
+  color: var(--link-default);
+  transition: background-color var(--default-hover-animation-duration)
+    var(--default-timing-function);
+}
+
+.sidebarMenuButton:hover {
+  background: var(--pane-background-hover);
+}
+
+.sidebarMenuButton:focus-visible {
+  outline: 1px solid var(--primary-color);
+}
+
+.sidebarMenuAction {
+  padding: 0 var(--spacing-1, 4px);
+  border-radius: var(--border-radius-base);
+}
+
+.sidebarMenuAction:focus-visible {
+  outline: 1px solid var(--primary-color);
+}
+
+.sidebarMenuAction.showOnHover {
+  opacity: 0;
+  transition: opacity var(--default-hover-animation-duration)
+    var(--default-timing-function);
+}
+
+[data-sidebar='menu-item']:hover .sidebarMenuAction.showOnHover {
+  opacity: 1;
+}
+
+.sidebarGroupLabel {
+  padding: var(--spacing-2);
+  border-bottom: 1px solid var(--global-border);
+}
+
+.sidebarGroupLabel span {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  font-size: var(--font-size-2);
+  font-weight: 500;
+  line-height: normal;
+}
+
+.sidebarFooter {
+  padding: var(--spacing-2);
+  color: var(--overlay-70);
+  border-top: 1px solid var(--global-border);
+}
