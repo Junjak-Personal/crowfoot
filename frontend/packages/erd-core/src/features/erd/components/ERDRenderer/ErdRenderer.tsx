@@ -25,12 +25,7 @@ import { useIsTouchDevice } from '../../../../hooks'
 import { useVersionOrThrow } from '../../../../providers'
 import { useSchemaOrThrow, useUserEditingOrThrow } from '../../../../stores'
 import { toggleLogEvent } from '../../../gtm/utils'
-import {
-  convertSchemaToNodes,
-  createHash,
-  setCookie,
-  setCookieJson,
-} from '../../utils'
+import { convertSchemaToNodes, setCookie, setCookieJson } from '../../utils'
 import { ERDContent } from '../ERDContent'
 import { CardinalityMarkers } from './CardinalityMarkers'
 import { CommandPalette, CommandPaletteProvider } from './CommandPalette'
@@ -70,15 +65,17 @@ export const ERDRenderer: FC<Props> = ({
     return showDiff && merged ? merged : current
   }, [showDiff, merged, current])
 
-  const schemaKey = useMemo(() => {
-    const str = JSON.stringify(schema)
-    return createHash(str)
-  }, [schema])
-
-  const { nodes, edges } = convertSchemaToNodes({
-    schema,
-    showMode,
-  })
+  /**
+   * Memoised for two reasons. It used to run on every render of this component
+   * — every sidebar toggle and panel drag re-converted the whole schema for a
+   * child that only reads it on mount. And ERDContent now reconciles against
+   * this array rather than remounting, so a new reference has to mean "the
+   * schema actually changed".
+   */
+  const { nodes, edges } = useMemo(
+    () => convertSchemaToNodes({ schema, showMode }),
+    [schema, showMode],
+  )
 
   const leftPanelRef = createRef<ImperativePanelHandle>()
 
@@ -167,8 +164,15 @@ export const ERDRenderer: FC<Props> = ({
                     )}
                     {errorObjects.length > 0 || (
                       <>
+                        {/* Keyed on the show mode alone. A schema edit is
+                            reconciled into the canvas in place — remounting
+                            for one would throw away the viewport, the
+                            selection and every position ELK was not told to
+                            pin. Show mode still remounts: the node heights
+                            change by multiples, so the layout has to be
+                            recomputed. */}
                         <ERDContent
-                          key={`${schemaKey}-${showMode}`}
+                          key={showMode}
                           nodes={nodes}
                           edges={edges}
                           displayArea="main"

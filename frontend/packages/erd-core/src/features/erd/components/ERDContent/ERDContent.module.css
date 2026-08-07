@@ -109,3 +109,10 @@
   border: 1px solid var(--color-gray-500);
   border-radius: 4px;
 }
+
+/* Only while tables are making room for one that grew. Scoped to that window
+   rather than left on the node: a dragged table must follow the cursor
+   exactly, not trail behind it. */
+.settling :global(.react-flow__node) {
+  transition: transform 180ms ease-out;
+}

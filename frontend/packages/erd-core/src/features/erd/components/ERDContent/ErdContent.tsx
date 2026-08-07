@@ -15,6 +15,7 @@ import {
   useNodesState,
   useReactFlow,
 } from '@xyflow/react'
+import clsx from 'clsx'
 import {
   type FC,
   type MouseEvent as ReactMouseEvent,
@@ -86,7 +87,11 @@ import {
 } from './components'
 import styles from './ERDContent.module.css'
 import { ErdContentProvider, useErdContentContext } from './ErdContentContext'
-import { useInitialAutoLayout, useQueryParamsChanged } from './hooks'
+import {
+  useInitialAutoLayout,
+  useQueryParamsChanged,
+  useSchemaNodeSync,
+} from './hooks'
 import { nodeElementAt } from './utils'
 
 const nodeTypes = {
@@ -279,6 +284,15 @@ export const ERDContentInner: FC<Props> = ({
     commit: commitSchema,
     reset: resetSchemaEdits,
   } = useSchemaEditing()
+
+  const { handleNodesChange, isSettling, stopSettleAnimation } =
+    useSchemaNodeSync({
+      nodes,
+      incomingNodes: _nodes,
+      incomingEdges: _edges,
+      displayArea,
+      onNodesChange,
+    })
 
   useInitialAutoLayout({
     nodes,
@@ -956,7 +970,7 @@ export const ERDContentInner: FC<Props> = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: this only suppresses
     // the native menu and opens the editing menu; nothing here is a control.
     <div
-      className={styles.wrapper}
+      className={clsx(styles.wrapper, { [styles.settling]: isSettling })}
       data-loading={loading}
       onContextMenu={handleCanvasContextMenu}
       onPointerMove={handlePointerMove}
@@ -1118,12 +1132,13 @@ export const ERDContentInner: FC<Props> = ({
         edgesReconnectable={false}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClickEvent}
         onPaneClick={handlePaneClick}
         onNodeMouseEnter={handleMouseEnterNode}
         onNodeMouseLeave={handleMouseLeaveNode}
+        onNodeDragStart={stopSettleAnimation}
         onNodeDragStop={handleDragStopNode}
         panOnScroll
         panOnDrag={panOnDrag}

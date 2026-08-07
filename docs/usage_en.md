@@ -324,6 +324,12 @@ order; the per-column `Primary key` checkbox cannot express any other order.
 The edited schema is what the whole viewer reads, so **`Export` emits the edited
 DDL** — MySQL, PostgreSQL and YAML alike.
 
+Editing never rearranges the diagram. The canvas keeps its viewport, its
+selection and every table exactly where it is; when a table grows a row, only
+the tables directly below it slide down to make room, and they stay there if it
+shrinks again. To have the automatic layout run over everything, use `Tidy up`
+in the toolbar.
+
 #### Connecting two tables
 
 `Ctrl`/`Cmd` + right-click the table that should hold the key, then pick a table
