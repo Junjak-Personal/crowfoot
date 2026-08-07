@@ -1,0 +1,66 @@
+[
+  {
+    "id": "vocab",
+    "name": "Vocabulary",
+    "color": "sky",
+    "tableNames": [
+      "words",
+      "word_examples",
+      "wordbooks",
+      "wordbook_items",
+      "wordbook_subscriptions",
+      "user_word_state"
+    ]
+  },
+  {
+    "id": "kanji",
+    "name": "Kanji",
+    "color": "teal",
+    "tableNames": [
+      "kanjis",
+      "kanji_readings"
+    ]
+  },
+  {
+    "id": "ai",
+    "name": "AI Chat",
+    "color": "orange",
+    "tableNames": [
+      "ai_sessions",
+      "ai_messages",
+      "ai_tool_executions",
+      "ai_telemetry"
+    ]
+  },
+  {
+    "id": "study",
+    "name": "Study & Quiz",
+    "color": "gold",
+    "tableNames": [
+      "quiz_settings",
+      "study_progress",
+      "daily_stats",
+      "achievements"
+    ]
+  },
+  {
+    "id": "user",
+    "name": "User",
+    "color": "green",
+    "tableNames": [
+      "user_settings",
+      "user_subscription"
+    ]
+  },
+  {
+    "id": "ops",
+    "name": "Notifications & Ops",
+    "color": "steel",
+    "tableNames": [
+      "push_tokens",
+      "push_subscriptions",
+      "api_rate_limits",
+      "feedback_survey"
+    ]
+  }
+]

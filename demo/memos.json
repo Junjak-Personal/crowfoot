@@ -1,0 +1,62 @@
+[
+  {
+    "id": "d0000000-0000-4000-8000-000000000001",
+    "text": "crowfoot — a demo\n\nThis is the database behind nivoca, a Japanese vocabulary app.\nThe version drawn here is its legacy build: Next.js + Supabase, shipped as a PWA.\nThe app has since been rebuilt on Flutter with a Kotlin/Spring backend, and this\nearlier codebase was opened as github.com/Junjak-Personal/nivoca-legacy.\n\n23 tables · 27 foreign keys, parsed straight from 37 Supabase migration files:\n    npx crowfoot erd build --input 'migrations/*.sql' --format postgres",
+    "x": 3100,
+    "y": -1180,
+    "width": 3240,
+    "height": 620,
+    "color": "vermilion",
+    "fontSize": 40
+  },
+  {
+    "id": "d0000000-0000-4000-8000-000000000002",
+    "text": "Everything you see is editable\n\nAdd ?edit=1 to the URL. Without it the diagram is read-only on purpose, so a\nlink you share cannot be rearranged by whoever opens it.\n\nDrag tables to move them. Drag across empty canvas — or Ctrl/Cmd-click — to\nselect several at once, then move, tint or delete them together.",
+    "x": 3100,
+    "y": -480,
+    "width": 1560,
+    "height": 420,
+    "color": "sky",
+    "fontSize": 32
+  },
+  {
+    "id": "d0000000-0000-4000-8000-000000000003",
+    "text": "Grouping\n\nSelect the tables you want, right-click one of them, and choose to group them.\nA named, tinted box is drawn behind the members — the box is derived from where\nthey sit, so it follows them. Drag the group label to move the whole set.\n\nA table may belong to more than one group. The toolbar switches between group\nview and a plain alphabetical list without touching the data.",
+    "x": 4780,
+    "y": -480,
+    "width": 1560,
+    "height": 420,
+    "color": "gold",
+    "fontSize": 32
+  },
+  {
+    "id": "d0000000-0000-4000-8000-000000000004",
+    "text": "Memos and colour\n\nCtrl/Cmd + right-click empty canvas to drop a memo like this one. Memos resize,\nrecolour, change font size, and copy-paste — including into another browser tab.\n\nTables, memos and groups all take a tint from the same 12-colour palette, so the\ndiagram stays consistent with the app it documents.",
+    "x": 6460,
+    "y": -480,
+    "width": 1560,
+    "height": 420,
+    "color": "orange",
+    "fontSize": 32
+  },
+  {
+    "id": "d0000000-0000-4000-8000-000000000005",
+    "text": "Making an arrangement permanent\n\nYour layout lives in the URL, which makes it shareable but not durable. Copy the\n?edit=1 URL and turn it into files the viewer loads on every visit:\n\n    npx crowfoot erd from-link --input '<the URL>' --output-dir dist\n\nThat writes layout.json, memos.json and groups.json next to schema.json. Commit\nthem, and this arrangement is what everyone sees — this demo included.",
+    "x": 3100,
+    "y": 1180,
+    "width": 3240,
+    "height": 520,
+    "color": "green",
+    "fontSize": 32
+  },
+  {
+    "id": "d0000000-0000-4000-8000-000000000006",
+    "text": "Where this runs\n\nA static site: no server, no database connection. crowfoot parses the schema once\nand emits HTML, CSS and JSON you can host anywhere — S3, nginx, GitHub Pages.\nThis page is nginx on a mini PC behind a Cloudflare tunnel.\n\ngithub.com/Junjak-Personal/crowfoot   ·   npm i -g crowfoot",
+    "x": 6460,
+    "y": 1180,
+    "width": 1560,
+    "height": 520,
+    "color": "steel",
+    "fontSize": 32
+  }
+]

@@ -30,6 +30,12 @@
 
   // Workspace-specific configurations
   "workspaces": {
+    ".": {
+      // Run by hand, so nothing imports it — an entry point, not dead code.
+      // Declared here rather than added to `ignore`, so knip keeps checking
+      // whatever it imports.
+      "entry": ["demo/build-demo.mjs"]
+    },
     "frontend/packages/cli": {
       "entry": ["bin/cli.ts", "src/main.tsx"]
     },
