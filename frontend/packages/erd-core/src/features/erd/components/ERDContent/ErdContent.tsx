@@ -26,12 +26,19 @@ import {
 } from 'react'
 import { useVersionOrThrow } from '../../../../providers'
 import { useUserEditingOrThrow } from '../../../../stores'
+import {
+  connectTables,
+  createTable,
+  putTable,
+  uniqueName,
+} from '../../../../utils/schemaEdit'
 import { selectTableLogEvent } from '../../../gtm/utils'
 import { MAX_ZOOM, MIN_ZOOM } from '../../../reactflow/constants'
 import {
   useCommitTablePositions,
   useGroupNodes,
   useMemoNodes,
+  useSchemaEditing,
   useTableSelection,
 } from '../../hooks'
 import type { DisplayArea, MemoNodeType } from '../../types'
@@ -42,6 +49,7 @@ import {
   deserializeGroups,
   deserializeMemos,
   deserializeTableColors,
+  deserializeTableLayout,
   duplicateMemo,
   type Group,
   getEffectiveGroups,
@@ -61,6 +69,7 @@ import {
   parseMemosFromClipboard,
   placeMemos,
   serializeMemosToClipboard,
+  serializeTableLayout,
   setTableColor,
   stepMemoFontSize,
   tableGroupNodesFrom,
@@ -217,10 +226,14 @@ export const ERDContentInner: FC<Props> = ({
 }) => {
   const {
     activeTableName,
+    setActiveTableName,
     tableColors,
     setTableColors,
+    tablePositions,
+    setTablePositions,
     memoEntries,
     groupEntries,
+    schemaEdits,
     editMode,
   } = useUserEditingOrThrow()
 
@@ -250,6 +263,7 @@ export const ERDContentInner: FC<Props> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes)
 
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(_edges)
+
   const {
     state: { loading },
   } = useErdContentContext()
@@ -260,6 +274,11 @@ export const ERDContentInner: FC<Props> = ({
   const { commitMemos, selectedMemos } = useMemoNodes()
   const { commitGroups } = useGroupNodes()
   const commitTablePositions = useCommitTablePositions()
+  const {
+    schema,
+    commit: commitSchema,
+    reset: resetSchemaEdits,
+  } = useSchemaEditing()
 
   useInitialAutoLayout({
     nodes,
@@ -576,6 +595,79 @@ export const ERDContentInner: FC<Props> = ({
   }, [menu, commitMemos, screenToFlowPosition])
 
   /**
+   * A new table is pinned where it was dropped rather than left to the auto
+   * layout, which would otherwise place it wherever ELK felt like — usually
+   * off screen, which reads as "nothing happened".
+   */
+  const handleAddTable = useCallback(() => {
+    if (menu?.kind !== 'pane') return
+
+    const name = uniqueName(Object.keys(schema.tables), 'new_table')
+    const { x, y } = screenToFlowPosition({ x: menu.x, y: menu.y })
+
+    commitSchema((current) => putTable(current, createTable(name)))
+    setTablePositions(
+      serializeTableLayout({
+        ...deserializeTableLayout(tablePositions),
+        [name]: { x, y },
+      }),
+    )
+    // Straight into the editor: an empty table has nothing to show on the
+    // canvas, so landing on it is the only useful next step.
+    setActiveTableName(name)
+    setMenu(null)
+  }, [
+    menu,
+    schema,
+    commitSchema,
+    screenToFlowPosition,
+    tablePositions,
+    setTablePositions,
+    setActiveTableName,
+  ])
+
+  const handleDiscardSchemaEdits = useCallback(() => {
+    resetSchemaEdits()
+    setMenu(null)
+  }, [resetSchemaEdits])
+
+  /**
+   * The table-to-table gesture: right-click the table that should hold the
+   * key, pick what it references. `connectTables` reuses a column that already
+   * follows the `<table>_<key>` convention and creates one when there is none,
+   * so the edge appears without a trip to the drawer first.
+   */
+  const handleConnectTable = useCallback(
+    (targetName: string) => {
+      if (menu?.kind !== 'table' || targetName === '') return
+
+      const sourceName = menu.tableName
+      const result = connectTables(schema, sourceName, targetName)
+      setMenu(null)
+
+      if (!result) {
+        toast({
+          title: 'Cannot reference that table',
+          description: `${targetName} has no primary key to point at.`,
+          status: 'error',
+        })
+        return
+      }
+
+      commitSchema(() => result.schema)
+      toast({
+        title: `${sourceName} → ${targetName}`,
+        description:
+          result.createdColumns.length > 0
+            ? `Added ${result.createdColumns.join(', ')} to ${sourceName}.`
+            : 'Linked using the columns that were already there.',
+        status: 'success',
+      })
+    },
+    [menu, schema, commitSchema, toast],
+  )
+
+  /**
    * The nodes of one kind that the open menu applies to. A right-click has
    * already put the clicked node in the selection, so the selection is the
    * answer for both kinds.
@@ -887,6 +979,22 @@ export const ERDContentInner: FC<Props> = ({
           >
             Add memo here
           </button>
+          <button
+            type="button"
+            className={styles.contextMenuItem}
+            onClick={handleAddTable}
+          >
+            Add table here
+          </button>
+          {schemaEdits !== '' && (
+            <button
+              type="button"
+              className={styles.contextMenuItem}
+              onClick={handleDiscardSchemaEdits}
+            >
+              Discard schema edits
+            </button>
+          )}
         </div>
       )}
       {(menu?.kind === 'table' || menu?.kind === 'memo') && (
@@ -957,12 +1065,35 @@ export const ERDContentInner: FC<Props> = ({
             </>
           )}
           {menu.kind === 'table' && (
-            <TableGroupMenuItems
-              groups={menuTableGroups}
-              canGroup={selectedTableCount >= 2}
-              onGroupSelected={handleGroupSelected}
-              onRemoveFromGroup={handleRemoveFromGroup}
-            />
+            <>
+              <div className={styles.contextMenuRow}>
+                <span>Connect to</span>
+                {/* A native select rather than a nested menu: it scrolls,
+                    it has type-ahead, and a wide schema would otherwise need
+                    a submenu taller than the screen. */}
+                <select
+                  className={styles.contextMenuText}
+                  aria-label="Reference another table"
+                  value=""
+                  onChange={(event) => handleConnectTable(event.target.value)}
+                >
+                  <option value="">Pick a table…</option>
+                  {Object.keys(schema.tables)
+                    .filter((name) => name !== menu.tableName)
+                    .map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <TableGroupMenuItems
+                groups={menuTableGroups}
+                canGroup={selectedTableCount >= 2}
+                onGroupSelected={handleGroupSelected}
+                onRemoveFromGroup={handleRemoveFromGroup}
+              />
+            </>
           )}
         </ViewColorMenu>
       )}

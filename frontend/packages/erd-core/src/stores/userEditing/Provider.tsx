@@ -179,8 +179,29 @@ export const UserEditingProvider: FC<Props> = ({
 
   // Read-only by default so a shared link cannot be messed up by accident.
   // Accepts `?edit=1` as well as `?edit=true`.
-  const [editParam] = useQueryState('edit', parseAsString.withDefault(''))
+  //
+  // 'push' like the other mode parameters: the back button should leave edit
+  // mode, and nothing here writes on every drag the way the editing parameters
+  // below do, so the history stack stays readable.
+  const [editParam, setEditParam] = useQueryState(
+    'edit',
+    parseAsString.withDefault('').withOptions({ history: 'push' }),
+  )
   const editMode = editParam === '1' || editParam === 'true'
+
+  const setEditMode: (editMode: boolean) => void = useCallback(
+    (value) => {
+      setEditParam(value ? '1' : null)
+    },
+    [setEditParam],
+  )
+
+  const [schemaEdits, setSchemaEdits] = useQueryState(
+    'schemaedits',
+    parseAsCompressedString.withDefault('').withOptions({
+      history: 'replace',
+    }),
+  )
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set())
   const [isPopstateInProgress, setIsPopstateInProgress] = useState(false)
@@ -331,6 +352,9 @@ export const UserEditingProvider: FC<Props> = ({
         showGroups,
         setShowGroups,
         editMode,
+        setEditMode,
+        schemaEdits,
+        setSchemaEdits,
         // Local state
         selectedNodeIds,
         updateSelectedNodeIds,

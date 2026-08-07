@@ -62,9 +62,9 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => (
     <ToastProvider>
       <ReactFlowProvider>
         <VersionProvider version={version}>
-          <SchemaProvider current={schema}>
-            <UserEditingProvider>{children}</UserEditingProvider>
-          </SchemaProvider>
+          <UserEditingProvider>
+            <SchemaProvider current={schema}>{children}</SchemaProvider>
+          </UserEditingProvider>
         </VersionProvider>
       </ReactFlowProvider>
     </ToastProvider>

@@ -96,3 +96,13 @@ Summary of the changes made to the original work
     was updated to match. The per-file notices required by section 4(b) that
     lived in the packages the fork ships are unaffected; none of the 92 files
     carrying one lived in a deleted package.
+
+13. In-browser schema editing.
+    In edit mode the table detail panel becomes a form covering the whole of a
+    table's definition — name, comment, columns, primary/foreign/unique/check
+    constraints and indexes — and tables can be added, renamed and removed. A
+    foreign key can also be drawn between two tables from the canvas context
+    menu. Renames and deletions carry every reference that pointed at what
+    changed. Edits live in ?schemaedits= and are folded into the schema every
+    consumer reads, so the DDL export reflects them; nothing is written back to
+    schema.json. Upstream's viewer is read-only.

@@ -245,13 +245,15 @@ MySQL export is added by this fork; upstream offers PostgreSQL and YAML only.
 
 ### Turning it on
 
+The **`Edit` button in the header** toggles it, or add the parameter by hand:
+
 ```
 https://your-host/erd/?edit=1
 ```
 
 `?edit=1` or `?edit=true`. Without it the diagram is **read-only** — tables cannot
-be dragged and memos cannot be created. That default is what keeps a shared link
-from being rearranged by accident.
+be dragged, memos cannot be created and the schema cannot be changed. That default
+is what keeps a shared link from being rearranged by accident.
 
 In edit mode a badge appears at the top of the canvas:
 `Edit mode · drag to select · Ctrl/Cmd + right-click for the menu`
@@ -283,14 +285,56 @@ as one, with table positions saved to `?positions=` and memos to `?memos=`.
 
 | Target | Menu |
 |---|---|
-| Empty canvas | `Add memo here` — creates a memo at the clicked point |
-| A table | Colour palette |
+| Empty canvas | `Add memo here`, `Add table here` — both land at the clicked point; `Discard schema edits` when there are any |
+| A table | `Connect to` (draw a foreign key to another table), colour palette |
 | A memo | Colour palette, font size (`−` / number input / `+`), `Duplicate memo`, `Delete memo` |
 
 The menu applies to **the whole selection**. Right-clicking something already in the
 selection keeps that selection; right-clicking something outside it narrows the
 selection to that one thing — the same rule a left click follows. So selecting five
 tables and picking a colour from any one of them tints all five.
+
+### Editing the schema
+
+In edit mode the table detail panel becomes a form. Everything the schema holds is
+editable there: the table's name and comment, its columns (name, type, default,
+comment, `PRIMARY KEY`, `NOT NULL`), its foreign, unique and check constraints, and
+its indexes. `Add table here` on the empty-canvas menu creates a table and opens it.
+
+Edits go to `?schemaedits=` — nothing is written to `schema.json`, and nothing is
+sent anywhere. The parameter carries **only the tables actually edited**, so a link
+stays short; editing a table back to the shape it shipped with drops it from the
+parameter again. `Discard schema edits` on the empty-canvas menu clears the lot.
+
+References follow the thing they point at, so a diagram never ends up pointing at
+something that is no longer there:
+
+| Edit | What follows it |
+|---|---|
+| Rename a table | Every foreign key that targeted it, plus its pinned position, its tint and its group membership |
+| Delete a table | Every foreign key that targeted it is dropped |
+| Rename a column | This table's constraints and indexes, and the foreign keys in other tables that targeted it |
+| Delete a column | The same, and any constraint or index left with no columns is dropped |
+
+Two things are deliberately left alone. A `CHECK` constraint's expression is
+free-form SQL, so a renamed column is **not** substituted into it — fix those by
+hand. And a composite primary key takes its column order from the table's column
+order; the per-column `Primary key` checkbox cannot express any other order.
+
+The edited schema is what the whole viewer reads, so **`Export` emits the edited
+DDL** — MySQL, PostgreSQL and YAML alike.
+
+#### Connecting two tables
+
+`Ctrl`/`Cmd` + right-click the table that should hold the key, then pick a table
+under `Connect to`. The foreign key points at the target's primary key, and the
+referencing column is:
+
+1. an existing `<target>_<key>` or `<target-without-trailing-s>_<key>` column, if there is one;
+2. otherwise a new `<target>_<key>` column, typed to match the key it references.
+
+A toast says which happened. The target needs a primary key — without one there is
+nothing to point at, and the menu says so rather than inventing one.
 
 ### Memos
 
@@ -545,11 +589,12 @@ Almost every piece of UI state is reflected in the URL, so one link reproduces t
 | `memos` | compressed JSON | The memos, verbatim. | replace |
 | `groups` | compressed JSON | The groups, verbatim. | replace |
 | `showgroups` | `on` \| `off` | Single view vs group view — applies to both the canvas boxes/labels and the sidebar sectioning. Defaults to `on`. | push |
-| `edit` | `1` \| `true` | Enables editing. Absent means read-only. | — |
+| `schemaedits` | compressed JSON | Schema edits, as whole replaced tables plus removed names. | replace |
+| `edit` | `1` \| `true` | Enables editing. Absent means read-only. | push |
 
 ### Encoding
 
-`positions`, `colors`, `memos` and `groups` are **deflate-compressed and URL-safe
+`positions`, `colors`, `memos`, `groups` and `schemaedits` are **deflate-compressed and URL-safe
 base64 encoded** (`+`→`-`, `/`→`_`, `=` stripped). Not human-readable, but in exchange:
 
 - They survive query-string reassembly by a CDN such as CloudFront intact.
@@ -558,6 +603,9 @@ base64 encoded** (`+`→`-`, `/`→`_`, `=` stripped). Not human-readable, but i
 - `memos` and `groups` are each a single JSON blob rather than a list — memo text
   and group names are both free-form and would be shredded by a list parser's
   `split(',')`.
+- `schemaedits` carries **only the tables that were actually edited**, plus the
+  names of the ones removed. Editing a table back to the shape it shipped with
+  drops it out of the parameter again.
 - `showgroups` is a **view mode**, not group data, so it rides uncompressed as
   `on`/`off`.
 
@@ -565,8 +613,9 @@ base64 encoded** (`+`→`-`, `/`→`_`, `=` stripped). Not human-readable, but i
 
 `push` adds a back-button entry, `replace` does not. Navigation (`active`, `show`,
 `hidden`, `showgroups`) should be reversible with the back button; editing
-(`positions`, `colors`, `memos`, `groups`) must not fill the history stack on every
-drag, so the two are split deliberately.
+(`positions`, `colors`, `memos`, `groups`, `schemaedits`) must not fill the history
+stack on every drag, so the two are split deliberately. `edit` is a mode rather than
+an edit, so it gets `push` — the back button leaves edit mode.
 
 ---
 

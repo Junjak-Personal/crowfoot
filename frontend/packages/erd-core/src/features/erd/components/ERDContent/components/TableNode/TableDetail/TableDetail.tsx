@@ -19,6 +19,7 @@ import { Head } from './Head'
 import { Indexes } from './Indexes'
 import { RelatedTables } from './RelatedTables'
 import styles from './TableDetail.module.css'
+import { TableEditor } from './TableEditor'
 
 type Props = {
   table: Table
@@ -26,7 +27,8 @@ type Props = {
 
 export const TableDetail: FC<Props> = ({ table }) => {
   const ref = useRef<HTMLElement>(null)
-  const { setActiveTableName, setHiddenNodeIds } = useUserEditingOrThrow()
+  const { setActiveTableName, setHiddenNodeIds, editMode } =
+    useUserEditingOrThrow()
 
   const { current } = useSchemaOrThrow()
 
@@ -94,19 +96,26 @@ export const TableDetail: FC<Props> = ({ table }) => {
   return (
     <section className={styles.wrapper} ref={ref}>
       <Head table={table} />
-      <div className={styles.body}>
-        {table.comment && <Comment table={table} />}
-        <Columns table={table} />
-        <Indexes tableId={table.name} indexes={table.indexes} />
-        <Constraints table={table} />
-        <div className={styles.relatedTables}>
-          <RelatedTables
-            nodes={nodes}
-            edges={edges}
-            onOpenMainPane={handleOpenMainPane}
-          />
+      {/* The read-only sections are built around the diff view and its
+          `operations`; edit mode swaps in a form for the same table rather
+          than growing an "or an input" branch through all of them. */}
+      {editMode ? (
+        <TableEditor table={table} />
+      ) : (
+        <div className={styles.body}>
+          {table.comment && <Comment table={table} />}
+          <Columns table={table} />
+          <Indexes tableId={table.name} indexes={table.indexes} />
+          <Constraints table={table} />
+          <div className={styles.relatedTables}>
+            <RelatedTables
+              nodes={nodes}
+              edges={edges}
+              onOpenMainPane={handleOpenMainPane}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </section>
   )
 }

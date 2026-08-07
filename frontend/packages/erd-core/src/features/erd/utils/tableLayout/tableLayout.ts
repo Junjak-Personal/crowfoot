@@ -151,10 +151,19 @@ export const deserializeTableLayout = (entries: string[]): TableLayout => {
  * appended to the position entry: the position codec stays exactly as it was,
  * and a table can be coloured without ever having been moved.
  */
+export const serializeColorEntries = (
+  colors: Record<string, ViewColorKey>,
+): string[] =>
+  Object.entries(colors).map(([tableName, color]) => `${tableName}:${color}`)
+
 export const serializeTableColors = (layout: TableLayout): string[] =>
-  Object.entries(layout)
-    .filter(([, entry]) => entry.color !== undefined)
-    .map(([tableName, entry]) => `${tableName}:${entry.color}`)
+  serializeColorEntries(
+    Object.fromEntries(
+      Object.entries(layout).flatMap(([tableName, entry]) =>
+        entry.color === undefined ? [] : [[tableName, entry.color] as const],
+      ),
+    ),
+  )
 
 export const deserializeTableColors = (
   entries: string[],
@@ -254,6 +263,51 @@ export const setTableColor = (
 
 export const getTableColor = (tableName: string): ViewColorKey | undefined =>
   resolvedLayout[tableName]?.color
+
+/** Refile every entry under `from` as `to`, keeping its place in the record. */
+const renameKey = <T>(
+  record: Record<string, T>,
+  from: string,
+  to: string,
+): Record<string, T> =>
+  Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key === from ? to : key,
+      value,
+    ]),
+  )
+
+/**
+ * Follows a table rename through every place a position or colour is filed
+ * under the table's name.
+ *
+ * `getEffectiveTableLayout` **merges** layout.json, browser storage and the
+ * link rather than taking the first that answers, so all three have to be
+ * renamed — a table pinned only by layout.json would otherwise lose its spot.
+ * The module's resolved snapshot goes too, because that is what
+ * `dumpTableLayout` commits and what `getTableColor` reads.
+ *
+ * The URL entries are returned rather than written: they are query state the
+ * caller owns. Everything else is module or browser state and is updated here.
+ */
+export const renameTableInLayout = (
+  from: string,
+  to: string,
+  entries: { positions: string[]; colors: string[] },
+): { positions: string[]; colors: string[] } => {
+  baseLayout = renameKey(baseLayout, from, to)
+  resolvedLayout = renameKey(resolvedLayout, from, to)
+  saveStoredTableLayout(renameKey(loadStoredTableLayout(), from, to))
+
+  return {
+    positions: serializeTableLayout(
+      renameKey(deserializeTableLayout(entries.positions), from, to),
+    ),
+    colors: serializeColorEntries(
+      renameKey(deserializeTableColors(entries.colors), from, to),
+    ),
+  }
+}
 
 /** Snapshot for committing as layout.json. */
 export const dumpTableLayout = (): TableLayout => ({ ...resolvedLayout })

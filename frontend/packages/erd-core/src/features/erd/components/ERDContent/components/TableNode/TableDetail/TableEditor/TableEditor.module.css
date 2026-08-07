@@ -1,0 +1,80 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-300);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  font-size: 12px;
+  color: var(--color-gray-400);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background-color: var(--color-gray-800);
+  border: 1px solid var(--color-gray-600);
+  border-radius: 6px;
+}
+
+.cardHead {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+/* The name field is a <label> from EditorFields, whose class lives in that
+   module and so cannot be named from here. */
+.cardHead > label {
+  flex: 1;
+}
+
+.checkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.dangerButton {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  align-self: flex-start;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-red-300);
+  cursor: pointer;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-red-500);
+  border-radius: 4px;
+}
+
+.dangerButton:hover {
+  background-color: var(--color-gray-600);
+}
+
+.warning {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--callout-warning-text);
+}

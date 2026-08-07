@@ -14,11 +14,13 @@ import { ExportDropdown } from './ExportDropdown'
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter>
     <ToastProvider>
-      <SchemaProvider
-        current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
-      >
-        <UserEditingProvider>{children}</UserEditingProvider>
-      </SchemaProvider>
+      <UserEditingProvider>
+        <SchemaProvider
+          current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
+        >
+          {children}
+        </SchemaProvider>
+      </UserEditingProvider>
     </ToastProvider>
   </NuqsTestingAdapter>
 )
@@ -28,11 +30,13 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => (
 const editModeWrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter searchParams="?edit=1">
     <ToastProvider>
-      <SchemaProvider
-        current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
-      >
-        <UserEditingProvider>{children}</UserEditingProvider>
-      </SchemaProvider>
+      <UserEditingProvider>
+        <SchemaProvider
+          current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
+        >
+          {children}
+        </SchemaProvider>
+      </UserEditingProvider>
     </ToastProvider>
   </NuqsTestingAdapter>
 )

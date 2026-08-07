@@ -43,6 +43,14 @@ export type UserEditingContextValue = {
 
   /** `?edit=1` — memos can be created, edited and moved only in this mode. */
   editMode: boolean
+  setEditMode: (editMode: boolean) => void
+
+  /**
+   * Compressed JSON of the viewer's schema edits — the tables they changed and
+   * the ones they removed, on top of the schema the build shipped.
+   */
+  schemaEdits: string
+  setSchemaEdits: (edits: string | null) => void
 
   // Local state
   selectedNodeIds: Set<string>

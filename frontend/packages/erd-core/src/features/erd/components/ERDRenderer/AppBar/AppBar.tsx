@@ -12,6 +12,7 @@ import type { FC } from 'react'
 import { CommandPaletteTriggerButton } from '../CommandPalette'
 import styles from './AppBar.module.css'
 import { CopyLinkButton } from './CopyLinkButton'
+import { EditModeButton } from './EditModeButton'
 import { ExportDropdown } from './ExportDropdown'
 import { GithubButton } from './GithubButton'
 import { HelpButton } from './HelpButton'
@@ -55,6 +56,7 @@ export const AppBar: FC = () => {
           <ReleaseNoteButton />
           <HelpButton />
         </div>
+        <EditModeButton />
         <ExportDropdown />
         <CopyLinkButton />
       </div>

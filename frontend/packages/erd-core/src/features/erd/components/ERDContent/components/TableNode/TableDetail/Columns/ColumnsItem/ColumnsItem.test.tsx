@@ -23,9 +23,11 @@ vi.spyOn(UseUserEditing, 'useUserEditingOrThrow').mockImplementation(() => {
 
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter>
-    <SchemaProvider current={{ enums: {}, extensions: {}, tables: {} }}>
-      <UserEditingProvider>{children}</UserEditingProvider>
-    </SchemaProvider>
+    <UserEditingProvider>
+      <SchemaProvider current={{ enums: {}, extensions: {}, tables: {} }}>
+        {children}
+      </SchemaProvider>
+    </UserEditingProvider>
   </NuqsTestingAdapter>
 )
 

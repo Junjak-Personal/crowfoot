@@ -3,4 +3,5 @@
 export * from './useCommitTablePositions'
 export * from './useGroupNodes'
 export * from './useMemoNodes'
+export * from './useSchemaEditing'
 export * from './useTableSelection'

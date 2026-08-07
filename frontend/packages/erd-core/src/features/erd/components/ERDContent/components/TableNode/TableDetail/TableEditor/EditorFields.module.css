@@ -1,0 +1,90 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  color: var(--color-gray-400);
+}
+
+.text,
+.select {
+  width: 100%;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--color-gray-100);
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 4px;
+}
+
+.text:focus-visible,
+.select:focus-visible {
+  outline: 1px solid var(--primary-color);
+}
+
+.check {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--color-gray-100);
+  cursor: pointer;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.listRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.iconAction {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: var(--color-gray-300);
+  cursor: pointer;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 4px;
+}
+
+.iconAction:hover {
+  color: var(--color-red-300);
+  background-color: var(--color-gray-600);
+}
+
+.addButton {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  align-self: flex-start;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-gray-100);
+  cursor: pointer;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 4px;
+}
+
+.addButton:hover:not(:disabled) {
+  background-color: var(--color-gray-600);
+}
+
+.addButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

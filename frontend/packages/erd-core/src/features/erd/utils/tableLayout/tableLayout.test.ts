@@ -12,6 +12,7 @@ import {
   loadStoredTableLayout,
   parseTableLayout,
   rememberTablePositions,
+  renameTableInLayout,
   serializeTableLayout,
   setBaseTableLayout,
   setResolvedTableLayout,
@@ -229,5 +230,57 @@ describe('storage key migration', () => {
     clearStoredTableLayout()
 
     expect(loadStoredTableLayout()).toEqual({})
+  })
+})
+
+describe(renameTableInLayout, () => {
+  beforeEach(() => {
+    clearStoredTableLayout()
+    setBaseTableLayout({})
+    setResolvedTableLayout([])
+  })
+
+  it('renames the entries carried by a link', () => {
+    expect(
+      renameTableInLayout('users', 'accounts', {
+        positions: ['users:10:20', 'orders:1:2'],
+        colors: ['users:gold', 'orders:red'],
+      }),
+    ).toEqual({
+      positions: ['accounts:10:20', 'orders:1:2'],
+      colors: ['accounts:gold', 'orders:red'],
+    })
+  })
+
+  it('renames a position that only layout.json pinned', () => {
+    // getEffectiveTableLayout merges rather than first-wins, so a table pinned
+    // only by the shipped file still has to follow the rename.
+    setBaseTableLayout({ users: { x: 7, y: 8 } })
+
+    renameTableInLayout('users', 'accounts', { positions: [], colors: [] })
+
+    expect(getEffectiveTableLayout()['accounts']).toEqual({ x: 7, y: 8 })
+    expect(getEffectiveTableLayout()['users']).toBeUndefined()
+  })
+
+  it('renames the browser-storage copy and the resolved snapshot', () => {
+    setResolvedTableLayout([node('users', 3, 4)])
+    setTableColor('users', 'gold')
+
+    renameTableInLayout('users', 'accounts', { positions: [], colors: [] })
+
+    expect(getTableColor('accounts')).toBe('gold')
+    expect(getTableColor('users')).toBeUndefined()
+    expect(dumpTableLayout()['accounts']).toEqual({ x: 3, y: 4, color: 'gold' })
+    expect(loadStoredTableLayout()['accounts']?.color).toBe('gold')
+  })
+
+  it('leaves everything alone when the table is not pinned anywhere', () => {
+    expect(
+      renameTableInLayout('ghost', 'spectre', {
+        positions: ['users:1:2'],
+        colors: ['users:gold'],
+      }),
+    ).toEqual({ positions: ['users:1:2'], colors: ['users:gold'] })
   })
 })

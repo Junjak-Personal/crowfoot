@@ -40,7 +40,7 @@
 
 [`crowfoot`](https://www.npmjs.com/package/crowfoot) builds a standalone, static ERD
 app from a database schema — plus persisted table positions, canvas memos, colour
-coding, table grouping, an explicit edit mode and MySQL export.
+coding, table grouping, in-browser schema editing and MySQL export.
 
 **[crowfoot.jun-devlog.win](https://crowfoot.jun-devlog.win)** is a live one — a real
 app's schema, grouped and annotated, built by the command below and served as static
@@ -110,19 +110,22 @@ applies — that link is upstream's, not this project's.
 | **Multi-select** | In edit mode, drag a box across the canvas or `Ctrl`/`Cmd`/`Shift` + click to select several tables and memos at once, then move, tint or delete them together. |
 | **Table grouping** | Gather tables into named groups, drawn as a dashed tinted box behind them. A table may belong to more than one group. Dragging a group's label moves its members together. One toolbar control switches between **group view** (boxes drawn, sidebar sectioned by group) and **single view** (no boxes, the plain alphabetical list). Shipped with the build in `groups.json`. |
 | **Colour coding** | Tables and memos can be tinted from a fixed 12-colour palette taken from the existing design tokens: `green`, `mint`, `teal`, `sky`, `blue`, `steel`, `sand`, `yellow`, `gold`, `orange`, `vermilion`, `red`. |
-| **Read-only by default** | Positions, memos and colours are locked unless the page is opened with `?edit=1`, so a shared link cannot be rearranged by accident. |
+| **Schema editing** | In edit mode the table detail panel becomes a form for the whole table definition — name, comment, columns, primary/foreign/unique/check constraints, indexes — and tables can be added, renamed and removed. `Ctrl`/`Cmd` + right-click a table and pick `Connect to` to draw a foreign key to another one. Renames and deletions carry every reference with them, and the DDL export reflects the result. Edits live in `?schemaedits=`; `schema.json` is never touched. |
+| **Read-only by default** | Positions, memos, colours and the schema itself are locked unless edit mode is on, so a shared link cannot be rearranged by accident. |
 | **MySQL export** | Upstream exports PostgreSQL and YAML only; MySQL DDL was added, and the export menu can copy to the clipboard or download a `.sql` file. |
 | **Short `?show=` values** | `all` / `table` / `key` instead of the internal `ALL_FIELDS` / `TABLE_NAME` / `KEY_ONLY`. |
 
 ## Edit mode
+
+The **`Edit` button in the header** toggles it, or set the parameter yourself:
 
 ```
 https://your-host/erd/?edit=1
 ```
 
 `?edit=1` (or `?edit=true`) is what unlocks dragging tables, adding and editing
-memos, and the colour menus. It is derived from the URL and never stored, so
-closing the tab or dropping the parameter returns the diagram to read-only.
+memos, the colour menus and schema editing. It is derived from the URL and never
+stored, so dropping the parameter returns the diagram to read-only.
 
 ## Committing an arranged layout
 

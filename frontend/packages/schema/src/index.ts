@@ -58,6 +58,7 @@ export {
   type Constraints,
   columnSchema,
   type ForeignKeyConstraint,
+  type ForeignKeyConstraintReferenceOption,
   foreignKeyConstraintSchema,
   type Index,
   type Indexes,
@@ -67,6 +68,7 @@ export {
   schemaSchema,
   type Table,
   type Tables,
+  tableSchema,
   type UniqueConstraint,
 } from './schema/index.js'
 export {
