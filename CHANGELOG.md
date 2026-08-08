@@ -13,6 +13,23 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.2.3
+
+### Fixed
+
+- **A section of the table pane could be cut off partway through.** Each one
+  animated open to a height its caller had guessed — 300px per column, 400px per
+  constraint, 700px per foreign key — and whatever did not fit inside the guess
+  was hidden, with no scrollbar or any other sign that there was more. The
+  margins were thin: a four-column unique constraint already used 336px of its
+  400, and each further column costs about 30px. Sections now fold to the height
+  they actually measure, so there is nothing left to guess.
+- `erd build` left the previous build's bundle behind on every rebuild into the
+  same directory — 2.4MB each time, and a deploy that syncs without `--delete`
+  carries all of them forever. `assets/` is emptied first now. Nothing else in
+  the output directory is touched: `schema.json`, and the `layout.json`,
+  `memos.json` and `groups.json` you put beside it, stay exactly as they were.
+
 ## 0.2.2
 
 ### Fixed
