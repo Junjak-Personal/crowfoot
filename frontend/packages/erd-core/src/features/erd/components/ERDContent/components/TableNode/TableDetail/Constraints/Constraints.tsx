@@ -28,9 +28,6 @@ export const Constraints: React.FC<Props> = ({ table }) => {
     (constraint) => constraint.type === 'CHECK',
   )
 
-  // NOTE: 400px is higher enough than each table, even considering titles and padding of its section.
-  const contentMaxHeight = constraints.length * 400
-
   return (
     <CollapsibleHeader
       title="Constraints #"
@@ -39,7 +36,6 @@ export const Constraints: React.FC<Props> = ({ table }) => {
       // NOTE: Header height for Columns and Indexes section:
       // (40px (content) + 1px (border))) * 2 = 82px
       stickyTopHeight={82}
-      contentMaxHeight={contentMaxHeight}
     >
       {primaryKeyConstraints.length > 0 && (
         <PrimaryKeyConstraints

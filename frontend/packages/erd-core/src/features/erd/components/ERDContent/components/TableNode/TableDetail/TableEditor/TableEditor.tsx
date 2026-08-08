@@ -105,8 +105,6 @@ const showDefault = (value: Column['default']): string =>
 type SectionProps = {
   title: string
   icon: ReactNode
-  /** Roughly how tall the open section can get; drives the collapse animation. */
-  maxHeight: number
   /** Omitted for the table's own section, which has nothing to add to. */
   onAdd?: (() => void) | undefined
   addLabel?: string | undefined
@@ -122,7 +120,6 @@ type SectionProps = {
 const Section: FC<SectionProps> = ({
   title,
   icon,
-  maxHeight,
   onAdd,
   addLabel,
   children,
@@ -135,7 +132,6 @@ const Section: FC<SectionProps> = ({
     // below the ones before it: the editor has six of them, and stacked they
     // would take most of the drawer.
     stickyTopHeight={0}
-    contentMaxHeight={maxHeight}
     additionalButtons={
       onAdd && addLabel ? (
         <IconButton
@@ -328,7 +324,7 @@ export const TableEditor: FC<Props> = ({ table }) => {
 
   return (
     <div className={styles.wrapper}>
-      <Section title="Table" icon={<Table2 width={12} />} maxHeight={400}>
+      <Section title="Table" icon={<Table2 width={12} />}>
         <TextField
           label="Name"
           value={table.name}
@@ -355,7 +351,6 @@ export const TableEditor: FC<Props> = ({ table }) => {
       <Section
         title="Columns"
         icon={<Rows3 width={12} />}
-        maxHeight={Math.max(columnNames.length, 1) * 400}
         onAdd={handleAddColumn}
         addLabel="Add column"
       >
@@ -431,7 +426,6 @@ export const TableEditor: FC<Props> = ({ table }) => {
       <Section
         title="Foreign keys"
         icon={<Waypoints width={12} />}
-        maxHeight={Math.max(foreignKeys.length, 1) * 700}
         onAdd={handleAddForeignKey}
         addLabel="Add foreign key"
       >
@@ -530,7 +524,6 @@ export const TableEditor: FC<Props> = ({ table }) => {
       <Section
         title="Unique constraints"
         icon={<Lock width={12} />}
-        maxHeight={Math.max(uniques.length, 1) * 400}
         onAdd={handleAddUnique}
         addLabel="Add unique constraint"
       >
@@ -574,7 +567,6 @@ export const TableEditor: FC<Props> = ({ table }) => {
       <Section
         title="Check constraints"
         icon={<Lock width={12} />}
-        maxHeight={Math.max(checks.length, 1) * 300}
         onAdd={handleAddCheck}
         addLabel="Add check constraint"
       >
@@ -619,7 +611,6 @@ export const TableEditor: FC<Props> = ({ table }) => {
       <Section
         title="Indexes"
         icon={<FileText width={12} />}
-        maxHeight={Math.max(Object.keys(table.indexes).length, 1) * 500}
         onAdd={handleAddIndex}
         addLabel="Add index"
       >

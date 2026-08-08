@@ -10,8 +10,6 @@ type Props = {
 }
 
 export const Indexes: FC<Props> = ({ tableId, indexes }) => {
-  const contentMaxHeight = Object.keys(indexes).length * 400
-
   return (
     <CollapsibleHeader
       title="Indexes #"
@@ -20,7 +18,6 @@ export const Indexes: FC<Props> = ({ tableId, indexes }) => {
       // NOTE: Header height for Columns section:
       // 40px (content) + 1px (border) = 41px
       stickyTopHeight={41}
-      contentMaxHeight={contentMaxHeight}
     >
       {Object.entries(indexes).map(([key, index]) => (
         <IndexesItem key={key} tableId={tableId} index={index} />

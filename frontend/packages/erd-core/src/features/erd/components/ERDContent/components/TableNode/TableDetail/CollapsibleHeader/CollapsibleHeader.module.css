@@ -45,15 +45,27 @@
   align-items: center;
 }
 
+/* The row carries the fold; the clip has to sit on this element rather than on
+   the inner one, which keeps a negative margin (see below) that a clip of its
+   own would leave showing when closed. */
 .content {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   overflow: hidden;
-  transition: max-height 0.1s var(--default-timing-function);
+  transition: grid-template-rows 0.1s var(--default-timing-function);
+}
+
+.content[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+.contentInner {
+  min-height: 0;
 }
 
 /* enable to scroll to the top children element */
 /* 41px (= 41px * 1) for the first CollapsibleHeader component */
-.header + .content {
+.header + .content > .contentInner {
   padding-top: 41px;
   margin-top: -41px;
 }
@@ -63,7 +75,7 @@
 }
 
 /* 82px (= 41px * 2) for the second CollapsibleHeader component */
-.header + .content + .header + .content {
+.header + .content + .header + .content > .contentInner {
   padding-top: 82px;
   margin-top: -82px;
 }

@@ -16,7 +16,6 @@ type CollapsibleHeaderProps = {
   children: ReactNode
   isContentVisible: boolean
   stickyTopHeight: number
-  contentMaxHeight: number
   additionalButtons?: ReactNode
 }
 
@@ -26,7 +25,6 @@ export const CollapsibleHeader: FC<CollapsibleHeaderProps> = ({
   children,
   isContentVisible,
   stickyTopHeight,
-  contentMaxHeight,
   additionalButtons,
 }) => {
   const [isClosed, setIsClosed] = useState(!isContentVisible)
@@ -66,11 +64,12 @@ export const CollapsibleHeader: FC<CollapsibleHeaderProps> = ({
           />
         </div>
       </div>
-      <div
-        className={styles.content}
-        style={{ maxHeight: isClosed ? '0' : `${contentMaxHeight}px` }}
-      >
-        {children}
+      {/* The fold is a grid row going 0fr → 1fr, so the open height is whatever
+          the content actually measures. It used to be a max-height the caller
+          had to guess — "400px per column" — and anything taller than the guess
+          was cut off with nothing to say so. */}
+      <div className={styles.content} data-open={!isClosed}>
+        <div className={styles.contentInner}>{children}</div>
       </div>
     </>
   )

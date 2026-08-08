@@ -32,7 +32,6 @@ export const RelatedTables: FC<Props> = ({ nodes, edges, onOpenMainPane }) => {
       // (40px (content) + 1px (borders)) * 3 = 123px
       stickyTopHeight={123}
       // NOTE: 360px is the height of the content
-      contentMaxHeight={360}
       additionalButtons={
         <IconButton
           icon={<GotoIcon />}

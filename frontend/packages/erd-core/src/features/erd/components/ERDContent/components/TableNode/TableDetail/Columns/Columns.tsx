@@ -9,15 +9,12 @@ type Props = {
 }
 
 export const Columns: FC<Props> = ({ table }) => {
-  // NOTE: 300px is the height of one item in the list(when comments are lengthy)
-  const contentMaxHeight = Object.keys(table.columns).length * 300
   return (
     <CollapsibleHeader
       title="Columns"
       icon={<Rows3Icon width={12} />}
       isContentVisible={true}
       stickyTopHeight={0}
-      contentMaxHeight={contentMaxHeight}
     >
       {Object.entries(table.columns).map(([key, column]) => (
         <ColumnsItem
