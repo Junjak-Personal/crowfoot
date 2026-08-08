@@ -14,6 +14,7 @@ import {
   useEdgesState,
   useNodesState,
   useReactFlow,
+  type XYPosition,
 } from '@xyflow/react'
 import clsx from 'clsx'
 import {
@@ -28,9 +29,11 @@ import {
 import { useVersionOrThrow } from '../../../../providers'
 import { useUserEditingOrThrow } from '../../../../stores'
 import {
+  type ConnectResult,
   connectTables,
   createTable,
   putTable,
+  type RelationshipKind,
   uniqueName,
 } from '../../../../utils/schemaEdit'
 import { selectTableLogEvent } from '../../../gtm/utils'
@@ -120,6 +123,37 @@ type CanvasMenuTarget =
 
 type CanvasMenu = CanvasMenuTarget & { x: number; y: number }
 
+/**
+ * What the connect menu offers. The schema only ever stores a foreign key —
+ * these say how to build one, and which end holds it. See `RelationshipKind`.
+ */
+const RELATIONSHIP_KINDS: { kind: RelationshipKind; label: string }[] = [
+  { kind: 'MANY_TO_ONE', label: 'many : 1' },
+  { kind: 'ONE_TO_ONE', label: '1 : 1' },
+  { kind: 'ONE_TO_MANY', label: '1 : many' },
+  { kind: 'MANY_TO_MANY', label: 'many : many' },
+]
+
+/** What a finished connection actually did to the schema, for the toast. */
+const connectionSummary = (result: ConnectResult): string => {
+  if (result.createdTable !== null) {
+    return `Joined through ${result.createdTable}.`
+  }
+  if (result.createdColumns.length > 0) {
+    return `Added ${result.createdColumns.join(', ')}.`
+  }
+  return 'Linked using the columns that were already there.'
+}
+
+/** Why one could not be made — both ends need something to point at. */
+const missingKeyReason = (
+  kind: RelationshipKind,
+  targetName: string,
+): string =>
+  kind === 'MANY_TO_MANY'
+    ? 'Both tables need a primary key to point at.'
+    : `${targetName} needs a primary key to point at.`
+
 /** "Memo copied" / "3 memos pasted" — the count only earns a plural. */
 const memoCountLabel = (count: number, verb: 'copied' | 'pasted') =>
   count === 1 ? `Memo ${verb}` : `${count} memos ${verb}`
@@ -142,6 +176,36 @@ const resolveMenuColor = (
   if (menu?.kind === 'memo') return context.selectedMemo?.data.color
   if (menu?.kind === 'tableGroup') return context.menuGroup?.color
   return undefined
+}
+
+type CanvasBadgeProps = {
+  editMode: boolean
+  /** The table a half-made connection is waiting on, if there is one. */
+  connectingFrom: string | null
+}
+
+/**
+ * The one-line hint in the corner. Kept out of the component body for the same
+ * reason the menus below are — one more state to explain should be one more
+ * branch here, not another nested condition in ERDContentInner's own render.
+ */
+const CanvasBadge: FC<CanvasBadgeProps> = ({ editMode, connectingFrom }) => {
+  if (connectingFrom !== null) {
+    return (
+      <div className={styles.connectBadge}>
+        Click the table to connect <strong>{connectingFrom}</strong> to · Esc to
+        cancel
+      </div>
+    )
+  }
+
+  if (!editMode) return null
+
+  return (
+    <div className={styles.editBadge}>
+      Edit mode · drag to select · Ctrl/Cmd + right-click for the menu
+    </div>
+  )
 }
 
 type TableGroupMenuItemsProps = {
@@ -330,19 +394,120 @@ export const ERDContentInner: FC<Props> = ({
    * which is the opposite of what building a selection needs. Memos navigate
    * to nothing, so they never reach it either.
    */
+  /**
+   * A connection waiting for its other end. Picking the kind up front rather
+   * than after the second click keeps the whole gesture to one popup: choose,
+   * then click the table to connect to.
+   */
+  const [connecting, setConnecting] = useState<{
+    from: string
+    kind: RelationshipKind
+  } | null>(null)
+
+  /** Pins a table's spot so the automatic layout does not get a say in it. */
+  const pinTable = useCallback(
+    (tableName: string, position: XYPosition) => {
+      setTablePositions(
+        serializeTableLayout({
+          ...deserializeTableLayout(tablePositions),
+          [tableName]: position,
+        }),
+      )
+    },
+    [tablePositions, setTablePositions],
+  )
+
+  /**
+   * Completes it. `connectTables` reuses a column that already follows the
+   * `<table>_<key>` convention and creates one when there is none, so the edge
+   * appears without a trip to the drawer first.
+   */
+  const handleFinishConnect = useCallback(
+    (targetName: string) => {
+      if (!connecting) return
+      const { from, kind } = connecting
+      setConnecting(null)
+
+      if (targetName === from) return
+
+      const result = connectTables({
+        schema,
+        sourceName: from,
+        targetName,
+        kind,
+      })
+
+      if (!result) {
+        toast({
+          title: 'Cannot connect those tables',
+          description: missingKeyReason(kind, targetName),
+          status: 'error',
+        })
+        return
+      }
+
+      commitSchema(() => result.schema)
+      toast({
+        title: `${from} → ${targetName}`,
+        description: connectionSummary(result),
+        status: 'success',
+      })
+
+      if (result.createdTable) {
+        // Halfway between the two tables it joins. Left to the automatic
+        // layout it would appear wherever there happened to be room, which on
+        // a diagram this size means going to look for it.
+        const ends = getNodes().filter(
+          (node) => node.id === from || node.id === targetName,
+        )
+        const first = ends[0]?.position
+        const second = ends[1]?.position
+        if (first && second) {
+          pinTable(result.createdTable, {
+            x: (first.x + second.x) / 2,
+            y: (first.y + second.y) / 2,
+          })
+        }
+        // It is new and empty, so it is worth landing in.
+        setActiveTableName(result.createdTable)
+      }
+    },
+    [
+      connecting,
+      schema,
+      commitSchema,
+      toast,
+      setActiveTableName,
+      getNodes,
+      pinTable,
+    ],
+  )
+
   const handleNodeClickEvent: NodeMouseHandler<Node> = useCallback(
     (event, node) => {
       if (event.ctrlKey || event.metaKey || event.shiftKey) return
       if (!isTableNode(node)) return
 
+      // While a connection is waiting for its other end, a click picks that end
+      // rather than navigating to the table.
+      if (connecting) {
+        handleFinishConnect(node.id)
+        return
+      }
+
       handleNodeClick(node.id)
     },
-    [handleNodeClick],
+    [connecting, handleFinishConnect, handleNodeClick],
   )
 
   const handlePaneClick = useCallback(() => {
+    // Clicking empty canvas is how you back out of a connection.
+    if (connecting) {
+      setConnecting(null)
+      return
+    }
     deselectTable()
-  }, [deselectTable])
+  }, [connecting, deselectTable])
 
   const handleMouseEnterNode: NodeMouseHandler<Node> = useCallback(
     (_, { id }) => {
@@ -493,9 +658,15 @@ export const ERDContentInner: FC<Props> = ({
       pasteMemos(memos)
     }
 
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setConnecting(null)
+    }
+
+    document.addEventListener('keydown', handleEscape)
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('paste', handlePaste)
     return () => {
+      document.removeEventListener('keydown', handleEscape)
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('paste', handlePaste)
     }
@@ -622,12 +793,7 @@ export const ERDContentInner: FC<Props> = ({
     const { x, y } = screenToFlowPosition({ x: menu.x, y: menu.y })
 
     commitSchema((current) => putTable(current, createTable(name)))
-    setTablePositions(
-      serializeTableLayout({
-        ...deserializeTableLayout(tablePositions),
-        [name]: { x, y },
-      }),
-    )
+    pinTable(name, { x, y })
     // Straight into the editor: an empty table has nothing to show on the
     // canvas, so landing on it is the only useful next step.
     setActiveTableName(name)
@@ -637,8 +803,7 @@ export const ERDContentInner: FC<Props> = ({
     schema,
     commitSchema,
     screenToFlowPosition,
-    tablePositions,
-    setTablePositions,
+    pinTable,
     setActiveTableName,
   ])
 
@@ -648,39 +813,18 @@ export const ERDContentInner: FC<Props> = ({
   }, [resetSchemaEdits])
 
   /**
-   * The table-to-table gesture: right-click the table that should hold the
-   * key, pick what it references. `connectTables` reuses a column that already
-   * follows the `<table>_<key>` convention and creates one when there is none,
-   * so the edge appears without a trip to the drawer first.
+   * Arms the table-to-table gesture. The menu closes and the next table clicked
+   * becomes the other end — picking from a list meant knowing the name of the
+   * table you were looking straight at.
    */
-  const handleConnectTable = useCallback(
-    (targetName: string) => {
-      if (menu?.kind !== 'table' || targetName === '') return
+  const handleStartConnect = useCallback(
+    (kind: RelationshipKind) => {
+      if (menu?.kind !== 'table') return
 
-      const sourceName = menu.tableName
-      const result = connectTables(schema, sourceName, targetName)
+      setConnecting({ from: menu.tableName, kind })
       setMenu(null)
-
-      if (!result) {
-        toast({
-          title: 'Cannot reference that table',
-          description: `${targetName} has no primary key to point at.`,
-          status: 'error',
-        })
-        return
-      }
-
-      commitSchema(() => result.schema)
-      toast({
-        title: `${sourceName} → ${targetName}`,
-        description:
-          result.createdColumns.length > 0
-            ? `Added ${result.createdColumns.join(', ')} to ${sourceName}.`
-            : 'Linked using the columns that were already there.',
-        status: 'success',
-      })
     },
-    [menu, schema, commitSchema, toast],
+    [menu],
   )
 
   /**
@@ -972,17 +1116,19 @@ export const ERDContentInner: FC<Props> = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: this only suppresses
     // the native menu and opens the editing menu; nothing here is a control.
     <div
-      className={clsx(styles.wrapper, { [styles.settling]: isSettling })}
+      className={clsx(styles.wrapper, {
+        [styles.settling]: isSettling,
+        [styles.connecting]: connecting !== null,
+      })}
       data-loading={loading}
       onContextMenu={handleCanvasContextMenu}
       onPointerMove={handlePointerMove}
     >
       {loading && <Spinner className={styles.loading} />}
-      {editMode && (
-        <div className={styles.editBadge}>
-          Edit mode · drag to select · Ctrl/Cmd + right-click for the menu
-        </div>
-      )}
+      <CanvasBadge
+        editMode={editMode}
+        connectingFrom={connecting?.from ?? null}
+      />
       {menu?.kind === 'pane' && (
         <div
           className={styles.contextMenu}
@@ -1083,25 +1229,17 @@ export const ERDContentInner: FC<Props> = ({
           {menu.kind === 'table' && (
             <>
               <div className={styles.contextMenuRow}>
-                <span>Connect to</span>
-                {/* A native select rather than a nested menu: it scrolls,
-                    it has type-ahead, and a wide schema would otherwise need
-                    a submenu taller than the screen. */}
-                <select
-                  className={styles.contextMenuText}
-                  aria-label="Reference another table"
-                  value=""
-                  onChange={(event) => handleConnectTable(event.target.value)}
-                >
-                  <option value="">Pick a table…</option>
-                  {Object.keys(schema.tables)
-                    .filter((name) => name !== menu.tableName)
-                    .map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                </select>
+                <span>Connect</span>
+                {RELATIONSHIP_KINDS.map(({ kind, label }) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    className={styles.contextMenuChip}
+                    onClick={() => handleStartConnect(kind)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
               <TableGroupMenuItems
                 groups={menuTableGroups}

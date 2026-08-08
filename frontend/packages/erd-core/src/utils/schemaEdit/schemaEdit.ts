@@ -2,7 +2,9 @@
 // See the NOTICE file at the repository root.
 import type {
   Column,
+  Columns,
   Constraint,
+  Constraints,
   ForeignKeyConstraint,
   Index,
   Schema,
@@ -467,75 +469,223 @@ const referencingColumn = (
   return candidates.find((name) => hasOwn(source.columns, name)) ?? null
 }
 
-type ConnectResult = {
+/**
+ * What the viewer picked in the connect menu. The schema itself only ever
+ * stores a foreign key — `constraintsToRelationships` *derives* the cardinality
+ * the diagram draws from whether a UNIQUE constraint covers the key. So these
+ * are instructions for how to build the link, not a field to write:
+ *
+ * - `MANY_TO_ONE` — the plain foreign key, on the table that was clicked first
+ * - `ONE_TO_ONE`  — the same key, plus the UNIQUE that makes it one-to-one
+ * - `ONE_TO_MANY` — the same as many-to-one with the two tables swapped; which
+ *   end is "many" is decided by which table holds the column
+ * - `MANY_TO_MANY` — not expressible as one key at all, so a join table is
+ *   created between them and each side gets a foreign key to it
+ */
+export type RelationshipKind =
+  | 'MANY_TO_ONE'
+  | 'ONE_TO_ONE'
+  | 'ONE_TO_MANY'
+  | 'MANY_TO_MANY'
+
+export type ConnectResult = {
   schema: Schema
   /** Columns that had to be created because nothing suitable existed. */
   createdColumns: string[]
-  constraintName: string
+  /** The join table a many-to-many needed, if it needed one. */
+  createdTable: string | null
+}
+
+type Link = {
+  columns: Columns
+  columnNames: string[]
+  createdColumns: string[]
 }
 
 /**
- * Draws a relationship between two tables: the canvas right-click gesture.
+ * The columns on `source` that will carry a key to `target`: reusing whatever
+ * already follows the convention and creating the rest.
+ */
+const linkColumns = (
+  source: Table,
+  target: Table,
+  targetColumns: string[],
+): Link => {
+  const createdColumns: string[] = []
+  let columns = source.columns
+
+  const columnNames = targetColumns.map((targetColumn) => {
+    const existing = referencingColumn(source, target.name, targetColumn)
+    if (existing) return existing
+
+    const name = uniqueName(
+      Object.keys(columns),
+      `${target.name}_${targetColumn}`,
+    )
+    columns = {
+      ...columns,
+      [name]: createColumn(name, target.columns[targetColumn]?.type ?? 'text'),
+    }
+    createdColumns.push(name)
+    return name
+  })
+
+  return { columns, columnNames, createdColumns }
+}
+
+const foreignKey = (
+  name: string,
+  columnNames: string[],
+  target: Table,
+  targetColumnNames: string[],
+): ForeignKeyConstraint => ({
+  type: 'FOREIGN KEY',
+  name,
+  columnNames,
+  targetTableName: target.name,
+  targetColumnNames,
+  updateConstraint: 'NO_ACTION',
+  deleteConstraint: 'NO_ACTION',
+})
+
+/** A plain foreign key from `source` to `target`'s primary key. */
+const addForeignKey = (
+  schema: Schema,
+  source: Table,
+  target: Table,
+  unique: boolean,
+): ConnectResult => {
+  const targetColumns = primaryKeyOf(target)
+  const link = linkColumns(source, target, targetColumns)
+
+  const taken = Object.keys(source.constraints)
+  const fkName = uniqueName(taken, `fk_${source.name}_${target.name}`)
+  const constraints: Constraints = {
+    ...source.constraints,
+    [fkName]: foreignKey(fkName, link.columnNames, target, targetColumns),
+  }
+
+  // One-to-one is not a different key, it is the same key the schema can only
+  // satisfy once — which is exactly what a UNIQUE over its columns says.
+  if (unique) {
+    const uniqueNameFor = uniqueName(
+      [...taken, fkName],
+      `${source.name}_${link.columnNames.join('_')}_key`,
+    )
+    constraints[uniqueNameFor] = {
+      type: 'UNIQUE',
+      name: uniqueNameFor,
+      columnNames: link.columnNames,
+    }
+  }
+
+  return {
+    schema: putTable(schema, { ...source, columns: link.columns, constraints }),
+    createdColumns: link.createdColumns,
+    createdTable: null,
+  }
+}
+
+/**
+ * Many-to-many has no single-key form in a relational schema, so this builds
+ * the table that does express it: one foreign key to each side, and a primary
+ * key over all of them so a pair cannot be recorded twice.
+ */
+const addJoinTable = (
+  schema: Schema,
+  source: Table,
+  target: Table,
+): ConnectResult => {
+  const name = uniqueName(
+    Object.keys(schema.tables),
+    `${source.name}_${target.name}`,
+  )
+  const empty = createTable(name)
+
+  const toSource = linkColumns(empty, source, primaryKeyOf(source))
+  const toTarget = linkColumns(
+    { ...empty, columns: toSource.columns },
+    target,
+    primaryKeyOf(target),
+  )
+  const columnNames = [...toSource.columnNames, ...toTarget.columnNames]
+
+  const join: Table = {
+    ...empty,
+    columns: toTarget.columns,
+    constraints: {
+      [`${name}_pkey`]: {
+        type: 'PRIMARY KEY',
+        name: `${name}_pkey`,
+        columnNames,
+      },
+      [`fk_${name}_${source.name}`]: foreignKey(
+        `fk_${name}_${source.name}`,
+        toSource.columnNames,
+        source,
+        primaryKeyOf(source),
+      ),
+      [`fk_${name}_${target.name}`]: foreignKey(
+        `fk_${name}_${target.name}`,
+        toTarget.columnNames,
+        target,
+        primaryKeyOf(target),
+      ),
+    },
+  }
+
+  return {
+    schema: putTable(schema, join),
+    createdColumns: columnNames,
+    createdTable: name,
+  }
+}
+
+type ConnectParams = {
+  schema: Schema
+  sourceName: string
+  targetName: string
+  kind: RelationshipKind
+}
+
+/**
+ * Draws a relationship between two tables: the canvas click-to-connect gesture.
  *
- * `null` when the target has no primary key — there is nothing to reference,
+ * `null` when either table has no primary key — there is nothing to reference,
  * and inventing one would silently rewrite a table the viewer did not ask to
  * touch.
  */
-export const connectTables = (
-  schema: Schema,
-  sourceName: string,
-  targetName: string,
-): ConnectResult | null => {
+export const connectTables = ({
+  schema,
+  sourceName,
+  targetName,
+  kind,
+}: ConnectParams): ConnectResult | null => {
   const source = hasOwn(schema.tables, sourceName)
     ? schema.tables[sourceName]
     : undefined
   const target = hasOwn(schema.tables, targetName)
     ? schema.tables[targetName]
     : undefined
-  if (!source || !target) return null
+  if (!source || !target || source.name === target.name) return null
 
-  const targetColumns = primaryKeyOf(target)
-  if (targetColumns.length === 0) return null
+  // Whichever way round the link goes, the end being pointed at has to have a
+  // primary key to point at.
+  const needsBothKeys = kind === 'MANY_TO_MANY'
+  if (primaryKeyOf(target).length === 0) return null
+  if (needsBothKeys && primaryKeyOf(source).length === 0) return null
 
-  const createdColumns: string[] = []
-  let columns = source.columns
-
-  const columnNames = targetColumns.map((targetColumn) => {
-    const existing = referencingColumn(source, targetName, targetColumn)
-    if (existing) return existing
-
-    const name = uniqueName(
-      Object.keys(columns),
-      `${targetName}_${targetColumn}`,
-    )
-    const type = target.columns[targetColumn]?.type ?? 'text'
-    columns = { ...columns, [name]: createColumn(name, type) }
-    createdColumns.push(name)
-    return name
-  })
-
-  const constraintName = uniqueName(
-    Object.keys(source.constraints),
-    `fk_${sourceName}_${targetName}`,
-  )
-
-  const constraint: ForeignKeyConstraint = {
-    type: 'FOREIGN KEY',
-    name: constraintName,
-    columnNames,
-    targetTableName: targetName,
-    targetColumnNames: targetColumns,
-    updateConstraint: 'NO_ACTION',
-    deleteConstraint: 'NO_ACTION',
-  }
-
-  return {
-    schema: putTable(schema, {
-      ...source,
-      columns,
-      constraints: { ...source.constraints, [constraintName]: constraint },
-    }),
-    createdColumns,
-    constraintName,
+  switch (kind) {
+    case 'MANY_TO_ONE':
+      return addForeignKey(schema, source, target, false)
+    case 'ONE_TO_ONE':
+      return addForeignKey(schema, source, target, true)
+    case 'ONE_TO_MANY':
+      // The same link read from the other end: the *target* holds the column.
+      return primaryKeyOf(source).length === 0
+        ? null
+        : addForeignKey(schema, target, source, false)
+    case 'MANY_TO_MANY':
+      return addJoinTable(schema, source, target)
   }
 }

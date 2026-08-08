@@ -116,3 +116,39 @@
 .settling :global(.react-flow__node) {
   transition: transform 180ms ease-out;
 }
+
+/* A connection waiting for its other end: the whole canvas is a target. */
+.connecting :global(.react-flow__node-table) {
+  cursor: crosshair;
+}
+
+.connectBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-gray-100);
+  pointer-events: none;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+}
+
+.contextMenuChip {
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--color-gray-100);
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--color-gray-600);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 4px;
+}
+
+.contextMenuChip:hover {
+  background: var(--color-gray-500);
+}

@@ -13,6 +13,7 @@ import {
   dropTable,
   parseSchemaEdits,
   putTable,
+  type RelationshipKind,
   renameColumn,
   renameTable,
   serializeSchemaEdits,
@@ -250,27 +251,85 @@ describe('dropColumn', () => {
   })
 })
 
+const fkOf = (schema: Schema | undefined, tableName: string) =>
+  Object.values(schema?.tables[tableName]?.constraints ?? {}).filter(
+    (constraint) => constraint.type === 'FOREIGN KEY',
+  )
+
 describe('connectTables', () => {
+  const connect = (
+    kind: RelationshipKind,
+    sourceName = 'orders',
+    targetName = 'users',
+  ) => connectTables({ schema: baseSchema(), sourceName, targetName, kind })
+
   it('reuses a column that already follows the naming convention', () => {
-    const result = connectTables(baseSchema(), 'orders', 'users')
+    const result = connect('MANY_TO_ONE')
 
     expect(result?.createdColumns).toEqual([])
-    expect(
-      result?.schema.tables['orders']?.constraints[result.constraintName],
-    ).toMatchObject({
-      columnNames: ['users_id'],
-      targetTableName: 'users',
-      targetColumnNames: ['id'],
-    })
+    expect(result?.createdTable).toBeNull()
+    expect(fkOf(result?.schema, 'orders')).toContainEqual(
+      expect.objectContaining({
+        columnNames: ['users_id'],
+        targetTableName: 'users',
+        targetColumnNames: ['id'],
+      }),
+    )
   })
 
   it('creates the referencing column when none exists, copying the key type', () => {
     const schema = putTable(baseSchema(), table('orders'))
-    const result = connectTables(schema, 'orders', 'users')
+    const result = connectTables({
+      schema,
+      sourceName: 'orders',
+      targetName: 'users',
+      kind: 'MANY_TO_ONE',
+    })
 
     expect(result?.createdColumns).toEqual(['users_id'])
     expect(result?.schema.tables['orders']?.columns['users_id']?.type).toBe(
       'bigint',
+    )
+  })
+
+  it('makes one-to-one out of the same key plus a UNIQUE over it', () => {
+    const result = connect('ONE_TO_ONE')
+    const constraints = Object.values(
+      result?.schema.tables['orders']?.constraints ?? {},
+    )
+
+    expect(constraints).toContainEqual(
+      expect.objectContaining({ type: 'UNIQUE', columnNames: ['users_id'] }),
+    )
+  })
+
+  it('one-to-many puts the key on the other table', () => {
+    const result = connect('ONE_TO_MANY')
+
+    // orders 1 : many users -> the column lands on users, pointing at orders.
+    expect(fkOf(result?.schema, 'users')).toContainEqual(
+      expect.objectContaining({ targetTableName: 'orders' }),
+    )
+    expect(result?.createdColumns).toEqual(['orders_id'])
+  })
+
+  it('many-to-many builds the join table that expresses it', () => {
+    const result = connect('MANY_TO_MANY')
+    const join = result?.schema.tables[result.createdTable ?? '']
+
+    expect(result?.createdTable).toBe('orders_users')
+    expect(Object.keys(join?.columns ?? {})).toEqual(['orders_id', 'users_id'])
+    expect(join?.constraints['orders_users_pkey']).toMatchObject({
+      columnNames: ['orders_id', 'users_id'],
+    })
+    expect(
+      fkOf(result?.schema, 'orders_users')
+        .map((c) => c.targetTableName)
+        .sort(),
+    ).toEqual(['orders', 'users'])
+    // Neither original table is touched.
+    expect(result?.schema.tables['orders']).toEqual(
+      baseSchema().tables['orders'],
     )
   })
 
@@ -280,7 +339,18 @@ describe('connectTables', () => {
       table('users', { columns: { id: createColumn('id') } }),
     )
 
-    expect(connectTables(schema, 'orders', 'users')).toBeNull()
+    expect(
+      connectTables({
+        schema,
+        sourceName: 'orders',
+        targetName: 'users',
+        kind: 'MANY_TO_ONE',
+      }),
+    ).toBeNull()
+  })
+
+  it('refuses to connect a table to itself', () => {
+    expect(connect('MANY_TO_ONE', 'users', 'users')).toBeNull()
   })
 })
 

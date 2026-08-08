@@ -10,8 +10,18 @@ import type {
   Table,
   UniqueConstraint,
 } from '@crowfoot/schema'
-import { Trash2, useToast } from '@crowfoot/ui'
-import type { FC } from 'react'
+import {
+  FileText,
+  IconButton,
+  Lock,
+  Plus,
+  Rows3,
+  Table2,
+  Trash2,
+  useToast,
+  Waypoints,
+} from '@crowfoot/ui'
+import type { FC, ReactNode } from 'react'
 import { useUserEditingOrThrow } from '../../../../../../../../stores'
 import {
   createColumn,
@@ -23,8 +33,8 @@ import {
   uniqueName,
 } from '../../../../../../../../utils/schemaEdit'
 import { useSchemaEditing } from '../../../../../../hooks'
+import { CollapsibleHeader } from '../CollapsibleHeader'
 import {
-  AddButton,
   CheckField,
   ColumnList,
   IconAction,
@@ -91,6 +101,57 @@ const parseDefault = (raw: string): Column['default'] => {
 
 const showDefault = (value: Column['default']): string =>
   value === null ? '' : String(value)
+
+type SectionProps = {
+  title: string
+  icon: ReactNode
+  /** Roughly how tall the open section can get; drives the collapse animation. */
+  maxHeight: number
+  /** Omitted for the table's own section, which has nothing to add to. */
+  onAdd?: (() => void) | undefined
+  addLabel?: string | undefined
+  children: ReactNode
+}
+
+/**
+ * The editor's sections are the read-only view's `CollapsibleHeader`, so both
+ * halves of the drawer fold and read the same way. The header is itself a
+ * button, hence the `stopPropagation` — adding a column must not also collapse
+ * the section it was added to.
+ */
+const Section: FC<SectionProps> = ({
+  title,
+  icon,
+  maxHeight,
+  onAdd,
+  addLabel,
+  children,
+}) => (
+  <CollapsibleHeader
+    title={title}
+    icon={icon}
+    isContentVisible
+    // Every section header sticks to the top of the panel rather than stacking
+    // below the ones before it: the editor has six of them, and stacked they
+    // would take most of the drawer.
+    stickyTopHeight={0}
+    contentMaxHeight={maxHeight}
+    additionalButtons={
+      onAdd && addLabel ? (
+        <IconButton
+          icon={<Plus />}
+          tooltipContent={addLabel}
+          onClick={(event) => {
+            event.stopPropagation()
+            onAdd()
+          }}
+        />
+      ) : undefined
+    }
+  >
+    <div className={styles.section}>{children}</div>
+  </CollapsibleHeader>
+)
 
 export const TableEditor: FC<Props> = ({ table }) => {
   const { setActiveTableName } = useUserEditingOrThrow()
@@ -267,8 +328,7 @@ export const TableEditor: FC<Props> = ({ table }) => {
 
   return (
     <div className={styles.wrapper}>
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Table</h2>
+      <Section title="Table" icon={<Table2 width={12} />} maxHeight={400}>
         <TextField
           label="Name"
           value={table.name}
@@ -290,10 +350,15 @@ export const TableEditor: FC<Props> = ({ table }) => {
           <Trash2 size={13} />
           Delete table
         </button>
-      </section>
+      </Section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Columns</h2>
+      <Section
+        title="Columns"
+        icon={<Rows3 width={12} />}
+        maxHeight={Math.max(columnNames.length, 1) * 400}
+        onAdd={handleAddColumn}
+        addLabel="Add column"
+      >
         {columnNames.length === 0 && (
           <p className={styles.empty}>No columns yet.</p>
         )}
@@ -361,11 +426,18 @@ export const TableEditor: FC<Props> = ({ table }) => {
             </div>
           </div>
         ))}
-        <AddButton label="Add column" onClick={handleAddColumn} />
-      </section>
+      </Section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Foreign keys</h2>
+      <Section
+        title="Foreign keys"
+        icon={<Waypoints width={12} />}
+        maxHeight={Math.max(foreignKeys.length, 1) * 700}
+        onAdd={handleAddForeignKey}
+        addLabel="Add foreign key"
+      >
+        {foreignKeys.length === 0 && (
+          <p className={styles.empty}>No foreign keys yet.</p>
+        )}
         {foreignKeys.map(([key, constraint]) => {
           const target = schema.tables[constraint.targetTableName]
           const pairsDiffer =
@@ -453,11 +525,18 @@ export const TableEditor: FC<Props> = ({ table }) => {
             </div>
           )
         })}
-        <AddButton label="Add foreign key" onClick={handleAddForeignKey} />
-      </section>
+      </Section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Unique constraints</h2>
+      <Section
+        title="Unique constraints"
+        icon={<Lock width={12} />}
+        maxHeight={Math.max(uniques.length, 1) * 400}
+        onAdd={handleAddUnique}
+        addLabel="Add unique constraint"
+      >
+        {uniques.length === 0 && (
+          <p className={styles.empty}>No unique constraints yet.</p>
+        )}
         {uniques.map(([key, constraint]) => (
           <div key={key} className={styles.card}>
             <div className={styles.cardHead}>
@@ -490,11 +569,18 @@ export const TableEditor: FC<Props> = ({ table }) => {
             />
           </div>
         ))}
-        <AddButton label="Add unique constraint" onClick={handleAddUnique} />
-      </section>
+      </Section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Check constraints</h2>
+      <Section
+        title="Check constraints"
+        icon={<Lock width={12} />}
+        maxHeight={Math.max(checks.length, 1) * 300}
+        onAdd={handleAddCheck}
+        addLabel="Add check constraint"
+      >
+        {checks.length === 0 && (
+          <p className={styles.empty}>No check constraints yet.</p>
+        )}
         {checks.map(([key, constraint]) => (
           <div key={key} className={styles.card}>
             <div className={styles.cardHead}>
@@ -528,11 +614,18 @@ export const TableEditor: FC<Props> = ({ table }) => {
             />
           </div>
         ))}
-        <AddButton label="Add check constraint" onClick={handleAddCheck} />
-      </section>
+      </Section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Indexes</h2>
+      <Section
+        title="Indexes"
+        icon={<FileText width={12} />}
+        maxHeight={Math.max(Object.keys(table.indexes).length, 1) * 500}
+        onAdd={handleAddIndex}
+        addLabel="Add index"
+      >
+        {Object.keys(table.indexes).length === 0 && (
+          <p className={styles.empty}>No indexes yet.</p>
+        )}
         {Object.entries(table.indexes).map(([key, index]) => (
           <div key={key} className={styles.card}>
             <div className={styles.cardHead}>
@@ -576,8 +669,7 @@ export const TableEditor: FC<Props> = ({ table }) => {
             </div>
           </div>
         ))}
-        <AddButton label="Add index" onClick={handleAddIndex} />
-      </section>
+      </Section>
     </div>
   )
 }

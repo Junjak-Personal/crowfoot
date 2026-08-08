@@ -199,7 +199,7 @@ type AddButtonProps = {
   onClick: () => void
 }
 
-export const AddButton: FC<AddButtonProps> = ({
+const AddButton: FC<AddButtonProps> = ({
   label,
   disabled = false,
   onClick,

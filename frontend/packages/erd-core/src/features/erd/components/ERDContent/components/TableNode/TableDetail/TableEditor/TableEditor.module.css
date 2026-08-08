@@ -1,8 +1,8 @@
+/* The section headers are CollapsibleHeader's, which span the full width and
+   bring their own padding, so this only scrolls. */
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
   overflow-y: auto;
 }
 
@@ -10,14 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.sectionTitle {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-gray-300);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  padding: 12px;
 }
 
 .empty {
