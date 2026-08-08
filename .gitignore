@@ -23,3 +23,6 @@ lefthook-local.yml
 
 # Browser-smoke scratch dirs (built ERD output, per-release)
 _test/
+
+# Hosts, paths and anything else this public repo must not carry
+_credential/
