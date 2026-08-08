@@ -28,6 +28,7 @@ const groupNode = (position = { x: 0, y: 0 }): Node => ({
 })
 
 const place = () => ({ x: 999, y: 999 })
+const placeNowhere = () => null
 
 describe(reconcileTableNodes, () => {
   it('returns the same array when the schema did not change', () => {
@@ -35,7 +36,45 @@ describe(reconcileTableNodes, () => {
     const current = [tableNode('users', shared)]
     const incoming = [tableNode('users', shared)]
 
-    expect(reconcileTableNodes({ current, incoming, place })).toBe(current)
+    expect(reconcileTableNodes({ current, incoming, place }).nodes).toBe(
+      current,
+    )
+  })
+
+  it('does not call a table changed for an equal cardinality record', () => {
+    // convertSchemaToNodes rebuilds this object every run; comparing it by
+    // reference would rebuild every table with an incoming foreign key.
+    const shared = { table: { name: 'orders' } }
+    const withCardinalities = (): Node =>
+      tableNode('orders', shared, {
+        data: {
+          ...shared,
+          targetColumnCardinalities: { users_id: 'ONE_TO_MANY' },
+        },
+      })
+    const current = [withCardinalities()]
+
+    expect(
+      reconcileTableNodes({ current, incoming: [withCardinalities()], place })
+        .nodes,
+    ).toBe(current)
+  })
+
+  it('names the tables whose handles React Flow has to be told about', () => {
+    const current = [
+      tableNode('users', { table: { name: 'users' } }),
+      tableNode('orders', { table: { name: 'orders' } }),
+    ]
+    const incoming = [
+      tableNode('users', { table: { name: 'users' } }),
+      ...current.slice(1),
+      tableNode('audits', { table: { name: 'audits' } }),
+    ]
+
+    // `users` was rebuilt and `audits` is new; `orders` came through untouched.
+    expect(
+      reconcileTableNodes({ current, incoming, place }).touched.sort(),
+    ).toEqual(['audits', 'users'])
   })
 
   it('keeps position, selection and measurement while replacing data', () => {
@@ -58,7 +97,7 @@ describe(reconcileTableNodes, () => {
     const edited = { name: 'users', comment: 'edited' }
     const incoming = [tableNode('users', { table: edited })]
 
-    const [node] = reconcileTableNodes({ current, incoming, place })
+    const [node] = reconcileTableNodes({ current, incoming, place }).nodes
 
     expect(node?.position).toEqual({ x: 100, y: 200 })
     expect(node?.selected).toBe(true)
@@ -80,7 +119,7 @@ describe(reconcileTableNodes, () => {
     ]
     const incoming = [tableNode('users', { table: { name: 'users' } })]
 
-    const [node] = reconcileTableNodes({ current, incoming, place })
+    const [node] = reconcileTableNodes({ current, incoming, place }).nodes
 
     expect(node?.width).toBeUndefined()
     expect(node?.height).toBeUndefined()
@@ -101,7 +140,7 @@ describe(reconcileTableNodes, () => {
     ]
     const incoming = [tableNode('orders', { table: { name: 'orders' } })]
 
-    const [node] = reconcileTableNodes({ current, incoming, place })
+    const [node] = reconcileTableNodes({ current, incoming, place }).nodes
 
     expect(node?.data['targetColumnCardinalities']).toBeUndefined()
   })
@@ -113,10 +152,26 @@ describe(reconcileTableNodes, () => {
       tableNode('orders', { table: { name: 'orders' } }),
     ]
 
-    const result = reconcileTableNodes({ current, incoming, place })
+    const result = reconcileTableNodes({ current, incoming, place }).nodes
 
     expect(result.map((node) => node.id)).toEqual(['users', 'orders'])
     expect(result[1]?.position).toEqual({ x: 999, y: 999 })
+  })
+
+  it('reports a table nothing pins so the caller can lay it out', () => {
+    const current = [tableNode('users', { table: { name: 'users' } })]
+    const incoming = [
+      ...current,
+      tableNode('orders', { table: { name: 'orders' } }),
+    ]
+
+    const result = reconcileTableNodes({
+      current,
+      incoming,
+      place: placeNowhere,
+    })
+
+    expect(result.unplaced).toEqual(['orders'])
   })
 
   it('drops a table the schema no longer has', () => {
@@ -127,7 +182,7 @@ describe(reconcileTableNodes, () => {
     const incoming = current.slice(0, 1)
 
     expect(
-      reconcileTableNodes({ current, incoming, place }).map((n) => n.id),
+      reconcileTableNodes({ current, incoming, place }).nodes.map((n) => n.id),
     ).toEqual(['users'])
   })
 
@@ -141,7 +196,7 @@ describe(reconcileTableNodes, () => {
     const current = [memo, tableNode('users', { table: { name: 'users' } })]
     const incoming = [tableNode('users', { table: { name: 'users2' } })]
 
-    const result = reconcileTableNodes({ current, incoming, place })
+    const result = reconcileTableNodes({ current, incoming, place }).nodes
 
     expect(result[0]).toBe(memo)
   })
@@ -162,7 +217,7 @@ describe(reconcileTableNodes, () => {
       // Gaining a foreign key drops the table out of the group.
       const incoming = [tableNode('users', { table: { name: 'users' } })]
 
-      const result = reconcileTableNodes({ current, incoming, place })
+      const result = reconcileTableNodes({ current, incoming, place }).nodes
       const table = result.find((node) => node.id === 'users')
 
       expect(table?.parentId).toBeUndefined()
@@ -186,7 +241,7 @@ describe(reconcileTableNodes, () => {
         ),
       ]
 
-      const result = reconcileTableNodes({ current, incoming, place })
+      const result = reconcileTableNodes({ current, incoming, place }).nodes
 
       expect(result[0]?.id).toBe(NON_RELATED_TABLE_GROUP_NODE_ID)
       expect(result.find((node) => node.id === 'users')?.position).toEqual({
@@ -207,7 +262,9 @@ describe(reconcileTableNodes, () => {
       const incoming = [tableNode('users', { table: { name: 'users' } })]
 
       expect(
-        reconcileTableNodes({ current, incoming, place }).map((n) => n.id),
+        reconcileTableNodes({ current, incoming, place }).nodes.map(
+          (n) => n.id,
+        ),
       ).toEqual(['users'])
     })
   })

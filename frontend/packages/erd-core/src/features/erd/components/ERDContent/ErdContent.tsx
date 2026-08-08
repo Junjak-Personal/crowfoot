@@ -292,6 +292,8 @@ export const ERDContentInner: FC<Props> = ({
       incomingEdges: _edges,
       displayArea,
       onNodesChange,
+      setNodes,
+      setEdges,
     })
 
   useInitialAutoLayout({

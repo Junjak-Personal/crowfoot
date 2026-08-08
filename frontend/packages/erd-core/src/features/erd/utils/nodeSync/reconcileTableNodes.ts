@@ -8,8 +8,22 @@ type Params = {
   current: Node[]
   /** What the schema says it should be showing, from `convertSchemaToNodes`. */
   incoming: Node[]
-  /** Where a table that was not on the canvas a moment ago should appear. */
-  place: (tableId: string) => XYPosition
+  /**
+   * Where a table that was not on the canvas a moment ago should appear, or
+   * `null` when nothing pins it and only the automatic layout can say.
+   */
+  place: (tableId: string) => XYPosition | null
+}
+
+type ReconcileResult = {
+  nodes: Node[]
+  /** Tables whose handles may have changed — see the note on the export. */
+  touched: string[]
+  /**
+   * Tables that arrived with nowhere to go. The caller has to lay the diagram
+   * out, or they all pile up wherever the fallback put them.
+   */
+  unplaced: string[]
 }
 
 const ORIGIN: XYPosition = { x: 0, y: 0 }
@@ -24,16 +38,35 @@ const positionOf = (nodes: Node[], id: string | undefined): XYPosition =>
     ?.position ?? ORIGIN
 
 /**
- * Whether the schema still describes this node exactly as it is. `incoming` is
- * memoised on `(schema, showMode)` upstream, which makes reference equality
- * exact here rather than merely cheap.
+ * `convertSchemaToNodes` rebuilds this record every time it runs, so comparing
+ * it by reference would call every table that is the target of a foreign key
+ * changed on every edit — on a schema where one table is referenced by a
+ * hundred others, that is the whole diagram re-rendering to add one column.
+ */
+const sameCardinalities = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false
+
+  const left = Object.entries(a)
+  if (left.length !== Object.keys(b).length) return false
+
+  const right: Record<string, unknown> = { ...b }
+  return left.every(([column, cardinality]) => right[column] === cardinality)
+}
+
+/**
+ * Whether the schema still describes this node exactly as it is. `data.table`
+ * can be compared by reference because `applySchemaEdits` hands back the very
+ * objects it was given for tables it did not touch.
  */
 const isUnchanged = (node: Node, next: Node): boolean =>
   node.parentId === next.parentId &&
   node.data['table'] === next.data['table'] &&
   node.data['sourceColumnName'] === next.data['sourceColumnName'] &&
-  node.data['targetColumnCardinalities'] ===
-    next.data['targetColumnCardinalities']
+  sameCardinalities(
+    node.data['targetColumnCardinalities'],
+    next.data['targetColumnCardinalities'],
+  )
 
 /**
  * A table with no relationships is parented to the non-related group box, and
@@ -102,19 +135,27 @@ const merge = (
  * only the schema-derived `data` is replaced. Memos and user-authored group
  * boxes are not touched at all.
  *
- * **Returns `current` itself when nothing changed.** The caller drives this from
- * an effect, so a fresh array on every call would loop forever.
+ * **`nodes` is `current` itself when nothing changed.** The caller drives this
+ * from an effect, so a fresh array on every call would loop forever.
+ *
+ * `touched` names the tables whose schema-derived data was replaced or that
+ * arrived. Their column rows carry React Flow's handles, and React Flow does
+ * not notice handles appearing on a node it has already mounted — the caller
+ * has to hand these to `updateNodeInternals` or the new relationship has an
+ * edge with nowhere to attach.
  */
 export const reconcileTableNodes = ({
   current,
   incoming,
   place,
-}: Params): Node[] => {
+}: Params): ReconcileResult => {
   const unclaimed = new Map(
     incoming.filter(isTable).map((node) => [node.id, node]),
   )
   const incomingGroup = incoming.find(isNonRelatedGroup)
 
+  const touched: string[] = []
+  const unplaced: string[] = []
   let changed = false
   const kept: Node[] = []
 
@@ -143,19 +184,29 @@ export const reconcileTableNodes = ({
     }
 
     changed = true
+    touched.push(node.id)
     kept.push(merge(node, next, current, incoming))
   }
 
-  const added = Array.from(unclaimed.values(), (node) => ({
-    ...node,
-    position: place(node.id),
-  }))
+  const added = Array.from(unclaimed.values(), (node) => {
+    touched.push(node.id)
+
+    const position = place(node.id)
+    if (position !== null) return { ...node, position }
+
+    unplaced.push(node.id)
+    return node
+  })
   const groupIsNew =
     incomingGroup !== undefined && !current.some(isNonRelatedGroup)
 
   if (added.length > 0 || groupIsNew) changed = true
-  if (!changed) return current
+  if (!changed) return { nodes: current, touched: [], unplaced: [] }
 
   // React Flow requires a parent to appear before its children.
-  return groupIsNew ? [incomingGroup, ...kept, ...added] : [...kept, ...added]
+  const nodes = groupIsNew
+    ? [incomingGroup, ...kept, ...added]
+    : [...kept, ...added]
+
+  return { nodes, touched, unplaced }
 }

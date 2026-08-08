@@ -1,14 +1,19 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { Edge, Node, OnNodesChange, XYPosition } from '@xyflow/react'
+import { useUpdateNodeInternals } from '@xyflow/react'
+import type { Dispatch, SetStateAction } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUserEditingOrThrow } from '../../../../../stores'
 import { useCustomReactflow } from '../../../../reactflow/hooks'
 import type { DisplayArea } from '../../../types'
 import {
+  applyTableLayout,
+  computeAutoLayout,
   deserializeTableLayout,
   dumpTableLayout,
   getEffectiveTableLayout,
+  reconcileEdges,
   reconcileTableNodes,
   setResolvedTableLayout,
   settleOverlaps,
@@ -26,6 +31,14 @@ type Params = {
   displayArea: DisplayArea
   /** React Flow's own handler, from `useNodesState`. */
   onNodesChange: OnNodesChange<Node>
+  /**
+   * The setters from `useNodesState` / `useEdgesState` — not the ones on the
+   * React Flow instance. On a controlled flow those go through `onEdgesChange`
+   * as `replace` changes, which can only swap an edge that is already there:
+   * the edge a new relationship needs would be dropped on the floor.
+   */
+  setNodes: Dispatch<SetStateAction<Node[]>>
+  setEdges: Dispatch<SetStateAction<Edge[]>>
 }
 
 /**
@@ -48,9 +61,12 @@ export const useSchemaNodeSync = ({
   incomingEdges,
   displayArea,
   onNodesChange,
+  setNodes,
+  setEdges,
 }: Params) => {
   const { tablePositions } = useUserEditingOrThrow()
-  const { setNodes, setEdges, screenToFlowPosition } = useCustomReactflow()
+  const { getEdges, fitView } = useCustomReactflow()
+  const updateNodeInternals = useUpdateNodeInternals()
 
   /**
    * Last known height of each table, so a schema edit that changes one can be
@@ -60,6 +76,21 @@ export const useSchemaNodeSync = ({
   const heightsRef = useRef(new Map<string, number>())
   /** Tables that just got taller. `null` means "not watching". */
   const grownRef = useRef<Set<string> | null>(null)
+  /**
+   * Tables whose handles React Flow has not been told about yet. A column row
+   * grows a `<Handle>` the moment it becomes one end of a foreign key, and
+   * React Flow does not look for handles appearing on a node it already
+   * mounted — an edge pointing at one it has never seen has nowhere to attach.
+   */
+  const restatedRef = useRef<string[]>([])
+  /**
+   * Set when tables arrived that nothing pins. The schema is fetched after the
+   * first render, so on load *every* table arrives this way — and with the
+   * canvas no longer remounting when it lands, laying them out is this hook's
+   * job rather than `useInitialAutoLayout`'s, which by then has already run
+   * against whatever was on screen.
+   */
+  const needsLayoutRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isSettling, setIsSettling] = useState(false)
 
@@ -70,22 +101,20 @@ export const useSchemaNodeSync = ({
    * whatever pinned it (`Add table here` writes its drop point to `?positions=`
    * in the same commit), then the on-screen snapshot — which is how a *renamed*
    * table lands back on its own spot, `renameTableInLayout` having moved that
-   * entry across — and only then the middle of the view.
+   * entry across.
+   *
+   * `null` means nothing pins it. Guessing a spot would pile every such table
+   * on the same one; the caller lays the diagram out instead.
    */
   const place = useCallback(
-    (tableId: string): XYPosition => {
+    (tableId: string): XYPosition | null => {
       const pinned =
         dumpTableLayout()[tableId] ??
         getEffectiveTableLayout(deserializeTableLayout(tablePositions))[tableId]
 
-      return pinned
-        ? { x: pinned.x, y: pinned.y }
-        : screenToFlowPosition({
-            x: window.innerWidth / 2,
-            y: window.innerHeight / 2,
-          })
+      return pinned ? { x: pinned.x, y: pinned.y } : null
     },
-    [tablePositions, screenToFlowPosition],
+    [tablePositions],
   )
 
   const stopSettleAnimation = useCallback(() => {
@@ -109,10 +138,20 @@ export const useSchemaNodeSync = ({
     // first mount: nothing has a previous height to have grown from.
     grownRef.current = new Set()
 
-    setNodes((current) =>
-      reconcileTableNodes({ current, incoming: incomingNodes, place }),
-    )
-    setEdges(incomingEdges)
+    setNodes((current) => {
+      const { nodes, touched, unplaced } = reconcileTableNodes({
+        current,
+        incoming: incomingNodes,
+        place,
+      })
+      // Writing a ref from an updater is normally a smell; this one is
+      // idempotent, so React calling the updater twice in StrictMode records
+      // the same list twice rather than compounding.
+      if (touched.length > 0) restatedRef.current = touched
+      if (unplaced.length > 0) needsLayoutRef.current = true
+      return nodes
+    })
+    setEdges((current) => reconcileEdges(current, incomingEdges))
   }, [isMain, incomingNodes, incomingEdges, place, setNodes, setEdges])
 
   /**
@@ -145,6 +184,55 @@ export const useSchemaNodeSync = ({
    * out of `observeMeasurements` so the sizes it reads are the ones already
    * committed to state.
    */
+  // After the render that put the new handles in the DOM, never before it.
+  useEffect(() => {
+    const ids = restatedRef.current
+    if (ids.length === 0) return
+    restatedRef.current = []
+
+    // Filtering against `nodes` is not only a guard against a table that was
+    // removed again before this ran — it is what keeps `nodes` in the
+    // dependency list. Without a reference to it in the body the exhaustive-deps
+    // fixer strips it, and the effect then only ever runs on mount, when there
+    // is nothing to restate. That is precisely how a new relationship ended up
+    // with an edge React Flow could not attach until the page was reloaded.
+    const present = new Set(nodes.map((node) => node.id))
+    updateNodeInternals(ids.filter((id) => present.has(id)))
+  }, [nodes, updateNodeInternals])
+
+  /**
+   * Lays out tables that arrived with nowhere to go, once React Flow has
+   * measured them — ELK needs real sizes, and unmeasured nodes come out stacked
+   * in a single column. Anything already pinned is put back afterwards.
+   */
+  useEffect(() => {
+    if (!isMain || !needsLayoutRef.current) return
+
+    const tables = nodes.filter((node) => node.type === 'table')
+    if (tables.length === 0 || tables.some((node) => !node.measured)) return
+    needsLayoutRef.current = false
+
+    let cancelled = false
+    const pinned = getEffectiveTableLayout(
+      deserializeTableLayout(tablePositions),
+    )
+
+    computeAutoLayout(applyTableLayout(nodes, pinned), getEdges()).then(
+      ({ nodes: laidOut }) => {
+        if (cancelled) return
+
+        const positioned = applyTableLayout(laidOut, pinned)
+        setNodes(positioned)
+        setResolvedTableLayout(positioned)
+        fitView({ duration: 0 })
+      },
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [isMain, nodes, tablePositions, getEdges, setNodes, fitView])
+
   useEffect(() => {
     const grown = grownRef.current
     if (!isMain || !grown?.size) return
