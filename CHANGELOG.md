@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.2.1
+
 ### Fixed
 
 - **Memos and group boxes disappeared from any deployment carrying
