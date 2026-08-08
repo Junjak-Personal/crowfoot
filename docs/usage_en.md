@@ -185,7 +185,7 @@ dist/
 | Click a table | Open the detail panel (reflected in `?active=`) |
 | Drag a table | Move it *(edit mode only)* |
 | Left drag | Draw a selection box over tables and memos *(edit mode only)* |
-| `Ctrl`/`Cmd`/`Shift` + click | Add to or remove from the selection *(edit mode only)* |
+| `⌘`/`Ctrl` + click, `Shift` + click | Add to or remove from the selection *(edit mode only)* |
 
 The left sidebar lists every table and lets you hide or show them individually.
 Hidden state lands in `?hidden=`, so it travels with the link.
@@ -211,6 +211,8 @@ Three levels of detail, from the toolbar or the URL.
 | `⌘K` / `Ctrl+K` | Command palette |
 | `⌘C` / `Ctrl+C` | Copy the selected memos *(edit mode only)* |
 | `⌘V` / `Ctrl+V` | Paste the copied memos at the cursor *(edit mode only)* |
+| `⌘G` / `Ctrl+G` | Group the selected tables *(edit mode only)* |
+| `⌘⇧G` / `Ctrl+Shift+G` | Ungroup what the selection belongs to, after confirming *(edit mode only)* |
 | `⇧1` | Zoom to fit |
 | `⇧2` | Show all fields |
 | `⇧3` | Show table names only |
@@ -286,7 +288,7 @@ as one, with table positions saved to `?positions=` and memos to `?memos=`.
 | Target | Menu |
 |---|---|
 | Empty canvas | `Add memo here`, `Add table here` — both land at the clicked point; `Discard schema edits` when there are any |
-| A table | `Connect to` (draw a foreign key to another table), colour palette |
+| A table | `Connect` (pick a relationship kind, then click the other table), colour palette, grouping |
 | A memo | Colour palette, font size (`−` / number input / `+`), `Duplicate memo`, `Delete memo` |
 
 The menu applies to **the whole selection**. Right-clicking something already in the
@@ -299,7 +301,8 @@ tables and picking a colour from any one of them tints all five.
 In edit mode the table detail panel becomes a form. Everything the schema holds is
 editable there: the table's name and comment, its columns (name, type, default,
 comment, `PRIMARY KEY`, `NOT NULL`), its foreign, unique and check constraints, and
-its indexes. `Add table here` on the empty-canvas menu creates a table and opens it.
+its indexes. Each section folds, and its header carries the button that adds to it.
+`Add table here` on the empty-canvas menu creates a table and opens it.
 
 Edits go to `?schemaedits=` — nothing is written to `schema.json`, and nothing is
 sent anywhere. The parameter carries **only the tables actually edited**, so a link
@@ -332,15 +335,26 @@ in the toolbar.
 
 #### Connecting two tables
 
-`Ctrl`/`Cmd` + right-click the table that should hold the key, then pick a table
-under `Connect to`. The foreign key points at the target's primary key, and the
-referencing column is:
+`Ctrl`/`Cmd` + right-click the table that should hold the key, pick the kind of
+relationship, then **click the table to connect it to**. A badge says what is
+waiting on what; `Esc` or a click on empty canvas backs out.
 
-1. an existing `<target>_<key>` or `<target-without-trailing-s>_<key>` column, if there is one;
-2. otherwise a new `<target>_<key>` column, typed to match the key it references.
+The kinds are instructions for building a link, not a field the schema stores —
+a foreign key is what is written, and the cardinality the diagram draws is
+derived from it:
 
-A toast says which happened. The target needs a primary key — without one there is
-nothing to point at, and the menu says so rather than inventing one.
+| | |
+|---|---|
+| `many : 1` | The plain foreign key, on the table clicked first |
+| `1 : 1` | The same key, plus the `UNIQUE` that makes it one-to-one |
+| `1 : many` | The same with the two tables swapped — which end is "many" is decided by which one holds the column |
+| `many : many` | Has no single-key form, so a **join table** is created between them with a foreign key to each side and a primary key over both. It is pinned halfway between them |
+
+The referencing column is an existing `<target>_<key>` or
+`<target-without-trailing-s>_<key>` column if there is one, and a new
+`<target>_<key>` column typed to match the key it references otherwise. A toast
+says which happened. Each end needs a primary key to point at; without one the
+viewer says so rather than inventing one.
 
 ### Memos
 

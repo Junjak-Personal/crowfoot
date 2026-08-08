@@ -13,6 +13,59 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.2.0
+
+The viewer could arrange a diagram but never change what it showed. It can now.
+
+### Added
+
+- **Schema editing in the browser.** In edit mode the table detail panel becomes
+  a form covering the whole of a table's definition — name, comment, columns,
+  primary/foreign/unique/check constraints and indexes — and tables can be added,
+  renamed and removed. Each section folds, and its header carries the button that
+  adds to it.
+- **Connecting two tables is a gesture.** `Ctrl`/`Cmd` + right-click the table
+  that should hold the key, pick `many : 1`, `1 : 1`, `1 : many` or
+  `many : many`, then click the table to connect it to. The first three write a
+  foreign key (one-to-one adds the `UNIQUE` that makes it so, one-to-many puts
+  the column on the other end); many-to-many has no single-key form, so a join
+  table is created between them and pinned halfway.
+- **`⌘G` / `⌘⇧G`** group and ungroup the selection. Ungrouping asks first,
+  from the shortcut and the right-click menu alike.
+- Edits ride in `?schemaedits=` and carry only the tables actually touched, so a
+  link stays proportional to the work. Nothing is written to `schema.json`, and
+  the DDL export reflects the edits.
+- Renames and deletions carry their references: foreign keys follow a renamed
+  table or column, constraints and indexes left with no columns are dropped, and
+  a renamed table keeps its pinned position, its tint and its group membership.
+
+### Changed
+
+- **Editing no longer rearranges the diagram.** The canvas used to be rebuilt on
+  a key derived from the schema, so every edit reset the viewport, the selection
+  and the position of every table nobody had dragged. It is reconciled in place
+  now; when a table grows, only what is directly below it slides down to make
+  room. `Tidy up` is still there for a full re-layout.
+- **Shift + click adds to the selection.** React Flow's default is a single
+  modifier, so it never did — even though this project's own documentation said
+  it worked. Ctrl is deliberately not a selection modifier on macOS, where it is
+  the secondary-click gesture.
+
+### Fixed
+
+- Pressing Enter to confirm an IME candidate committed the field mid-composition,
+  which broke Korean syllables apart into jamo.
+- A new relationship's edge did not appear until the page was reloaded: React
+  Flow was never told about the handle the new key had grown.
+- Reloading a link carrying `?schemaedits=` scattered the diagram into a single
+  column — the schema arrives after the first render, and the automatic layout
+  had already declared itself done against a partial one.
+
+### Known
+
+- Diagrams past roughly a hundred tables feel heavy while editing. The cost is in
+  the per-table tooltip and context-menu machinery, not in the schema layer.
+
 ## 0.1.3
 
 ### Fixed
