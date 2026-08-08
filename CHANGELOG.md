@@ -13,6 +13,14 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Fixed
+
+- Every section of the table editor was cut off partway through — the comment
+  field, a column's checkboxes, the line saying a table has no check
+  constraints. The editor's pane was a flex column, so each section was free to
+  shrink under its own content, and the sections hide their overflow: the pane
+  never grew tall enough to scroll, and nothing indicated there was more to see.
+
 ## 0.2.1
 
 ### Fixed

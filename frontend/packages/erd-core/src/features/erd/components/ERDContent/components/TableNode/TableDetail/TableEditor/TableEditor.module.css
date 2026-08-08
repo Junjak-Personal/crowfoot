@@ -1,8 +1,10 @@
 /* The section headers are CollapsibleHeader's, which span the full width and
-   bring their own padding, so this only scrolls. */
+   bring their own padding, so this only scrolls — as a block, deliberately, the
+   same way the read-only pane's body does. A flex column makes every section a
+   flex item free to shrink under its own content, and CollapsibleHeader's
+   `overflow: hidden` then cuts off whatever did not fit without a scrollbar
+   anywhere to say so. */
 .wrapper {
-  display: flex;
-  flex-direction: column;
   overflow-y: auto;
 }
 
