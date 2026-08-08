@@ -1,7 +1,17 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
 
-import { useToast } from '@crowfoot/ui'
+import {
+  Button,
+  ModalActions,
+  ModalContent,
+  ModalDescription,
+  ModalOverlay,
+  ModalPortal,
+  ModalRoot,
+  ModalTitle,
+  useToast,
+} from '@crowfoot/ui'
 import {
   Background,
   BackgroundVariant,
@@ -127,6 +137,32 @@ type CanvasMenu = CanvasMenuTarget & { x: number; y: number }
  * What the connect menu offers. The schema only ever stores a foreign key —
  * these say how to build one, and which end holds it. See `RelationshipKind`.
  */
+const isMacOs =
+  typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
+
+/**
+ * Adding to a selection by clicking: the platform's own modifier, plus Shift.
+ * React Flow's default is the platform modifier *alone*, so Shift + click did
+ * nothing — which is not what the diagram's own documentation said.
+ *
+ * Ctrl is deliberately not included on macOS: there it is the secondary-click
+ * gesture, and the editing menu already sits behind Ctrl/Cmd + right-click.
+ * Shift remains the selection-box key too; the two do not collide.
+ */
+const MULTI_SELECTION_KEYS = isMacOs ? ['Meta', 'Shift'] : ['Control', 'Shift']
+
+/**
+ * Which grouping shortcut a keystroke is, if any. `event.key` is the *typed*
+ * character, so holding Shift makes it "G" — comparing case-insensitively is
+ * what keeps the ungroup binding working.
+ */
+const groupingShortcut = (event: KeyboardEvent): 'group' | 'ungroup' | null => {
+  if (event.key.toLowerCase() !== 'g') return null
+  if (!event.metaKey && !event.ctrlKey) return null
+
+  return event.shiftKey ? 'ungroup' : 'group'
+}
+
 const RELATIONSHIP_KINDS: { kind: RelationshipKind; label: string }[] = [
   { kind: 'MANY_TO_ONE', label: 'many : 1' },
   { kind: 'ONE_TO_ONE', label: '1 : 1' },
@@ -205,6 +241,71 @@ const CanvasBadge: FC<CanvasBadgeProps> = ({ editMode, connectingFrom }) => {
     <div className={styles.editBadge}>
       Edit mode · drag to select · Ctrl/Cmd + right-click for the menu
     </div>
+  )
+}
+
+/** Every group that claims at least one of the given tables. */
+const groupsClaiming = (nodes: Node[], tableNames: string[]): Group[] => {
+  const selected = new Set(tableNames)
+
+  return groupsFromNodes(nodes).filter((group) =>
+    group.tableNames.some((name) => selected.has(name)),
+  )
+}
+
+type UngroupConfirmProps = {
+  /** `null` while nothing is waiting to be confirmed. */
+  groups: Group[] | null
+  onCancel: () => void
+  onConfirm: () => void
+}
+
+/**
+ * Ungrouping throws away a grouping someone put together by hand, and
+ * `Ctrl`/`Cmd` + `Shift` + `G` is easy to hit while reaching for something
+ * else, so it asks first.
+ */
+const UngroupConfirm: FC<UngroupConfirmProps> = ({
+  groups,
+  onCancel,
+  onConfirm,
+}) => {
+  if (groups === null) return null
+
+  const named = groups
+    .map((group) =>
+      group.name === '' ? 'an unnamed group' : `"${group.name}"`,
+    )
+    .join(', ')
+
+  return (
+    <ModalRoot
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel()
+      }}
+    >
+      <ModalPortal>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalTitle>
+            {groups.length === 1 ? 'Ungroup?' : `Ungroup ${groups.length}?`}
+          </ModalTitle>
+          <ModalDescription>
+            {named} will be dissolved. The tables stay exactly where they are —
+            only the grouping goes.
+          </ModalDescription>
+          <ModalActions>
+            <Button variant="outline-secondary" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button variant="solid-danger" onClick={onConfirm}>
+              Ungroup
+            </Button>
+          </ModalActions>
+        </ModalContent>
+      </ModalPortal>
+    </ModalRoot>
   )
 }
 
@@ -404,6 +505,9 @@ export const ERDContentInner: FC<Props> = ({
     kind: RelationshipKind
   } | null>(null)
 
+  /** Groups the viewer has asked to dissolve, waiting on the confirmation. */
+  const [pendingUngroup, setPendingUngroup] = useState<Group[] | null>(null)
+
   /** Pins a table's spot so the automatic layout does not get a say in it. */
   const pinTable = useCallback(
     (tableName: string, position: XYPosition) => {
@@ -601,76 +705,6 @@ export const ERDContentInner: FC<Props> = ({
     },
     [screenToFlowPosition, commitMemos, toast],
   )
-
-  useEffect(() => {
-    if (!editMode) return
-
-    /** Typing in a memo: ⌘C and ⌘V there mean the text, not the memo. */
-    const isTyping = () => {
-      const active = document.activeElement
-      return (
-        active instanceof HTMLTextAreaElement ||
-        active instanceof HTMLInputElement
-      )
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'c' || (!event.metaKey && !event.ctrlKey)) return
-      if (isTyping()) return
-
-      const memos = selectedMemos()
-      if (memos.length === 0) return
-
-      event.preventDefault()
-
-      copiedMemos.current = memos
-      void navigator.clipboard
-        ?.writeText(serializeMemosToClipboard(memos.map(nodeToMemo)))
-        .catch(() => {
-          // Insecure context; the in-memory copy above still works in this tab,
-          // so this is a warning rather than a failure.
-          toast({
-            title: 'Copied for this tab only',
-            description:
-              'The clipboard is unavailable outside a secure context.',
-            status: 'warning',
-          })
-        })
-
-      toast({
-        title: memoCountLabel(memos.length, 'copied'),
-        status: 'success',
-      })
-    }
-
-    // A `paste` event carries the clipboard text without asking for read
-    // permission, which `navigator.clipboard.readText()` would.
-    const handlePaste = (event: ClipboardEvent) => {
-      if (isTyping()) return
-
-      const text = event.clipboardData?.getData('text/plain') ?? ''
-      const fromClipboard = parseMemosFromClipboard(text).map(memoToNode)
-      const memos =
-        fromClipboard.length > 0 ? fromClipboard : copiedMemos.current
-      if (memos.length === 0) return
-
-      event.preventDefault()
-      pasteMemos(memos)
-    }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setConnecting(null)
-    }
-
-    document.addEventListener('keydown', handleEscape)
-    document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('paste', handlePaste)
-    return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('paste', handlePaste)
-    }
-  }, [editMode, selectedMemos, pasteMemos, toast])
 
   // Right-click rather than double-click: double-click is already React
   // Flow's zoom gesture, and overriding it broke zooming in edit mode.
@@ -916,14 +950,22 @@ export const ERDContentInner: FC<Props> = ({
    * existing group memberships of the selected tables are never touched). */
   const handleGroupSelected = useCallback(() => {
     const tableNames = selectedIdsOf('table')
-    if (tableNames.length < 2) return
+    if (tableNames.length < 2) {
+      // The menu item only appears with two selected; the shortcut does not,
+      // so silence here would read as the key not working.
+      toast({
+        title: 'Select two or more tables to group them',
+        status: 'warning',
+      })
+      return
+    }
 
     commitGroups((current) => [
       ...current,
       groupToNode({ id: crypto.randomUUID(), name: '', tableNames }),
     ])
     setMenu(null)
-  }, [selectedIdsOf, commitGroups])
+  }, [selectedIdsOf, commitGroups, toast])
 
   /**
    * Removes the right-clicked table from one group only — other memberships
@@ -978,17 +1020,134 @@ export const ERDContentInner: FC<Props> = ({
     [menu, commitGroups],
   )
 
+  const handleUngroupSelected = useCallback(() => {
+    const groups = groupsClaiming(getNodes(), selectedIdsOf('table'))
+    if (groups.length === 0) {
+      toast({
+        title: 'Nothing selected belongs to a group',
+        status: 'warning',
+      })
+      return
+    }
+    setPendingUngroup(groups)
+  }, [getNodes, selectedIdsOf, toast])
+
   const handleUngroup = useCallback(() => {
     if (menu?.kind !== 'tableGroup') return
     const { groupId } = menu
 
-    commitGroups((current) =>
-      current.filter(
-        (node) => !(isTableGroupNode(node) && node.data.groupId === groupId),
-      ),
+    const group = groupsFromNodes(getNodes()).find(
+      (candidate) => candidate.id === groupId,
     )
     setMenu(null)
-  }, [menu, commitGroups])
+    if (group) setPendingUngroup([group])
+  }, [menu, getNodes])
+
+  const handleCancelUngroup = useCallback(() => {
+    setPendingUngroup(null)
+  }, [])
+
+  const confirmUngroup = useCallback(() => {
+    const ids = new Set((pendingUngroup ?? []).map((group) => group.id))
+    setPendingUngroup(null)
+    if (ids.size === 0) return
+
+    commitGroups((current) =>
+      current.filter(
+        (node) => !(isTableGroupNode(node) && ids.has(node.data.groupId)),
+      ),
+    )
+  }, [pendingUngroup, commitGroups])
+
+  useEffect(() => {
+    if (!editMode) return
+
+    /** Typing in a memo: ⌘C and ⌘V there mean the text, not the memo. */
+    const isTyping = () => {
+      const active = document.activeElement
+      return (
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLInputElement
+      )
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'c' || (!event.metaKey && !event.ctrlKey)) return
+      if (isTyping()) return
+
+      const memos = selectedMemos()
+      if (memos.length === 0) return
+
+      event.preventDefault()
+
+      copiedMemos.current = memos
+      void navigator.clipboard
+        ?.writeText(serializeMemosToClipboard(memos.map(nodeToMemo)))
+        .catch(() => {
+          // Insecure context; the in-memory copy above still works in this tab,
+          // so this is a warning rather than a failure.
+          toast({
+            title: 'Copied for this tab only',
+            description:
+              'The clipboard is unavailable outside a secure context.',
+            status: 'warning',
+          })
+        })
+
+      toast({
+        title: memoCountLabel(memos.length, 'copied'),
+        status: 'success',
+      })
+    }
+
+    // A `paste` event carries the clipboard text without asking for read
+    // permission, which `navigator.clipboard.readText()` would.
+    const handlePaste = (event: ClipboardEvent) => {
+      if (isTyping()) return
+
+      const text = event.clipboardData?.getData('text/plain') ?? ''
+      const fromClipboard = parseMemosFromClipboard(text).map(memoToNode)
+      const memos =
+        fromClipboard.length > 0 ? fromClipboard : copiedMemos.current
+      if (memos.length === 0) return
+
+      event.preventDefault()
+      pasteMemos(memos)
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setConnecting(null)
+    }
+
+    const handleGrouping = (event: KeyboardEvent) => {
+      const shortcut = groupingShortcut(event)
+      if (shortcut === null || isTyping()) return
+
+      // The browser's own ⌘G (find again) would otherwise take it.
+      event.preventDefault()
+
+      if (shortcut === 'ungroup') handleUngroupSelected()
+      else handleGroupSelected()
+    }
+
+    document.addEventListener('keydown', handleGrouping)
+    document.addEventListener('keydown', handleEscape)
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('keydown', handleGrouping)
+      document.removeEventListener('keydown', handleEscape)
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [
+    editMode,
+    selectedMemos,
+    pasteMemos,
+    toast,
+    handleGroupSelected,
+    handleUngroupSelected,
+  ])
 
   const handleDuplicateMemos = useCallback(() => {
     if (menu?.kind !== 'memo') return
@@ -1125,6 +1284,11 @@ export const ERDContentInner: FC<Props> = ({
       onPointerMove={handlePointerMove}
     >
       {loading && <Spinner className={styles.loading} />}
+      <UngroupConfirm
+        groups={pendingUngroup}
+        onCancel={handleCancelUngroup}
+        onConfirm={confirmUngroup}
+      />
       <CanvasBadge
         editMode={editMode}
         connectingFrom={connecting?.from ?? null}
@@ -1295,6 +1459,7 @@ export const ERDContentInner: FC<Props> = ({
         // Partial: a box that clips a wide table still selects it. Requiring
         // full containment makes large tables almost unselectable by box.
         selectionMode={SelectionMode.Partial}
+        multiSelectionKeyCode={MULTI_SELECTION_KEYS}
       >
         <Background
           color="var(--color-gray-600)"

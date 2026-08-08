@@ -177,7 +177,7 @@ describe('ErdContent context-menu group actions', () => {
     expect(groups?.find((g) => g.id === 'beta')?.name).toBe('Beta')
   })
 
-  it('ungrouping removes only the right-clicked group', async () => {
+  it('ungrouping removes only the right-clicked group, once confirmed', async () => {
     saveStoredGroups([
       { id: 'alpha', name: 'Alpha', tableNames: ['orders'] },
       { id: 'beta', name: 'Beta', tableNames: ['payments'] },
@@ -187,9 +187,25 @@ describe('ErdContent context-menu group actions', () => {
 
     rightClickCtrl('rf__node-tableGroup:alpha')
     fireEvent.click(await screen.findByText('Ungroup'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ungroup' }))
 
     const groups = loadStoredGroups()
     expect(groups?.map((g) => g.id)).toEqual(['beta'])
+  })
+
+  it('leaves the group alone when the confirmation is cancelled', async () => {
+    saveStoredGroups([
+      { id: 'alpha', name: 'Alpha', tableNames: ['orders'] },
+      { id: 'beta', name: 'Beta', tableNames: ['payments'] },
+    ])
+
+    renderErdContent()
+
+    rightClickCtrl('rf__node-tableGroup:alpha')
+    fireEvent.click(await screen.findByText('Ungroup'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }))
+
+    expect(loadStoredGroups()?.map((g) => g.id)).toEqual(['alpha', 'beta'])
   })
 
   it('applying a colour applies to the right-clicked group only', async () => {
