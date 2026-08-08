@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.2.2
+
 ### Fixed
 
 - Every section of the table editor was cut off partway through — the comment
