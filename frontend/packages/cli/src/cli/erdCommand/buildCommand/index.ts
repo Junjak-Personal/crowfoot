@@ -1,10 +1,11 @@
-import { cpSync, existsSync, mkdirSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path, { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { SupportedFormat } from '@crowfoot/schema/parser'
 import { blueBright } from 'yoctocolors'
 import { type CliError, FileSystemError } from '../../errors.js'
 import { runPreprocess } from '../runPreprocess.js'
+import { copySite } from './copySite.js'
 
 export const buildCommand = async (
   inputPath: string,
@@ -40,10 +41,7 @@ export const buildCommand = async (
   }
 
   try {
-    // Ensure the output directory exists
-    mkdirSync(resolvedOutDir, { recursive: true })
-    // Copy files recursively
-    cpSync(cliHtmlPath, resolvedOutDir, { recursive: true })
+    copySite(cliHtmlPath, resolvedOutDir)
   } catch (error) {
     errors.push(new FileSystemError(`Error processing files: ${error}`))
   }
