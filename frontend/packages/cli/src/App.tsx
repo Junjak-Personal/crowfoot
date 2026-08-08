@@ -124,7 +124,15 @@ function getSidebarSettingsFromCookie(): {
 }
 
 function App() {
-  const [schema, setSchema] = useState<Schema>(emptySchema)
+  /**
+   * `null` until every sidecar and the schema are in. The canvas snapshots the
+   * memos, the group boxes and the pinned positions **once, when it mounts** —
+   * mounting it against an empty schema therefore fixes it with no memos and no
+   * groups, and nothing later puts them back. It used to be remounted whenever
+   * the schema changed, which hid this; a schema can be edited in place now, so
+   * it is not.
+   */
+  const [schema, setSchema] = useState<Schema | null>(null)
   const { isOpen: defaultSidebarOpen, panelSizes } =
     getSidebarSettingsFromCookie()
 
@@ -185,6 +193,8 @@ function App() {
       },
     }
   }, [])
+
+  if (schema === null) return null
 
   return (
     <VersionProvider version={version}>

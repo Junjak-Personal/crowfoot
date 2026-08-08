@@ -13,6 +13,18 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Fixed
+
+- **Memos and group boxes disappeared from any deployment carrying
+  `memos.json` or `groups.json`.** The canvas takes them, and the pinned
+  positions, once — when it mounts. Until 0.2.0 it was remounted whenever the
+  schema changed, so it picked them up when the schema arrived; 0.2.0 stopped
+  remounting it and the app was still mounting it immediately, against the empty
+  schema it starts with and before the sidecars had been fetched. The sidebar
+  went on listing the groups, which made it look like a canvas problem rather
+  than a loading one. The app now waits for the sidecars and the schema before
+  rendering the diagram.
+
 ## 0.2.0
 
 The viewer could arrange a diagram but never change what it showed. It can now.
