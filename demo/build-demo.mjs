@@ -90,6 +90,9 @@ const memo = (text, x, y, width, h, color, fontSize) => ({
   text, x, y, width, height: h, color, fontSize,
 })
 
+// A line wider than about 79 characters wraps at font size 32, and a card fits
+// roughly its height divided by 59 lines. Both were read off the rendered page,
+// which is also the only way to check them — see the README.
 const memos = [
   memo(
     'crowfoot — a demo\n\n' +
@@ -99,24 +102,26 @@ const memos = [
       'earlier codebase was opened as github.com/Junjak-Personal/nivoca-legacy.\n\n' +
       '23 tables · 27 foreign keys, parsed straight from 37 Supabase migration files:\n' +
       "    npx crowfoot erd build --input 'migrations/*.sql' --format postgres",
-    col(0), -1180, CARD_W * 2 + CARD_GAP, 620, 'vermilion', 40),
+    col(1), -1320, CARD_W * 2 + CARD_GAP, 620, 'vermilion', 40),
 
   memo(
-    'Everything you see is editable\n\n' +
-      'Add ?edit=1 to the URL. Without it the diagram is read-only on purpose, so a\n' +
-      'link you share cannot be rearranged by whoever opens it.\n\n' +
-      'Drag tables to move them. Drag across empty canvas — or Ctrl/Cmd-click — to\n' +
-      'select several at once, then move, tint or delete them together.',
-    col(0), -480, CARD_W, 420, 'sky', 32),
+    'Edit mode\n\n' +
+      'Press Edit in the header — or add ?edit=1 to the URL. Without it the diagram is\n' +
+      'read-only, so a link you share cannot be rearranged by whoever opens it.\n\n' +
+      'Drag tables to move them. Drag across empty canvas to select several, and add to\n' +
+      'that selection with Shift-click — Cmd-click on a Mac, Ctrl-click on Windows.\n' +
+      'Whatever is selected moves, takes a colour and is deleted together.',
+    col(0), -620, CARD_W, 520, 'sky', 32),
 
   memo(
     'Grouping\n\n' +
-      'Select the tables you want, right-click one of them, and choose to group them.\n' +
-      'A named, tinted box is drawn behind the members — the box is derived from where\n' +
-      'they sit, so it follows them. Drag the group label to move the whole set.\n\n' +
+      'Select the tables you want and press Cmd/Ctrl + G. A named, tinted box is drawn\n' +
+      'behind the members — it is derived from where they sit, so it follows them. Drag\n' +
+      'the group label to move the whole set. Cmd/Ctrl + Shift + G ungroups, and asks\n' +
+      'before it does.\n\n' +
       'A table may belong to more than one group. The toolbar switches between group\n' +
       'view and a plain alphabetical list without touching the data.',
-    col(1), -480, CARD_W, 420, 'gold', 32),
+    col(1), -620, CARD_W, 520, 'gold', 32),
 
   memo(
     'Memos and colour\n\n' +
@@ -124,24 +129,37 @@ const memos = [
       'recolour, change font size, and copy-paste — including into another browser tab.\n\n' +
       'Tables, memos and groups all take a tint from the same 12-colour palette, so the\n' +
       'diagram stays consistent with the app it documents.',
-    col(2), -480, CARD_W, 420, 'orange', 32),
+    col(2), -620, CARD_W, 520, 'orange', 32),
+
+  memo(
+    'Changing the schema\n\n' +
+      "In edit mode the panel on the right becomes a form: a table's name, comment,\n" +
+      'columns, keys, indexes and checks. Tables can be added and removed too.\n\n' +
+      'Ctrl/Cmd + right-click a table, pick many : 1, 1 : 1, 1 : many or many : many,\n' +
+      'then click the table to connect it to — many : many builds the join table.\n\n' +
+      'Nothing here rearranges the diagram, and the DDL export reflects every edit.',
+    col(3), -620, CARD_W, 520, 'teal', 32),
 
   memo(
     'Making an arrangement permanent\n\n' +
       'Your layout lives in the URL, which makes it shareable but not durable. Copy the\n' +
-      '?edit=1 URL and turn it into files the viewer loads on every visit:\n\n' +
+      'edit-mode URL and turn it into files the viewer loads on every visit:\n\n' +
       "    npx crowfoot erd from-link --input '<the URL>' --output-dir dist\n\n" +
       'That writes layout.json, memos.json and groups.json next to schema.json. Commit\n' +
-      'them, and this arrangement is what everyone sees — this demo included.',
-    col(0), 1180, CARD_W * 2 + CARD_GAP, 520, 'green', 32),
+      'them, and this arrangement is what everyone sees — this demo included.\n\n' +
+      'Schema edits stay in the link on purpose. A diagram is a view of a real schema:\n' +
+      'regenerate schema.json from the source rather than pinning an edited copy.',
+    col(0), 1180, CARD_W * 2 + CARD_GAP, 660, 'green', 32),
 
   memo(
     'Where this runs\n\n' +
       'A static site: no server, no database connection. crowfoot parses the schema once\n' +
       'and emits HTML, CSS and JSON you can host anywhere — S3, nginx, GitHub Pages.\n' +
       'This page is nginx on a mini PC behind a Cloudflare tunnel.\n\n' +
+      'The sidecar files and the script that generates them are in the repository under\n' +
+      'demo/, so this arrangement survives the server it happens to be served from.\n\n' +
       'github.com/Junjak-Personal/crowfoot   ·   npm i -g crowfoot',
-    col(2), 1180, CARD_W, 520, 'steel', 32),
+    col(2), 1180, CARD_W * 2 + CARD_GAP, 560, 'steel', 32),
 ]
 
 const write = (name, data) =>

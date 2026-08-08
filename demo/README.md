@@ -49,8 +49,13 @@ group lands.
 groups further apart than that padding or neighbouring boxes visibly overlap. The gap
 in the script was arrived at by rendering it and looking, not by deriving it.
 
-Both are easy to miss because the diagram still *renders* — it just renders wrong.
-Checking the rendered geometry beats reading the JSON:
+**A memo clips whatever does not fit, silently.** `overflow` is `hidden`, so a card
+one line too short simply loses its last line, and `scrollHeight` reports the clipped
+height rather than the real one — measuring the element in place says everything fits
+even when it doesn't. Measure a clone at `height: auto` instead.
+
+All three are easy to miss because the diagram still *renders* — it just renders
+wrong. Checking the rendered geometry beats reading the JSON:
 
 ```js
 // in the browser console on the demo
