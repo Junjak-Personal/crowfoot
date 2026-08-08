@@ -36,7 +36,31 @@ Serve `dist/` over HTTP — any static host will do. `file://` will not work.
 Edit the groups in `build-demo.mjs` rather than the JSON: positions are computed from
 group membership, so adding a table to a group is a one-line change and re-run.
 
-## Two things that will bite
+## Deploying
+
+The site is an nginx container with two bind mounts from the host: the directory it
+serves, and nginx's own `default.conf`. Both used to live inside the container and
+nowhere else — one `docker rm` from taking the site and its server config with it.
+
+A deploy is now `dist/` replacing the contents of the mounted directory. Take a copy
+of what is there first; the rest of this section is the two ways that goes wrong.
+
+**Replace the contents, never the directory.** A bind mount resolves to the inode, so
+`mv site site.old && mv site.new site` leaves the container serving the directory you
+just renamed — with no error, and the old page still answering. Copy into the
+directory that is already mounted.
+
+`rsync -a --delete` is the obvious way to do it. If the host has no rsync, upload a
+tarball, unpack it somewhere else, and copy it in — but then nothing deletes, which
+is the second one:
+
+**Empty `assets/` before copying, and only `assets/`.** Its filenames are
+content-hashed, so a copy leaves the previous build's bundle sitting beside the new
+one — megabytes a deploy, forever. Everything else in the directory has a stable name
+and is simply overwritten, and `schema.json` and the three sidecar files are not the
+build's to remove. (`erd build` does this itself; a copy-based deploy has to.)
+
+## Three things that will bite
 
 **A table with no foreign key ignores `layout.json`.** The viewer collects
 relationship-less tables into a built-in group of its own and places it where it
