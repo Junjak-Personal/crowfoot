@@ -235,11 +235,29 @@ The `Export` dropdown, top right.
 | Download MySQL (.sql) | Downloads `schema.mysql.sql` |
 | Copy PostgreSQL | PostgreSQL DDL to the clipboard |
 | Copy YAML | Schema as YAML |
+| Download PNG — whole diagram | `erd.png`, everything on the canvas |
+| Download PNG — current view | `erd-view.png`, the pane as you are looking at it |
+| Download PNG — selection (n) | `erd-selection.png`, only the selected tables — shown when something is selected |
 | Download layout.json | Current positions and colours *(edit mode only)* |
 | Download memos.json | Current memos *(edit mode only)* |
 | Download groups.json | Current groups *(edit mode only)* |
 
-MySQL export is added by this fork; upstream offers PostgreSQL and YAML only.
+MySQL and PNG export are added by this fork; upstream offers PostgreSQL and YAML only.
+
+The images are written at twice the on-screen size, so text stays sharp in a
+document. Three things are worth knowing:
+
+- **The zoom controls, the show-mode bar and React Flow's badge are not in the
+  image.** Only the diagram layer is captured.
+- **The background is painted, not transparent.** The viewer is dark, and a
+  transparent PNG dropped into a light document renders pale text on white.
+- **A very large diagram is exported at less than twice size**, down to whatever
+  keeps it inside the browser's canvas limits. Past those limits the canvas
+  silently stops working rather than erroring, so an export that cannot finish
+  gives up after 30 seconds and says so — try the current view or a selection.
+
+Fonts are embedded by fetching them, so a deployment that cannot reach the font
+host exports in the fallback face.
 
 ---
 

@@ -13,6 +13,19 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Added
+
+- **The export menu writes PNGs.** Three of them: the whole diagram, the pane as
+  you are looking at it, or only the tables you have selected. Images come out at
+  twice the on-screen size so text survives being dropped into a document, and
+  the zoom controls and badges are left out — only the diagram is captured. The
+  background is painted rather than left transparent, because the viewer is dark
+  and a transparent PNG in a light document is pale text on white.
+- A diagram too big for the browser's canvas is exported at reduced scale rather
+  than refused. Past the point where even that will not do, the canvas stops
+  working without raising anything, so an export that has not finished in 30
+  seconds gives up and says which of the smaller exports to try instead.
+
 ## 0.2.3
 
 ### Fixed

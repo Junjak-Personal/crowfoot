@@ -40,7 +40,7 @@
 
 [`crowfoot`](https://www.npmjs.com/package/crowfoot) builds a standalone, static ERD
 app from a database schema — plus persisted table positions, canvas memos, colour
-coding, table grouping, in-browser schema editing and MySQL export.
+coding, table grouping, in-browser schema editing, and MySQL and PNG export.
 
 **[crowfoot.jun-devlog.win](https://crowfoot.jun-devlog.win)** is a live one — a real
 app's schema, grouped and annotated, built by the command below and served as static
@@ -113,6 +113,7 @@ applies — that link is upstream's, not this project's.
 | **Schema editing** | In edit mode the table detail panel becomes a form for the whole table definition — name, comment, columns, primary/foreign/unique/check constraints, indexes — and tables can be added, renamed and removed. `Ctrl`/`Cmd` + right-click a table and pick `Connect to` to draw a foreign key to another one. Renames and deletions carry every reference with them, and the DDL export reflects the result. Edits live in `?schemaedits=`; `schema.json` is never touched. |
 | **Read-only by default** | Positions, memos, colours and the schema itself are locked unless edit mode is on, so a shared link cannot be rearranged by accident. |
 | **MySQL export** | Upstream exports PostgreSQL and YAML only; MySQL DDL was added, and the export menu can copy to the clipboard or download a `.sql` file. |
+| **PNG export** | The export menu writes the whole diagram, the current view, or just the selected tables, at twice the on-screen size. Controls and badges are left out, the background is painted rather than transparent, and an oversized diagram is scaled down to stay inside the browser's canvas limits. |
 | **Short `?show=` values** | `all` / `table` / `key` instead of the internal `ALL_FIELDS` / `TABLE_NAME` / `KEY_ONLY`. |
 
 ## Edit mode

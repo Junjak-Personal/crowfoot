@@ -123,8 +123,12 @@ export const ERDRenderer: FC<Props> = ({
       <RelationshipEdgeParticleMarker />
       <ToastProvider>
         <CommandPaletteProvider>
-          {withAppBar && <AppBar />}
+          {/* Inside the provider, not before it: the export menu reads the
+              nodes to work out what a PNG of the diagram should frame.
+              ReactFlowProvider renders context and no DOM, so the bar sits
+              exactly where it did. */}
           <ReactFlowProvider>
+            {withAppBar && <AppBar />}
             <ResizablePanelGroup
               direction="horizontal"
               className={styles.mainWrapper}

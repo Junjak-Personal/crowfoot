@@ -16,6 +16,8 @@ export {
   Fingerprint,
   Group,
   Hash,
+  // lucide's own alias for `Image`, which would otherwise shadow the DOM global.
+  ImageIcon,
   KeyRound,
   Link,
   Lock,

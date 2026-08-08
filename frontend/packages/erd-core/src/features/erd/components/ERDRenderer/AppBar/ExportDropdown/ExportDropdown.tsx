@@ -16,19 +16,65 @@ import {
   DropdownMenuPortal,
   DropdownMenuRoot,
   DropdownMenuTrigger,
+  ImageIcon,
   useToast,
 } from '@crowfoot/ui'
+import { useReactFlow, useStore } from '@xyflow/react'
 import type { FC } from 'react'
+import { useState } from 'react'
 import {
   useSchemaOrThrow,
   useUserEditingOrThrow,
 } from '../../../../../../stores'
-import { dumpGroups, dumpMemos, dumpTableLayout } from '../../../../utils'
+import {
+  captureDiagram,
+  dumpGroups,
+  dumpMemos,
+  dumpTableLayout,
+  findViewport,
+  frameForBounds,
+  frameForPane,
+  isEmptyBounds,
+  resolveCanvasBackground,
+} from '../../../../utils'
+
+type PngMode = 'diagram' | 'view' | 'selection'
+
+const PNG_FILE_NAMES: Record<PngMode, string> = {
+  diagram: 'erd.png',
+  view: 'erd-view.png',
+  selection: 'erd-selection.png',
+}
 
 export const ExportDropdown: FC = () => {
   const toast = useToast()
   const schema = useSchemaOrThrow()
   const { editMode } = useUserEditingOrThrow()
+  /**
+   * `getNodesBounds` from the hook, not the free function: tables with no
+   * relationships are parented to the non-related group box, and React Flow
+   * stores a child's position relative to its parent. Only the hook's version
+   * knows the parents, so the free one measures those tables in the wrong
+   * frame and the export is cropped.
+   */
+  const { getNodes, getNodesBounds, getViewport } = useReactFlow()
+  /**
+   * Subscribed rather than read from `getNodes()` at render time: that is an
+   * imperative getter, so selecting a table would not re-render this menu and
+   * the entry for it would go on being absent. Only the count is taken, so a
+   * drag that changes nothing else re-renders nothing.
+   */
+  const selectedCount = useStore((state) => {
+    let count = 0
+    // `forEach` rather than `for…of`: the build targets ES2019, where iterating
+    // a Map needs downlevelIteration.
+    state.nodeLookup.forEach((node) => {
+      if (node.selected && !node.hidden) count += 1
+    })
+    return count
+  })
+  /** Rasterising a large diagram takes a moment; two at once would fight. */
+  const [isCapturing, setIsCapturing] = useState(false)
 
   const handleCopyPostgreSQL = async () => {
     // Feature detection for clipboard API
@@ -166,6 +212,70 @@ export const ExportDropdown: FC = () => {
     download('schema.mysql.sql', buildMySQL(), 'application/sql')
 
   /**
+   * `null` when there is nothing to draw — an empty diagram, or a selection
+   * that has since been cleared. Saying so beats writing out a blank image.
+   *
+   * The nodes are read here rather than during render so they are whatever is
+   * on the canvas at the moment the menu item is chosen.
+   */
+  const resolveFrame = (mode: PngMode, viewport: HTMLElement) => {
+    if (mode === 'view') {
+      const pane = viewport.parentElement ?? viewport
+      const { width, height } = pane.getBoundingClientRect()
+      return width > 0 && height > 0
+        ? frameForPane({ width, height }, getViewport())
+        : null
+    }
+
+    const visible = getNodes().filter((node) => !node.hidden)
+    const nodes =
+      mode === 'selection' ? visible.filter((node) => node.selected) : visible
+    if (nodes.length === 0) return null
+
+    const bounds = getNodesBounds(nodes)
+    return isEmptyBounds(bounds) ? null : frameForBounds(bounds)
+  }
+
+  const downloadPng = async (mode: PngMode) => {
+    if (isCapturing) return
+
+    const viewport = findViewport()
+    const frame = viewport && resolveFrame(mode, viewport)
+    if (!viewport || !frame) {
+      toast({ title: 'Nothing to export', status: 'error' })
+      return
+    }
+
+    setIsCapturing(true)
+    const captured = await fromPromise(
+      captureDiagram(viewport, frame, resolveCanvasBackground(viewport)),
+    )
+    setIsCapturing(false)
+
+    captured.match(
+      (dataUrl) => {
+        const link = document.createElement('a')
+        link.href = dataUrl
+        link.download = PNG_FILE_NAMES[mode]
+        link.click()
+
+        toast({
+          title: `${PNG_FILE_NAMES[mode]} downloaded`,
+          status: 'success',
+        })
+      },
+      (error: Error) => {
+        console.error('Failed to export the diagram as PNG:', error)
+        toast({
+          title: 'Export failed',
+          description: error.message,
+          status: 'error',
+        })
+      },
+    )
+  }
+
+  /**
    * The layout and memo files are committed to the backend repo under
    * liam-custom-erd/, which is where the deploy picks them up. Downloading is
    * how an edit-mode session gets turned into something everyone can see.
@@ -225,6 +335,28 @@ export const ExportDropdown: FC = () => {
           >
             Copy YAML
           </DropdownMenuItem>
+          {/* Not gated on edit mode: saving a picture reads the diagram, the
+              same as the DDL above it. */}
+          <DropdownMenuItem
+            leftIcon={<ImageIcon size={16} />}
+            onSelect={() => downloadPng('diagram')}
+          >
+            Download PNG — whole diagram
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            leftIcon={<ImageIcon size={16} />}
+            onSelect={() => downloadPng('view')}
+          >
+            Download PNG — current view
+          </DropdownMenuItem>
+          {selectedCount > 0 && (
+            <DropdownMenuItem
+              leftIcon={<ImageIcon size={16} />}
+              onSelect={() => downloadPng('selection')}
+            >
+              Download PNG — selection ({selectedCount})
+            </DropdownMenuItem>
+          )}
           {editMode && (
             <>
               <DropdownMenuItem

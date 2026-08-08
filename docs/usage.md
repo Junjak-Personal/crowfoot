@@ -227,11 +227,27 @@ dist/
 | Download MySQL (.sql) | `schema.mysql.sql` 다운로드 |
 | Copy PostgreSQL | PostgreSQL DDL 을 클립보드로 |
 | Copy YAML | 스키마를 YAML 로 |
+| Download PNG — whole diagram | `erd.png`. 캔버스에 있는 것 전부 |
+| Download PNG — current view | `erd-view.png`. 지금 보고 있는 화면 그대로 |
+| Download PNG — selection (n) | `erd-selection.png`. 선택한 테이블만 — 선택이 있을 때만 노출 |
 | Download layout.json | 현재 위치·색상 *(편집 모드에서만 노출)* |
 | Download memos.json | 현재 메모 *(편집 모드에서만 노출)* |
 | Download groups.json | 현재 그룹 *(편집 모드에서만 노출)* |
 
-MySQL export 는 이 포크가 추가한 것이다. upstream 은 PostgreSQL·YAML 만 지원한다.
+MySQL·PNG export 는 이 포크가 추가한 것이다. upstream 은 PostgreSQL·YAML 만 지원한다.
+
+이미지는 화면의 2배 크기로 쓰므로 문서에 붙여도 글자가 뭉개지지 않는다. 알아둘 것 세 가지:
+
+- **줌 컨트롤·show 모드 바·React Flow 뱃지는 이미지에 들어가지 않는다.** 다이어그램
+  레이어만 캡처한다.
+- **배경은 칠해진다. 투명이 아니다.** 뷰어가 다크라 투명 PNG 를 밝은 문서에 붙이면
+  흰 바탕에 옅은 글자가 된다.
+- **아주 큰 다이어그램은 2배보다 작게 나간다.** 브라우저 canvas 한계 안에 들어가는
+  배율까지 낮춘다. 그 한계를 넘으면 canvas 는 에러 없이 그냥 동작을 멈추므로, 30초
+  안에 끝나지 않는 export 는 포기하고 그렇게 알린다 — 현재 화면이나 선택으로 시도할 것.
+
+폰트는 받아서 임베드하므로, 폰트 호스트에 닿지 못하는 환경에 배포된 빌드는 대체
+폰트로 export 된다.
 
 ---
 

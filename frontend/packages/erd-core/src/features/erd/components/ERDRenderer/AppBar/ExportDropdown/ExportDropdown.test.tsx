@@ -2,6 +2,7 @@ import { aSchema, aTable } from '@crowfoot/schema'
 import { ToastProvider } from '@crowfoot/ui'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { ReactFlowProvider } from '@xyflow/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -10,17 +11,21 @@ import { ExportDropdown } from './ExportDropdown'
 
 // UserEditingProvider is required since the dropdown reads edit mode from it
 // to decide whether to offer the layout.json / memos.json / groups.json
-// downloads.
+// downloads. ReactFlowProvider is required because the PNG exports ask the flow
+// for its nodes to work out what to frame — the same nesting as production,
+// where the app bar sits inside it.
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter>
     <ToastProvider>
-      <UserEditingProvider>
-        <SchemaProvider
-          current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
-        >
-          {children}
-        </SchemaProvider>
-      </UserEditingProvider>
+      <ReactFlowProvider>
+        <UserEditingProvider>
+          <SchemaProvider
+            current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
+          >
+            {children}
+          </SchemaProvider>
+        </UserEditingProvider>
+      </ReactFlowProvider>
     </ToastProvider>
   </NuqsTestingAdapter>
 )
@@ -30,13 +35,15 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => (
 const editModeWrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter searchParams="?edit=1">
     <ToastProvider>
-      <UserEditingProvider>
-        <SchemaProvider
-          current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
-        >
-          {children}
-        </SchemaProvider>
-      </UserEditingProvider>
+      <ReactFlowProvider>
+        <UserEditingProvider>
+          <SchemaProvider
+            current={aSchema({ tables: { users: aTable({ name: 'users' }) } })}
+          >
+            {children}
+          </SchemaProvider>
+        </UserEditingProvider>
+      </ReactFlowProvider>
     </ToastProvider>
   </NuqsTestingAdapter>
 )
