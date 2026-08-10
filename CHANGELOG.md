@@ -13,6 +13,10 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.3.0
+
+A diagram you can arrange without dragging, and take a picture of.
+
 ### Added
 
 - **`erd plan` and `erd arrange` — a diagram arranged without dragging anything.**
@@ -28,7 +32,6 @@ is where a breaking change may appear.
   reported rather than placed. The viewer gathers those into a group of its own,
   and React Flow reads a child's position in its parent's frame, so a coordinate
   written for one lands somewhere else entirely.
-
 - **The export menu writes PNGs.** Three of them: the whole diagram, the pane as
   you are looking at it, or only the tables you have selected. Images come out at
   twice the on-screen size so text survives being dropped into a document, and
