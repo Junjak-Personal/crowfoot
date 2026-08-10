@@ -15,6 +15,20 @@ is where a breaking change may appear.
 
 ### Added
 
+- **`erd plan` and `erd arrange` — a diagram arranged without dragging anything.**
+  `plan` prints a grouping with every table name already in it, grouped by
+  foreign-key island as a starting point. Edit it — rename the groups, move
+  tables between them, add memos — and `arrange` turns it into the three sidecar
+  files, working out every position. The plan has no coordinates in it on
+  purpose: sizing tables, spacing groups so their boxes clear, and making a memo
+  tall enough not to lose its last line are the parts that are wrong by default
+  and say nothing when they are. Meant for an AI agent driving the CLI, and just
+  as useful for a person who would rather not place forty tables by hand.
+- A table with no foreign key is left out of the generated `layout.json` and
+  reported rather than placed. The viewer gathers those into a group of its own,
+  and React Flow reads a child's position in its parent's frame, so a coordinate
+  written for one lands somewhere else entirely.
+
 - **The export menu writes PNGs.** Three of them: the whole diagram, the pane as
   you are looking at it, or only the tables you have selected. Images come out at
   twice the on-screen size so text survives being dropped into a document, and

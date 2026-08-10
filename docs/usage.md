@@ -138,6 +138,51 @@ npx crowfoot erd from-link --input 'https://example.com/erd/?edit=1&positions=..
   뷰어의 `parseGroups` 가 로드 시점에 한다. `?showgroups=` 는 순수 뷰 설정이라 `from-link` 는
   아예 읽지 않는다.
 
+### `crowfoot erd plan`
+
+모든 테이블이 이미 들어있는 그룹핑 계획을 stdout 으로 출력한다. 안내는 stderr 로 나가므로
+`> plan.json` 하면 계획만 담긴다.
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--input <path>` | (없음) | `erd build` 가 쓴 `schema.json`. |
+
+그룹핑은 스키마 자신의 FK 연결요소다. 의견이 아니라 출발점이라, 그룹 이름이
+`Rename me 1` 식으로 붙는다.
+
+FK 가 하나도 없는 테이블은 빠지고 stderr 에 나열된다. 아무도 배치할 수 없다 — 뷰어가 자체
+그룹에 모으고, 자식의 좌표는 부모 좌표계에서 읽히기 때문이다.
+
+### `crowfoot erd arrange`
+
+계획을 `layout.json` · `groups.json` · `memos.json` 으로 바꾼다. `erd from-link` 가 쓰는 것과
+같은 세 파일, 같은 자리다.
+
+| 옵션 | 기본값 | 설명 |
+|---|---|---|
+| `--input <path>` | (없음) | `erd build` 가 쓴 `schema.json`. |
+| `--plan <path>` | (없음) | 계획 파일 (`erd plan` 참고). |
+| `--output-dir <path>` | `dist` | 출력 디렉터리. |
+
+```bash
+npx crowfoot erd plan    --input dist/schema.json > plan.json
+npx crowfoot erd arrange --input dist/schema.json --plan plan.json --output-dir dist
+```
+
+**계획에는 좌표가 없다.** 계획은 의미만 담는다 — 어떤 테이블이 한 묶음인지, 그 묶음을 뭐라
+부를지, 뭐라고 설명할지. 위치는 `arrange` 가 전부 계산한다:
+
+- 테이블 크기는 컬럼 수에서
+- 그룹 간격은 박스가 안 겹칠 만큼 (그룹 박스는 멤버 바깥으로 사방 24px 을 더 먹으므로 두
+  그룹이 48px 보다 가까우면 겹친다)
+- 메모 높이는 본문이 안 잘릴 만큼 (메모는 넘친 부분을 감추고 `scrollHeight` 조차 잘린 값을
+  보고하므로, 잘못돼도 눈에 안 띈다)
+
+스키마에 없는 테이블을 지목한 계획은 에러다. 팔레트에 없는 색도 마찬가지 — 뷰어는 모르는
+색을 말없이 버린다.
+
+계획이 그대로면 다시 돌려도 같은 파일이 나온다.
+
 ### `crowfoot init`
 
 대화형으로 DB/ORM 을 고르면 그에 맞는 `erd build` 명령을 안내한다.

@@ -1,8 +1,10 @@
 import { supportedFormatSchema } from '@crowfoot/schema/parser'
 import { Command } from 'commander'
 import { actionRunner } from '../actionRunner.js'
+import { arrangeCommand } from './arrangeCommand/index.js'
 import { buildCommand } from './buildCommand/index.js'
 import { fromLinkCommand } from './fromLinkCommand/index.js'
+import { planCommand } from './planCommand/index.js'
 
 const defaultDistDir = 'dist'
 
@@ -44,6 +46,32 @@ erdCommand
   .action(
     actionRunner((options) =>
       fromLinkCommand(options.input, options.outputDir),
+    ),
+  )
+
+erdCommand
+  .command('plan')
+  .description(
+    'Print a grouping plan with every table already in it, to edit and pass to `arrange`',
+  )
+  .option('--input <path>', 'Path to the schema.json that `erd build` wrote')
+  .action(actionRunner((options) => planCommand(options.input)))
+
+erdCommand
+  .command('arrange')
+  .description(
+    'Write layout.json / groups.json / memos.json from a plan, working out every position',
+  )
+  .option('--input <path>', 'Path to the schema.json that `erd build` wrote')
+  .option('--plan <path>', 'Path to the plan (see `erd plan`)')
+  .option(
+    '--output-dir <path>',
+    'Output directory for generated files',
+    defaultDistDir,
+  )
+  .action(
+    actionRunner((options) =>
+      arrangeCommand(options.input, options.plan, options.outputDir),
     ),
   )
 

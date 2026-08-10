@@ -53,6 +53,49 @@ written, so a link with no memos will not blow away an existing `memos.json`.
 `schema.json`, so keep them next to it (or commit them to whatever your deploy
 copies in).
 
+### Arranging it without dragging anything
+
+Useful for an AI agent, and for anyone who would rather not place tables by hand.
+`erd plan` prints a grouping with every table name already in it, grouped by
+foreign-key island as a starting point:
+
+```bash
+npx crowfoot erd plan --input dist/schema.json > plan.json
+```
+
+Edit that file — rename the groups, move tables between them, add memos. **There
+is no coordinate in it, by design.** Then:
+
+```bash
+npx crowfoot erd arrange --input dist/schema.json --plan plan.json --output-dir dist
+```
+
+`arrange` writes the same three sidecar files as `from-link`, working out every
+position: tables sized from their column count, groups spaced far enough apart
+that their boxes do not overlap, memos tall enough that none of the text is cut
+off. Those are the parts that are wrong by default and silent about it, which is
+why they are not yours to get right.
+
+```jsonc
+{
+  "groups": [
+    { "id": "vocab", "name": "Vocabulary", "color": "sky",
+      "tables": ["words", "word_examples", "wordbooks"] }
+  ],
+  "memos": [
+    { "text": "Words and the books they belong to.", "color": "sky", "span": 2 }
+  ]
+}
+```
+
+`color` is one of `green` `mint` `teal` `sky` `blue` `steel` `sand` `yellow`
+`gold` `orange` `vermilion` `red` — anything else is rejected rather than
+silently dropped. `span` is the memo's width in columns.
+
+A table with no foreign key at all is left out of `layout.json` and reported: the
+viewer gathers those into a group of its own and places them itself, so a
+position written for one would be applied in a different coordinate space.
+
 ## Development
 
 ```bash

@@ -144,6 +144,54 @@ Behaviour:
   boundary. Real validation happens in the viewer's `parseGroups` on load.
   `?showgroups=` is a pure view preference, so `from-link` never reads it.
 
+### `crowfoot erd plan`
+
+Prints a grouping plan with every table already in it, to stdout. Notes go to
+stderr, so `> plan.json` gets only the plan.
+
+| Option | Default | Description |
+|---|---|---|
+| `--input <path>` | (none) | The `schema.json` that `erd build` wrote. |
+
+The grouping is the schema's own foreign-key islands. That is a starting point,
+not an opinion — the groups are named `Rename me 1`, and so on, to say so.
+
+Tables with no foreign key are left out and listed on stderr. Nothing can place
+them: the viewer collects them into a group of its own, and a child's position is
+read in its parent's frame.
+
+### `crowfoot erd arrange`
+
+Turns a plan into `layout.json`, `groups.json` and `memos.json` — the same three
+files `erd from-link` writes, in the same place.
+
+| Option | Default | Description |
+|---|---|---|
+| `--input <path>` | (none) | The `schema.json` that `erd build` wrote. |
+| `--plan <path>` | (none) | The plan (see `erd plan`). |
+| `--output-dir <path>` | `dist` | Output directory. |
+
+```bash
+npx crowfoot erd plan    --input dist/schema.json > plan.json
+npx crowfoot erd arrange --input dist/schema.json --plan plan.json --output-dir dist
+```
+
+**The plan has no coordinates in it.** It carries meaning — which tables belong
+together, what to call each grouping, what to say about it — and `arrange` works
+out every position:
+
+- table sizes from their column counts
+- groups far enough apart that their boxes clear (a group box extends 24px past
+  its members on every side, so two groups closer than 48px overlap)
+- memos tall enough that none of the text is cut off (a memo hides its overflow,
+  and even `scrollHeight` reports the clipped height, so this is invisible when
+  it goes wrong)
+
+A plan naming a table the schema does not have is an error, as is a colour that
+is not in the palette — the viewer drops unknown colours without a word.
+
+Re-running with an unchanged plan produces identical files.
+
 ### `crowfoot init`
 
 Walks through a database/ORM picker and prints the matching `erd build` command,
