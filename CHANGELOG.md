@@ -16,8 +16,8 @@ is where a breaking change may appear.
 ### Added
 
 - **`erd plan` and `erd arrange` — a diagram arranged without dragging anything.**
-  `plan` prints a grouping with every table name already in it, grouped by
-  foreign-key island as a starting point. Edit it — rename the groups, move
+  `plan` prints a grouping with every table name already in it, clustered by
+  shared name prefix as a starting point. Edit it — rename the groups, move
   tables between them, add memos — and `arrange` turns it into the three sidecar
   files, working out every position. The plan has no coordinates in it on
   purpose: sizing tables, spacing groups so their boxes clear, and making a memo

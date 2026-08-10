@@ -107,6 +107,48 @@ describe('arrangeTables', () => {
     expect(layout['d']).toEqual({ x: TABLE_WIDTH + 40, y: 140 })
   })
 
+  it('widens a big block instead of stacking it into a ribbon', () => {
+    const twenty = Array.from({ length: 20 }, (_, i) => `t${i}`)
+    const { layout } = arrangeTables({
+      groups: [{ tables: twenty }],
+      ungrouped: [],
+      heightOf,
+      originX: 0,
+    })
+
+    const columns = new Set(twenty.map((t) => layout[t]?.x))
+    const depth = Math.max(...twenty.map((t) => layout[t]?.y ?? 0))
+
+    expect(columns.size).toBe(4)
+    // Four columns of five, not two of ten.
+    expect(depth).toBe(4 * 140)
+  })
+
+  it('keeps small blocks narrow', () => {
+    const { layout } = arrangeTables({
+      groups: [{ tables: ['a', 'b', 'c'] }],
+      ungrouped: [],
+      heightOf,
+      originX: 0,
+    })
+
+    expect(new Set(['a', 'b', 'c'].map((t) => layout[t]?.x)).size).toBe(1)
+  })
+
+  it('fills the shortest column, so a block of uneven tables comes out level', () => {
+    const tall = (table: string) => (table === 'big' ? 1000 : 100)
+    const { layout } = arrangeTables({
+      groups: [{ tables: ['big', 'a', 'b', 'c'] }],
+      ungrouped: [],
+      heightOf: tall,
+      originX: 0,
+    })
+
+    // `big` takes one column; the three short ones stack in the other.
+    expect(layout['a']?.x).not.toBe(layout['big']?.x)
+    expect(layout['c']?.x).toBe(layout['a']?.x)
+  })
+
   it('leaves neighbouring groups far enough apart that their boxes clear', () => {
     const { layout } = arrangeTables({
       groups: [{ tables: ['a'] }, { tables: ['b'] }],

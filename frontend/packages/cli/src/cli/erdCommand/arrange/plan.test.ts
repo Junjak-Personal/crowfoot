@@ -1,12 +1,7 @@
 import { aSchema, aTable } from '@crowfoot/schema/schema'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
-import {
-  connectedComponents,
-  planSchema,
-  skeletonPlan,
-  unrelatedTables,
-} from './plan.js'
+import { planSchema, skeletonPlan, unrelatedTables } from './plan.js'
 
 const fk = (name: string, column: string, target: string) => ({
   [name]: {
@@ -20,7 +15,7 @@ const fk = (name: string, column: string, target: string) => ({
   },
 })
 
-/** users <- posts <- comments, and an island of one that references nothing. */
+/** Everything hangs off `users`, so there is exactly one foreign-key island. */
 const schema = aSchema({
   tables: {
     users: aTable({ name: 'users' }),
@@ -28,59 +23,24 @@ const schema = aSchema({
       name: 'posts',
       constraints: fk('fk_posts', 'user_id', 'users'),
     }),
-    comments: aTable({
-      name: 'comments',
-      constraints: fk('fk_comments', 'post_id', 'posts'),
+    post_tags: aTable({
+      name: 'post_tags',
+      constraints: fk('fk_post_tags', 'post_id', 'posts'),
     }),
-    tags: aTable({ name: 'tags', constraints: fk('fk_tags', 'a', 'labels') }),
-    labels: aTable({ name: 'labels' }),
+    post_stats: aTable({
+      name: 'post_stats',
+      constraints: fk('fk_post_stats', 'post_id', 'posts'),
+    }),
+    mail_template: aTable({
+      name: 'mail_template',
+      constraints: fk('fk_mail_template', 'user_id', 'users'),
+    }),
+    mail_log: aTable({
+      name: 'mail_log',
+      constraints: fk('fk_mail_log', 'user_id', 'users'),
+    }),
     audit_log: aTable({ name: 'audit_log' }),
   },
-})
-
-describe('connectedComponents', () => {
-  it('gathers tables a foreign key path can reach', () => {
-    expect(connectedComponents(schema)).toEqual([
-      ['comments', 'posts', 'users'],
-      ['labels', 'tags'],
-      ['audit_log'],
-    ])
-  })
-
-  it('puts the largest island first', () => {
-    const sizes = connectedComponents(schema).map((island) => island.length)
-    expect(sizes).toEqual([...sizes].sort((a, b) => b - a))
-  })
-
-  it('survives a table pointing at itself', () => {
-    const selfReferencing = aSchema({
-      tables: {
-        nodes: aTable({
-          name: 'nodes',
-          constraints: fk('fk_parent', 'parent_id', 'nodes'),
-        }),
-      },
-    })
-
-    expect(connectedComponents(selfReferencing)).toEqual([['nodes']])
-  })
-
-  it('ignores a foreign key pointing at a table that is not there', () => {
-    const dangling = aSchema({
-      tables: {
-        orders: aTable({
-          name: 'orders',
-          constraints: fk('fk_missing', 'x', 'nowhere'),
-        }),
-      },
-    })
-
-    expect(connectedComponents(dangling)).toEqual([['orders']])
-  })
-
-  it('has nothing to say about an empty schema', () => {
-    expect(connectedComponents(aSchema({ tables: {} }))).toEqual([])
-  })
 })
 
 describe('unrelatedTables', () => {
@@ -90,18 +50,30 @@ describe('unrelatedTables', () => {
 })
 
 describe('skeletonPlan', () => {
-  it('carries every related table, and leaves the unrelated ones out', () => {
+  it('clusters tables that share the first word of their name', () => {
     const plan = skeletonPlan(schema)
-    const planned = plan.groups.flatMap((group) => group.tables)
+    const clusters = plan.groups.map((group) => group.tables)
 
-    expect(planned.sort()).toEqual([
-      'comments',
-      'labels',
-      'posts',
-      'tags',
-      'users',
-    ])
+    expect(clusters).toContainEqual(['post_stats', 'post_tags'])
+  })
+
+  it('leaves a prefix only one table has for the caller to place', () => {
+    const planned = skeletonPlan(schema).groups.flatMap((group) => group.tables)
+
+    expect(planned).not.toContain('users')
+  })
+
+  it('never plans a table nothing can place', () => {
+    const planned = skeletonPlan(schema).groups.flatMap((group) => group.tables)
+
     expect(planned).not.toContain('audit_log')
+  })
+
+  it('puts the biggest cluster first', () => {
+    const sizes = skeletonPlan(schema).groups.map(
+      (group) => group.tables.length,
+    )
+    expect(sizes).toEqual([...sizes].sort((a, b) => b - a))
   })
 
   it('validates against the plan schema it is meant to seed', () => {
@@ -115,6 +87,14 @@ describe('skeletonPlan', () => {
   it('gives each group a different colour from the palette', () => {
     const colors = skeletonPlan(schema).groups.map((group) => group.color)
     expect(new Set(colors).size).toBe(colors.length)
+  })
+
+  /**
+   * A hub table joins everything into one foreign-key island, which is why the
+   * grouping is not built from those.
+   */
+  it('still separates a schema every table is transitively joined to', () => {
+    expect(skeletonPlan(schema).groups.length).toBeGreaterThan(1)
   })
 })
 

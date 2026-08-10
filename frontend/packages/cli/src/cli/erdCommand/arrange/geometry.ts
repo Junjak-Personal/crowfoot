@@ -35,7 +35,22 @@ const GROUP_GAP = 340
  * Three or fewer tables read better in one column; two columns leaves a wide,
  * mostly empty box.
  */
-const TWO_COLUMN_THRESHOLD = 3
+const SINGLE_COLUMN_MAX = 3
+/**
+ * Tables per column beyond that, and the ceiling on columns.
+ *
+ * Fixing every block at two columns makes a big one a ribbon: the fifteen
+ * `estimate_*` tables in the schema this was tested against stacked eight deep
+ * and set the height of the whole diagram. Widening the big blocks squares it
+ * up without spreading the small ones out.
+ */
+const COLUMN_DEPTH = 5
+const MAX_COLUMNS = 4
+
+const columnCountFor = (tableCount: number): number =>
+  tableCount <= SINGLE_COLUMN_MAX
+    ? 1
+    : Math.min(MAX_COLUMNS, Math.max(2, Math.ceil(tableCount / COLUMN_DEPTH)))
 
 type Point = { x: number; y: number }
 export type Layout = Record<string, Point>
@@ -52,22 +67,28 @@ const packGroup = (
   heightOf: (table: string) => number,
   originX: number,
 ): { layout: Layout; width: number } => {
-  const twoColumns = tables.length > TWO_COLUMN_THRESHOLD
+  const columns = columnCountFor(tables.length)
   const layout: Layout = {}
-  const nextY = [0, 0]
+  const nextY: number[] = Array.from({ length: columns }, () => 0)
 
-  tables.forEach((table, index) => {
-    const column = twoColumns && index % 2 === 1 ? 1 : 0
-    const x = originX + column * (TABLE_WIDTH + COLUMN_GAP)
+  // Into whichever column is currently shortest, so a block of tall and short
+  // tables comes out level rather than lopsided.
+  for (const table of tables) {
+    let shortest = 0
+    for (let column = 1; column < columns; column++) {
+      if ((nextY[column] ?? 0) < (nextY[shortest] ?? 0)) shortest = column
+    }
 
-    layout[table] = { x, y: nextY[column] ?? 0 }
-    nextY[column] = (nextY[column] ?? 0) + heightOf(table) + STACK_GAP
-  })
+    layout[table] = {
+      x: originX + shortest * (TABLE_WIDTH + COLUMN_GAP),
+      y: nextY[shortest] ?? 0,
+    }
+    nextY[shortest] = (nextY[shortest] ?? 0) + heightOf(table) + STACK_GAP
+  }
 
-  const columnsUsed = twoColumns && tables.length > 1 ? 2 : 1
   return {
     layout,
-    width: columnsUsed * TABLE_WIDTH + (columnsUsed - 1) * COLUMN_GAP,
+    width: columns * TABLE_WIDTH + (columns - 1) * COLUMN_GAP,
   }
 }
 

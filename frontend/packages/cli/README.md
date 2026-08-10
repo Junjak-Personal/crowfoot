@@ -56,8 +56,8 @@ copies in).
 ### Arranging it without dragging anything
 
 Useful for an AI agent, and for anyone who would rather not place tables by hand.
-`erd plan` prints a grouping with every table name already in it, grouped by
-foreign-key island as a starting point:
+`erd plan` prints a grouping with every table name already in it, clustered by
+shared name prefix (`estimate_*`, `template_*`) as a starting point:
 
 ```bash
 npx crowfoot erd plan --input dist/schema.json > plan.json

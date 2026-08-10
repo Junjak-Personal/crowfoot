@@ -153,8 +153,13 @@ stderr, so `> plan.json` gets only the plan.
 |---|---|---|
 | `--input <path>` | (none) | The `schema.json` that `erd build` wrote. |
 
-The grouping is the schema's own foreign-key islands. That is a starting point,
-not an opinion — the groups are named `Rename me 1`, and so on, to say so.
+The grouping is by shared name prefix — `estimate_*`, `template_*`. That is a
+starting point, not an opinion; the groups are named `Rename me 1`, and so on, to
+say so.
+
+Foreign-key islands were tried first and do not work on a real schema: one hub
+table joins everything into a single component. A 77-table application came out
+as one group of 74; by prefix it came out as eleven.
 
 Tables with no foreign key are left out and listed on stderr. Nothing can place
 them: the viewer collects them into a group of its own, and a child's position is

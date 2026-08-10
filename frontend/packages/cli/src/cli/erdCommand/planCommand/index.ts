@@ -8,9 +8,9 @@ import { readSchema } from '../arrange/readSchema.js'
  * Prints a plan with every table name already in it.
  *
  * The point is that whoever edits it — usually an agent — never has to type a
- * table name, and so cannot get one wrong. The grouping is the schema's own
- * foreign-key islands, which is a starting point rather than an opinion; the
- * group names say so.
+ * table name, and so cannot get one wrong. The grouping is by shared name
+ * prefix, which is a starting point rather than an opinion; the group names say
+ * so.
  *
  * Notes go to stderr so `> plan.json` gets only the plan.
  */
@@ -30,7 +30,7 @@ export const planCommand = async (inputPath: string): Promise<CliError[]> => {
   }
 
   console.error(
-    `\n${plan.groups.length} group(s) suggested from foreign-key islands.\n` +
+    `\n${plan.groups.length} group(s) suggested from shared name prefixes.\n` +
       'Rename them, move tables between them, add memos, then:\n' +
       `  crowfoot erd arrange --input ${inputPath} --plan plan.json`,
   )

@@ -74,50 +74,34 @@ const relationshipPairs = (schema: Schema): [string, string][] => {
 }
 
 /**
- * Tables joined by foreign keys, one array per island, each sorted by name and
- * the islands themselves ordered by size — the biggest is usually the core of
- * the schema and reads best on the left.
+ * Tables whose names start with the same word, biggest cluster first.
  *
- * A table with no foreign key at all is its own island of one, and the caller
- * has to keep those out of the layout: the viewer parents them to a group of its
- * own, which puts their coordinates in a different frame.
+ * Foreign-key islands were the obvious idea and they do not work: one hub table
+ * — `users`, with a degree of 32 in the schema this was tested against — welds a
+ * real application's tables into a single component. That schema came out as one
+ * group of 74. Prefixes cut the same schema into `estimate_*` (15),
+ * `template_*` (11), `parsing_*` (6) and ten more, because tables are named
+ * after the thing they belong to.
+ *
+ * A prefix only one table has is not a cluster, so those are left out for the
+ * caller to place. None of this is a claim about the design — it is a way to
+ * start with the names already typed.
  */
-export const connectedComponents = (schema: Schema): string[][] => {
-  const parent = new Map<string, string>()
-  const find = (name: string): string => {
-    const seen: string[] = []
-    let current = name
-    while (
-      parent.get(current) !== undefined &&
-      parent.get(current) !== current
-    ) {
-      seen.push(current)
-      current = parent.get(current) ?? current
-    }
-    for (const node of seen) parent.set(node, current)
-    return current
+const prefixClusters = (tables: string[]): string[][] => {
+  const byPrefix = new Map<string, string[]>()
+
+  for (const table of tables) {
+    const prefix = table.split('_')[0] ?? table
+    byPrefix.set(prefix, [...(byPrefix.get(prefix) ?? []), table])
   }
 
-  for (const name of Object.keys(schema.tables)) parent.set(name, name)
-
-  for (const [left, right] of relationshipPairs(schema)) {
-    if (!parent.has(left) || !parent.has(right)) continue
-    const a = find(left)
-    const b = find(right)
-    if (a !== b) parent.set(a, b)
-  }
-
-  const islands = new Map<string, string[]>()
-  for (const name of Object.keys(schema.tables)) {
-    const root = find(name)
-    islands.set(root, [...(islands.get(root) ?? []), name])
-  }
-
-  return Array.from(islands.values())
-    .map((names) => [...names].sort())
+  return Array.from(byPrefix.entries())
+    .filter(([, names]) => names.length > 1)
     .sort(
-      (a, b) => b.length - a.length || (a[0] ?? '').localeCompare(b[0] ?? ''),
+      ([leftPrefix, left], [rightPrefix, right]) =>
+        right.length - left.length || leftPrefix.localeCompare(rightPrefix),
     )
+    .map(([, names]) => [...names].sort())
 }
 
 /** Tables with no foreign key on either end. */
@@ -137,15 +121,16 @@ export const unrelatedTables = (schema: Schema): string[] => {
  */
 export const skeletonPlan = (schema: Schema): Plan => {
   const unrelated = new Set(unrelatedTables(schema))
-  const groups = connectedComponents(schema)
-    .map((tables) => tables.filter((name) => !unrelated.has(name)))
-    .filter((tables) => tables.length > 0)
-    .map((tables, index) => ({
-      id: `group-${index + 1}`,
-      name: `Rename me ${index + 1}`,
-      color: PALETTE[index % PALETTE.length] ?? 'sky',
-      tables,
-    }))
+  const placeable = Object.keys(schema.tables).filter(
+    (name) => !unrelated.has(name),
+  )
+
+  const groups = prefixClusters(placeable).map((tables, index) => ({
+    id: `${tables[0]?.split('_')[0] ?? `group-${index + 1}`}`,
+    name: `Rename me ${index + 1}`,
+    color: PALETTE[index % PALETTE.length] ?? 'sky',
+    tables,
+  }))
 
   return { groups, memos: [] }
 }
