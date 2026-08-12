@@ -1,9 +1,75 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { inflateSync } from 'node:zlib'
 import { ArgumentError, type CliError, FileSystemError } from '../../errors.js'
+
+/**
+ * What a link says about a set of records, since 0.4.0: only the ones it
+ * changed, plus the ids it deleted. Mirrors erd-core's `RecordDiff`.
+ */
+type RecordDiff = {
+  changed: Record<string, { id?: unknown }>
+  removed: string[]
+}
+
+const isRecordDiff = (value: unknown): value is RecordDiff =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  'changed' in value &&
+  typeof value.changed === 'object' &&
+  value.changed !== null
+
+/**
+ * Base + diff, in the order `applyDiff` produces: the base's order is kept and
+ * anything new is appended. Written out here rather than shared with erd-core
+ * because this binary must not pull the viewer — and it is twelve lines.
+ */
+const applyRecordDiff = (base: unknown[], diff: RecordDiff): unknown[] => {
+  const removed = new Set(diff.removed)
+  const changed = new Map(
+    Object.entries(diff.changed).map(([id, record]) => [id, record]),
+  )
+
+  const idOf = (record: unknown): string =>
+    typeof record === 'object' && record !== null && 'id' in record
+      ? String(record.id)
+      : ''
+
+  const kept = base
+    .filter((record) => !removed.has(idOf(record)))
+    .map((record) => changed.get(idOf(record)) ?? record)
+
+  const inBase = new Set(base.map(idOf))
+  const added = Object.entries(diff.changed)
+    .filter(([id]) => !inBase.has(id) && !removed.has(id))
+    .map(([, record]) => record)
+
+  return [...kept, ...added]
+}
+
+/**
+ * The deployed file a link's diff is measured against.
+ *
+ * A link carries only what it changed, so reproducing the whole file needs the
+ * one that was on screen when the link was made. In the documented workflow
+ * that is the file already sitting in `--output-dir` — the build wrote it, or
+ * a previous `from-link` did. Missing means the link was made against nothing,
+ * which is the case for a fresh build.
+ */
+const readBase = (outDir: string, fileName: string): unknown[] => {
+  const path = join(outDir, fileName)
+  if (!existsSync(path)) return []
+
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
 
 /**
  * Inverse of erd-core's `compressToEncodedUriComponent`: deflate, base64,
@@ -67,8 +133,8 @@ const applyColors = (
 
 type LinkContents = {
   layout: Record<string, TableEntry> | null
-  memos: unknown[] | null
-  groups: unknown[] | null
+  memos: RecordDiff | null
+  groups: RecordDiff | null
 }
 
 /** Absent params stay `null`: "the link said nothing" is not "the link is empty". */
@@ -89,22 +155,32 @@ export const parseLink = (url: string): LinkContents => {
   if (positions) layout = parsePositions(decodeParam(positions))
   if (colors) layout = applyColors(layout ?? {}, decodeParam(colors))
 
-  let parsedMemos: unknown[] | null = null
+  // Applied raw against the deployed file — the CLI is not a sanitization
+  // boundary, the viewer's parseMemos / parseGroups re-validate on load.
+  //
+  // A list here is a link from 0.3.0 or earlier, which carried the whole set
+  // and replaced the file. Those are rejected rather than guessed at: reading
+  // one as a diff would silently drop every record it does not name.
+  let parsedMemos: RecordDiff | null = null
   if (memos) {
     const decoded: unknown = JSON.parse(decodeParam(memos))
-    if (!Array.isArray(decoded))
-      throw new ArgumentError('`memos` is not a list')
-    parsedMemos = decoded
+    if (!isRecordDiff(decoded)) {
+      throw new ArgumentError(
+        '`memos` is not in the 0.4.0 shape. A link made by 0.3.0 or earlier carries the whole set; read it with that version of the CLI.',
+      )
+    }
+    parsedMemos = { changed: decoded.changed, removed: decoded.removed ?? [] }
   }
 
-  // Written raw, same as memos above — the CLI is not a sanitization
-  // boundary, the viewer's parseGroups re-validates on load.
-  let parsedGroups: unknown[] | null = null
+  let parsedGroups: RecordDiff | null = null
   if (groups) {
     const decoded: unknown = JSON.parse(decodeParam(groups))
-    if (!Array.isArray(decoded))
-      throw new ArgumentError('`groups` is not a list')
-    parsedGroups = decoded
+    if (!isRecordDiff(decoded)) {
+      throw new ArgumentError(
+        '`groups` is not in the 0.4.0 shape. A link made by 0.3.0 or earlier carries the whole set; read it with that version of the CLI.',
+      )
+    }
+    parsedGroups = { changed: decoded.changed, removed: decoded.removed ?? [] }
   }
 
   return { layout, memos: parsedMemos, groups: parsedGroups }
@@ -148,18 +224,26 @@ export const fromLinkCommand = async (
       written.push(`layout.json (${Object.keys(layout).length} tables)`)
     }
     if (memos !== null) {
+      const next = applyRecordDiff(
+        readBase(resolvedOutDir, 'memos.json'),
+        memos,
+      )
       writeFileSync(
         join(resolvedOutDir, 'memos.json'),
-        `${JSON.stringify(memos, null, 2)}\n`,
+        `${JSON.stringify(next, null, 2)}\n`,
       )
-      written.push(`memos.json (${memos.length} memos)`)
+      written.push(`memos.json (${next.length} memos)`)
     }
     if (groups !== null) {
+      const next = applyRecordDiff(
+        readBase(resolvedOutDir, 'groups.json'),
+        groups,
+      )
       writeFileSync(
         join(resolvedOutDir, 'groups.json'),
-        `${JSON.stringify(groups, null, 2)}\n`,
+        `${JSON.stringify(next, null, 2)}\n`,
       )
-      written.push(`groups.json (${groups.length} groups)`)
+      written.push(`groups.json (${next.length} groups)`)
     }
   } catch (error) {
     return [new FileSystemError(`Error writing files: ${error}`)]

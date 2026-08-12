@@ -13,6 +13,32 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.4.0
+
+The link is the diagram, and the back button undoes it.
+
+### Breaking
+
+- **`?groups=` and `?memos=` changed shape.** They carried the whole set and
+  replaced `groups.json` / `memos.json`; they now carry only the difference,
+  keyed by id, with a tombstone list for deletions. A link made by 0.3.0 or
+  earlier still opens, and its schema edits, positions and colours still apply
+  — but its **group and memo edits are ignored**, and what the deploy ships is
+  shown instead. There is no fallback: rebuild the link, or pin the arrangement
+  into the sidecar files with 0.3.0's `erd from-link` before upgrading.
+- **`erd from-link` needs the deployed sidecars to be in `--output-dir`.** A
+  link no longer carries the whole set, so reproducing `groups.json` and
+  `memos.json` means applying its difference to the files that were on screen
+  when it was made — which in the documented workflow are already there, from
+  the build or a previous `from-link`. Records the link never mentions survive
+  it; before, they would have been deleted. A link from 0.3.0 or earlier is
+  refused with a message rather than misread.
+- The browser-storage working copies (`crowfoot:tableLayout`, `crowfoot:memos`,
+  `crowfoot:groups`, and their `erdkit:` / `liam:` ancestors) are no longer read
+  at all, and are deleted the first time an edit is made. An arrangement that
+  only ever existed in one browser and was never copied into a link or a
+  sidecar file is **gone**. Nothing that was shared is affected.
+
 ### Added
 
 - **The back button is undo, and forward is redo** — `Cmd`/`Ctrl` + `Z` and
