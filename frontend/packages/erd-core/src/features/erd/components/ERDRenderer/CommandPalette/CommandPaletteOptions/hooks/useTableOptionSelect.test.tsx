@@ -21,7 +21,7 @@ afterEach(() => {
 })
 
 const mockSetCommandPaletteDialogOpen = vi.fn()
-const mockSelectTable = vi.fn()
+const mockRevealTable = vi.fn()
 const mockWindowOpen = vi.fn()
 
 const originalUseCommandPaletteOrThrow =
@@ -40,7 +40,7 @@ vi.spyOn(UseTableSelection, 'useTableSelection').mockImplementation(() => {
   const original = originalUseTableSelection()
   return {
     ...original,
-    selectTable: mockSelectTable,
+    revealTable: mockRevealTable,
   }
 })
 vi.spyOn(window, 'open').mockImplementation(mockWindowOpen)
@@ -65,7 +65,7 @@ describe('keyboard interactions', () => {
 
       await user.keyboard('{Enter}')
 
-      expect(mockSelectTable).toHaveBeenCalledWith({
+      expect(mockRevealTable).toHaveBeenCalledWith({
         displayArea: 'main',
         tableId: 'users',
       })
@@ -86,7 +86,7 @@ describe('keyboard interactions', () => {
       expect(mockWindowOpen).toHaveBeenCalledWith('?active=users')
 
       // other functions are not called
-      expect(mockSelectTable).not.toHaveBeenCalled()
+      expect(mockRevealTable).not.toHaveBeenCalled()
       expect(mockSetCommandPaletteDialogOpen).not.toHaveBeenCalled()
     })
   })
@@ -106,7 +106,7 @@ describe('keyboard interactions', () => {
 
       await user.keyboard('{Enter}')
 
-      expect(mockSelectTable).toHaveBeenCalledWith({
+      expect(mockRevealTable).toHaveBeenCalledWith({
         displayArea: 'main',
         tableId: 'users',
       })
@@ -135,7 +135,7 @@ describe('keyboard interactions', () => {
       )
 
       // other functions are not called
-      expect(mockSelectTable).not.toHaveBeenCalled()
+      expect(mockRevealTable).not.toHaveBeenCalled()
       expect(mockSetCommandPaletteDialogOpen).not.toHaveBeenCalled()
     })
   })
@@ -150,7 +150,7 @@ describe('keyboard interactions', () => {
 
       await user.keyboard('{Enter}')
 
-      expect(mockSelectTable).not.toHaveBeenCalled()
+      expect(mockRevealTable).not.toHaveBeenCalled()
       expect(mockSetCommandPaletteDialogOpen).not.toHaveBeenCalled()
       expect(mockWindowOpen).not.toHaveBeenCalled()
     })
@@ -161,7 +161,7 @@ describe('keyboard interactions', () => {
 
       await user.keyboard('{Meta>}{Enter}{/Meta}')
 
-      expect(mockSelectTable).not.toHaveBeenCalled()
+      expect(mockRevealTable).not.toHaveBeenCalled()
       expect(mockSetCommandPaletteDialogOpen).not.toHaveBeenCalled()
       expect(mockWindowOpen).not.toHaveBeenCalled()
     })
@@ -202,7 +202,7 @@ describe('optionSelectHandler', () => {
 
     await user.click(screen.getByRole('link', { name: 'table option link' }))
 
-    expect(mockSelectTable).toHaveBeenCalled()
+    expect(mockRevealTable).toHaveBeenCalled()
     expect(mockSetCommandPaletteDialogOpen).toHaveBeenCalledWith(false)
     expect(window.location.hash).toBe('#follows__columns__user_id')
   })
@@ -221,7 +221,7 @@ describe('optionSelectHandler', () => {
     await user.click(screen.getByRole('link', { name: 'table option link' }))
     await user.keyboard('{/Meta}')
 
-    expect(mockSelectTable).not.toHaveBeenCalled()
+    expect(mockRevealTable).not.toHaveBeenCalled()
     expect(mockSetCommandPaletteDialogOpen).not.toHaveBeenCalled()
     expect(window.location.hash).toBe('')
   })

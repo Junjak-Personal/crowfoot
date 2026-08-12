@@ -93,6 +93,7 @@ import {
   MemoNode,
   NonRelatedTableGroupNode,
   RelationshipEdge,
+  SelectionHud,
   Spinner,
   TableGroupNode,
   TableNode,
@@ -101,6 +102,7 @@ import {
 import styles from './ERDContent.module.css'
 import { ErdContentProvider, useErdContentContext } from './ErdContentContext'
 import {
+  useGroupMembership,
   useInitialAutoLayout,
   useQueryParamsChanged,
   useSchemaNodeSync,
@@ -435,7 +437,8 @@ export const ERDContentInner: FC<Props> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(_edges)
 
   const {
-    state: { loading },
+    state: { loading, selectedGroupId },
+    actions: { setSelectedGroupId, setGroupPreview },
   } = useErdContentContext()
   const { screenToFlowPosition, getNodes } = useReactFlow()
   const toast = useToast()
@@ -443,6 +446,13 @@ export const ERDContentInner: FC<Props> = ({
   const { selectTable, deselectTable } = useTableSelection()
   const { commitMemos, selectedMemos } = useMemoNodes()
   const { commitGroups } = useGroupNodes()
+  const {
+    addSelectionToGroup,
+    removeSelectionFromGroup,
+    removeTableFromGroup,
+    enterGroup,
+    dropGroupSelection,
+  } = useGroupMembership()
   const commitTablePositions = useCommitTablePositions()
   const {
     schema,
@@ -489,12 +499,6 @@ export const ERDContentInner: FC<Props> = ({
     [version, displayArea, selectTable],
   )
 
-  /**
-   * A modified click is React Flow's multi-selection gesture. Running the
-   * navigation as well would zoom the canvas onto the last table clicked,
-   * which is the opposite of what building a selection needs. Memos navigate
-   * to nothing, so they never reach it either.
-   */
   /**
    * A connection waiting for its other end. Picking the kind up front rather
    * than after the second click keeps the whole gesture to one popup: choose,
@@ -587,6 +591,11 @@ export const ERDContentInner: FC<Props> = ({
     ],
   )
 
+  /**
+   * A modified click is React Flow's multi-selection gesture; opening the
+   * drawer and re-highlighting on every one of them is the opposite of what
+   * building a selection needs. Memos open nothing, so they never reach it.
+   */
   const handleNodeClickEvent: NodeMouseHandler<Node> = useCallback(
     (event, node) => {
       if (event.ctrlKey || event.metaKey || event.shiftKey) return
@@ -610,8 +619,12 @@ export const ERDContentInner: FC<Props> = ({
       setConnecting(null)
       return
     }
+    // React Flow clears its own node selection here; the group selection is
+    // ours, so it has to be cleared alongside or the panel would go on
+    // offering commands for a group nothing is pointing at any more.
+    setSelectedGroupId(null)
     deselectTable()
-  }, [connecting, deselectTable])
+  }, [connecting, deselectTable, setSelectedGroupId])
 
   const handleMouseEnterNode: NodeMouseHandler<Node> = useCallback(
     (_, { id }) => {
@@ -967,41 +980,15 @@ export const ERDContentInner: FC<Props> = ({
     setMenu(null)
   }, [selectedIdsOf, commitGroups, toast])
 
-  /**
-   * Removes the right-clicked table from one group only — other memberships
-   * of the same table are untouched (multi-group membership). A group left
-   * with zero members is dropped entirely: an empty `tableNames` is not
-   * representable in groups.json (parseGroups drops it), so keeping the
-   * node here would make the canvas and a reloaded `?groups=` disagree.
-   */
+  /** Removes the right-clicked table from one group. */
   const handleRemoveFromGroup = useCallback(
     (groupId: string) => {
       if (menu?.kind !== 'table') return
-      const { tableName } = menu
 
-      commitGroups((current) =>
-        current
-          .map((node) =>
-            isTableGroupNode(node) && node.data.groupId === groupId
-              ? {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    tableNames: node.data.tableNames.filter(
-                      (name) => name !== tableName,
-                    ),
-                  },
-                }
-              : node,
-          )
-          .filter(
-            (node) =>
-              !isTableGroupNode(node) || node.data.tableNames.length > 0,
-          ),
-      )
+      removeTableFromGroup(groupId, menu.tableName)
       setMenu(null)
     },
-    [menu, commitGroups],
+    [menu, removeTableFromGroup],
   )
 
   const handleRenameGroup = useCallback(
@@ -1020,8 +1007,18 @@ export const ERDContentInner: FC<Props> = ({
     [menu, commitGroups],
   )
 
+  /**
+   * With a group selected it dissolves that one; with tables selected, every
+   * group they belong to. Reading only the table selection — which is what
+   * this did before there were two kinds — meant the shortcut did nothing at
+   * all, and said nothing about it, whenever a group was what was selected.
+   */
   const handleUngroupSelected = useCallback(() => {
-    const groups = groupsClaiming(getNodes(), selectedIdsOf('table'))
+    const groups =
+      selectedGroupId === null
+        ? groupsClaiming(getNodes(), selectedIdsOf('table'))
+        : groupsFromNodes(getNodes()).filter(({ id }) => id === selectedGroupId)
+
     if (groups.length === 0) {
       toast({
         title: 'Nothing selected belongs to a group',
@@ -1030,7 +1027,7 @@ export const ERDContentInner: FC<Props> = ({
       return
     }
     setPendingUngroup(groups)
-  }, [getNodes, selectedIdsOf, toast])
+  }, [getNodes, selectedGroupId, selectedIdsOf, toast])
 
   const handleUngroup = useCallback(() => {
     if (menu?.kind !== 'tableGroup') return
@@ -1116,7 +1113,9 @@ export const ERDContentInner: FC<Props> = ({
     }
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setConnecting(null)
+      if (event.key !== 'Escape') return
+      setConnecting(null)
+      setSelectedGroupId(null)
     }
 
     const handleGrouping = (event: KeyboardEvent) => {
@@ -1147,6 +1146,7 @@ export const ERDContentInner: FC<Props> = ({
     toast,
     handleGroupSelected,
     handleUngroupSelected,
+    setSelectedGroupId,
   ])
 
   const handleDuplicateMemos = useCallback(() => {
@@ -1259,9 +1259,12 @@ export const ERDContentInner: FC<Props> = ({
       ? groups.filter((group) => group.tableNames.includes(menu.tableName))
       : []
 
-  const selectedTableCount = nodes.filter(
-    (node) => node.selected && node.type === 'table',
-  ).length
+  const selectedTableNames = nodes
+    .filter((node) => node.selected && node.type === 'table')
+    .map((node) => node.id)
+  const selectedTableCount = selectedTableNames.length
+
+  const selectedGroup = groups.find((group) => group.id === selectedGroupId)
 
   const selectedColor = resolveMenuColor(menu, {
     getTableColor,
@@ -1292,6 +1295,18 @@ export const ERDContentInner: FC<Props> = ({
       <CanvasBadge
         editMode={editMode}
         connectingFrom={connecting?.from ?? null}
+      />
+      <SelectionHud
+        editMode={editMode}
+        selectedTableNames={selectedTableNames}
+        selectedGroup={selectedGroup}
+        groups={groups}
+        onGroup={handleGroupSelected}
+        onAddToGroup={addSelectionToGroup}
+        onRemoveFromGroup={removeSelectionFromGroup}
+        onEnterGroup={enterGroup}
+        onUngroup={handleUngroupSelected}
+        onPreview={setGroupPreview}
       />
       {menu?.kind === 'pane' && (
         <div
@@ -1439,6 +1454,7 @@ export const ERDContentInner: FC<Props> = ({
         onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClickEvent}
+        onSelectionChange={dropGroupSelection}
         onPaneClick={handlePaneClick}
         onNodeMouseEnter={handleMouseEnterNode}
         onNodeMouseLeave={handleMouseLeaveNode}

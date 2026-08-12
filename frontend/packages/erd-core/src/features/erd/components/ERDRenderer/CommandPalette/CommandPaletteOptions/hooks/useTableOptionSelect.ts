@@ -16,15 +16,15 @@ export const useTableOptionSelect = (
 ) => {
   const { setOpen } = useCommandPaletteOrThrow()
 
-  const { selectTable } = useTableSelection()
+  const { revealTable } = useTableSelection()
   const goToERD = useCallback(
     (tableName: string, hash?: Hash) => {
-      selectTable({ tableId: tableName, displayArea: 'main' })
+      revealTable({ tableId: tableName, displayArea: 'main' })
       if (hash) window.location.hash = hash
 
       setOpen(false)
     },
-    [selectTable, setOpen],
+    [revealTable, setOpen],
   )
 
   const optionSelectHandler = useCallback(

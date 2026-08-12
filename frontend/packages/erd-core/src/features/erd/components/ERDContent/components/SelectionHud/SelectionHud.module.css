@@ -1,0 +1,92 @@
+/*
+ * Added in crowfoot; not part of the original Liam ERD source.
+ * See the NOTICE file at the repository root.
+ */
+
+/*
+ * Bottom centre, clear of the edit badge (top right) and the toolbar. Only
+ * rendered while something is selected, so it costs no room the rest of the
+ * time.
+ */
+.hud {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  color: var(--color-gray-100);
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+  transform: translateX(-50%);
+}
+
+.summary {
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+/*
+ * Every button carries a border: a bare label on a panel this small reads as
+ * part of the sentence next to it rather than as something to press.
+ */
+.action {
+  padding: 4px 10px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-gray-100);
+  white-space: nowrap;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--color-gray-400);
+  border-radius: 6px;
+}
+
+.action:hover {
+  background-color: var(--color-gray-600);
+}
+
+.menuAnchor {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Opens upward — the panel already sits at the bottom of the canvas. */
+.menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  max-height: 240px;
+  padding: 4px;
+  overflow-y: auto;
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-500);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--color-gray-100);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 4px;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  background-color: var(--color-gray-600);
+}

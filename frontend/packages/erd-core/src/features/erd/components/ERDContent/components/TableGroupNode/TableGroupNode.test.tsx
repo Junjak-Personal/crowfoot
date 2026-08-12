@@ -9,6 +9,7 @@ import { VersionProvider } from '../../../../../../providers'
 import type { Version } from '../../../../../../schemas/version'
 import { UserEditingProvider } from '../../../../../../stores'
 import type { TableGroupNodeType } from '../../../../types'
+import { ErdContentProvider } from '../../ErdContentContext'
 import { TableGroupNode } from './TableGroupNode'
 import styles from './TableGroupNode.module.css'
 
@@ -66,7 +67,10 @@ const wrapperFor =
       {...(searchParams === undefined ? {} : { searchParams })}
     >
       <VersionProvider version={version}>
-        <UserEditingProvider>{children}</UserEditingProvider>
+        <UserEditingProvider>
+          {/* Holds which group is selected — the state the header writes. */}
+          <ErdContentProvider>{children}</ErdContentProvider>
+        </UserEditingProvider>
       </VersionProvider>
     </NuqsTestingAdapter>
   )
@@ -151,8 +155,8 @@ describe('TableGroupNode', () => {
   })
 
   it.each([
-    ['Billing', 'Select tables in group Billing'],
-    ['', 'Select tables in unnamed group'],
+    ['Billing', 'Select group Billing'],
+    ['', 'Select unnamed group'],
   ])(
     'falls back the header aria-label correctly for name %j',
     (name, expectedLabel) => {
@@ -168,13 +172,15 @@ describe('TableGroupNode', () => {
     },
   )
 
-  it('clicking the header replaces the current React Flow selection with the members (Q3)', () => {
-    // `fireEvent`, not `userEvent`: the button is clicked directly (a plain
-    // React onClick, not React Flow's own pointer-gated node click), and
-    // `userEvent`'s realistic hit-testing trips on React Flow's *own*
-    // unrelated `pointer-events: none` inline style on this node's wrapper
-    // (driven by `selectable`/`draggable`, both false for a group box) —
-    // that inline style is React Flow's, not the CSS this test targets.
+  /**
+   * `fireEvent`, not `userEvent`: the button is clicked directly (a plain
+   * React onClick, not React Flow's own pointer-gated node click), and
+   * `userEvent`'s realistic hit-testing trips on React Flow's *own* unrelated
+   * `pointer-events: none` inline style on this node's wrapper (driven by
+   * `selectable`/`draggable`, both false for a group box) — that inline style
+   * is React Flow's, not the CSS this test targets.
+   */
+  const aCanvasWithSelection = () =>
     renderCanvas([
       aMemberNode('orders', 0, { width: 100, height: 40 }),
       aMemberNode('payments', 200, { width: 100, height: 40 }),
@@ -185,8 +191,28 @@ describe('TableGroupNode', () => {
       aGroupNode({ tableNames: ['orders', 'payments'] }),
     ])
 
+  it('clicking the header selects the group itself, not the tables in it', () => {
+    aCanvasWithSelection()
+
     fireEvent.click(screen.getByRole('button'))
 
+    expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+    for (const table of ['orders', 'payments', 'shipments']) {
+      expect(screen.getByTestId(`rf__node-${table}`)).not.toHaveClass(
+        'selected',
+      )
+    }
+  })
+
+  it('double-clicking the header steps inside and selects the members', () => {
+    aCanvasWithSelection()
+
+    // `detail: 2` is the second click of a double-click. Not `dblClick`: the
+    // canvas never delivers that event — d3-zoom stops it at the zoom pane to
+    // run double-click-to-zoom — which is why the component counts clicks.
+    fireEvent.click(screen.getByRole('button'), { detail: 2 })
+
+    expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByTestId('rf__node-orders')).toHaveClass('selected')
     expect(screen.getByTestId('rf__node-payments')).toHaveClass('selected')
     expect(screen.getByTestId('rf__node-shipments')).not.toHaveClass('selected')

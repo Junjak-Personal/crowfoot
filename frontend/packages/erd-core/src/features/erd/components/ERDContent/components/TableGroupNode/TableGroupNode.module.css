@@ -30,6 +30,39 @@
   border-color: var(--view-tint);
 }
 
+/*
+ * The group is what is selected, not the tables in it — so the box says so,
+ * and the tables inside keep their own unselected look. A solid border against
+ * the dashed default reads at any zoom, where a colour change alone would not.
+ */
+.box[data-selected='true'] {
+  border-style: solid;
+  border-width: 2px;
+  border-color: var(--view-tint, var(--color-green-500));
+}
+
+.box[data-selected='true'] .chip {
+  color: var(--color-gray-900);
+  background-color: var(--view-tint, var(--color-green-500));
+  border-color: transparent;
+}
+
+/*
+ * What the box would become if the menu row under the pointer were clicked.
+ * Nothing is committed until it is, so this has to look provisional — a
+ * brighter, thicker version of the dashed default rather than a second solid
+ * state that could be mistaken for the selection above.
+ */
+.box[data-preview='true'] {
+  border-width: 2px;
+  border-color: var(--view-tint, var(--color-green-500));
+  background-color: color-mix(
+    in srgb,
+    var(--view-tint, var(--color-green-500)) 12%,
+    transparent
+  );
+}
+
 /* Sits outside the box's own top-left corner, never inside it. */
 .header {
   position: absolute;

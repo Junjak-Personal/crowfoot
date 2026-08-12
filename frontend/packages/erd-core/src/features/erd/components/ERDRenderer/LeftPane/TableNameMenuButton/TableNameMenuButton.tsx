@@ -36,7 +36,7 @@ export const TableNameMenuButton: FC<Props> = ({
 }) => {
   const nodeId = node.id
   const name = node.data.table.name
-  const { selectTable } = useTableSelection()
+  const { revealTable } = useTableSelection()
   const { selectedNodeIds, updateSelectedNodeIds } = useUserEditingOrThrow()
   const { version } = useVersionOrThrow()
   const textRef = useRef<HTMLSpanElement>(null)
@@ -78,7 +78,7 @@ export const TableNameMenuButton: FC<Props> = ({
             : 'single'
 
       updateSelectedNodeIds(nodeId, isMultiSelect, nodes)
-      selectTable({
+      revealTable({
         tableId: name,
         displayArea: 'main',
       })
@@ -92,7 +92,7 @@ export const TableNameMenuButton: FC<Props> = ({
         appEnv: version.envName,
       })
     },
-    [nodeId, name, nodes, selectTable, version, updateSelectedNodeIds],
+    [nodeId, name, nodes, revealTable, version, updateSelectedNodeIds],
   )
 
   const handleKeyDown = useCallback(

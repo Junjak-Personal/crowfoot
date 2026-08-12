@@ -13,6 +13,51 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Added
+
+- **A panel saying what is selected, and what can be done to it.** It appears
+  in edit mode as soon as anything is, and carries the count — which until now
+  existed only as a condition on a menu item, so "did the lasso catch four
+  tables or five" could only be answered by counting outlines. Its buttons come
+  from the selection and are absent rather than greyed out when they do not
+  apply.
+- **A table can be moved between groups without dissolving one.** `Add to` and
+  `Remove from` act on the whole selection; before this the only way to change
+  a grouping was to ungroup and build it again, which cost its name and its
+  colour too. Resting on a row draws the box that row would produce, in the
+  group's own colour, before anything is committed.
+- **Selecting a group and selecting the tables in it are two different
+  things.** Clicking a group's label selects the group; double-clicking steps
+  inside and hands you its tables, as does clicking any of them directly. They
+  used to be one act — the label put every member into the selection — so
+  nothing on screen could say which one a command was about to apply to, and
+  `⌘⇧G` quietly did nothing whenever a group was what you had in mind.
+
+### Fixed
+
+- **Clicking a table on the canvas no longer moves the camera.** It framed the
+  table you clicked, which meant the view lurched away from whatever else you
+  had in front of you — worst while arranging groups, where clicking tables is
+  the whole activity. Picking a table by name from the sidebar or the command
+  palette still brings it into view; there the table may be anywhere.
+- **A `DEFAULT` that is `false`, `0` or an empty string is no longer read as
+  absent.** The parser's JSON drops a scalar it considers empty but keeps its
+  wrapper, so every falsy default arrived looking like a column with no default
+  at all. Negative integers are dropped the same way and are indistinguishable
+  from zero, so those are read back out of the SQL rather than guessed —
+  recording `0` where the column said `-1` would be worse than recording
+  nothing.
+- **`DEFAULT now()`, `gen_random_uuid()`, `CURRENT_TIMESTAMP` and casts are
+  parsed.** Only bare literals were, and function defaults outnumbered literals
+  two to one in the schemas this was measured against: 18 of 251 columns came
+  back with a default before, 102 after. An expression that cannot be
+  represented faithfully is still left empty rather than approximated.
+- `erd arrange` no longer drops a table with no foreign key out of the group
+  the plan put it in. It cannot be given a coordinate — the viewer parents it
+  to a group of its own — but that is a fact about layout, not about which
+  context the table belongs to. The membership is kept and the consequence is
+  reported. `erd plan` clusters them like any other table for the same reason.
+
 ## 0.3.0
 
 A diagram you can arrange without dragging, and take a picture of.

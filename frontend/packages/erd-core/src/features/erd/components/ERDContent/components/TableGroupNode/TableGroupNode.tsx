@@ -4,6 +4,7 @@ import { type NodeProps, useNodes, useReactFlow } from '@xyflow/react'
 import clsx from 'clsx'
 import {
   type FC,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useMemo,
@@ -14,6 +15,7 @@ import { useUserEditingOrThrow } from '../../../../../../stores'
 import { useCommitTablePositions } from '../../../../hooks'
 import type { TableGroupNodeType } from '../../../../types'
 import { padGroupRect, resolveGroupMemberIds } from '../../../../utils'
+import { useErdContentContext } from '../../ErdContentContext'
 import styles from './TableGroupNode.module.css'
 
 type Props = NodeProps<TableGroupNodeType>
@@ -56,17 +58,29 @@ type DragState = {
  */
 export const TableGroupNode: FC<Props> = ({ data }) => {
   const { showGroups, editMode } = useUserEditingOrThrow()
+  const {
+    state: { selectedGroupId, groupPreview },
+    actions: { setSelectedGroupId },
+  } = useErdContentContext()
   const nodes = useNodes()
   const { getNodesBounds, setNodes, getNodes, screenToFlowPosition } =
     useReactFlow()
   const commitTablePositions = useCommitTablePositions()
 
+  const selected = selectedGroupId === data.groupId
+  const preview =
+    groupPreview?.groupId === data.groupId ? groupPreview.tableNames : null
+
   const drag = useRef<DragState | null>(null)
   const [dragging, setDragging] = useState(false)
 
+  /**
+   * The membership being previewed stands in for the real one, so the box the
+   * pointer is promising is drawn by the same code that draws the real box.
+   */
   const memberIds = useMemo(
-    () => resolveGroupMemberIds(data.tableNames, nodes),
-    [data.tableNames, nodes],
+    () => resolveGroupMemberIds(preview ?? data.tableNames, nodes),
+    [preview, data.tableNames, nodes],
   )
 
   const rect = useMemo(() => {
@@ -75,7 +89,7 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
   }, [memberIds, getNodesBounds])
 
   /**
-   * Replaces the selection with the group's members (F9) — React Flow's own
+   * Replaces the selection with the group's members — React Flow's own
    * `node.selected`, never `userEditing.selectedNodeIds`. The two selection
    * systems stay independent by design; this never touches the sidebar's.
    */
@@ -87,6 +101,42 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
       current.map((node) => ({ ...node, selected: members.has(node.id) })),
     )
   }, [memberIds, setNodes])
+
+  /**
+   * A click selects the group itself; a double-click goes inside it and hands
+   * you the members as individual tables. One level up, commands read "this
+   * group"; one level down, "these tables". Clicking a member directly is the
+   * same step down, and React Flow already does that part.
+   */
+  const selectGroup = useCallback(() => {
+    setNodes((current) =>
+      current.map((node) =>
+        node.selected ? { ...node, selected: false } : node,
+      ),
+    )
+    setSelectedGroupId(data.groupId)
+  }, [setNodes, setSelectedGroupId, data.groupId])
+
+  const enterGroup = useCallback(() => {
+    setSelectedGroupId(null)
+    selectMembers()
+  }, [setSelectedGroupId, selectMembers])
+
+  /**
+   * The step down is read off the click count, not from `onDoubleClick`:
+   * React Flow's zoom pane owns `dblclick` (d3-zoom stops it there to run
+   * double-click-to-zoom), so React never delivers that event to anything
+   * inside the canvas. A `click` carries the count in `detail`, and the first
+   * click of the pair having already selected the group is the right
+   * intermediate state anyway.
+   */
+  const handleClick = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      if (event.detail >= 2) enterGroup()
+      else selectGroup()
+    },
+    [enterGroup, selectGroup],
+  )
 
   /**
    * Dragging the label moves the member *tables*; the box follows because it
@@ -137,7 +187,7 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
         setDragging(true)
         // Same end state as a plain header click, so a drag and a click leave
         // the selection looking alike.
-        selectMembers()
+        selectGroup()
       }
 
       const pointer = screenToFlowPosition({
@@ -158,7 +208,7 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
         }),
       )
     },
-    [screenToFlowPosition, setNodes, selectMembers],
+    [screenToFlowPosition, setNodes, selectGroup],
   )
 
   const handlePointerUp = useCallback(
@@ -193,6 +243,8 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
     <div
       className={clsx(styles.box, data.color && styles.tinted)}
       data-view-color={data.color}
+      data-selected={selected}
+      data-preview={preview !== null}
       style={{
         left: rect.x,
         top: rect.y,
@@ -206,11 +258,10 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
         data-draggable={editMode}
         data-dragging={dragging}
         aria-label={
-          data.name
-            ? `Select tables in group ${data.name}`
-            : 'Select tables in unnamed group'
+          data.name ? `Select group ${data.name}` : 'Select unnamed group'
         }
-        onClick={selectMembers}
+        aria-pressed={selected}
+        onClick={handleClick}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

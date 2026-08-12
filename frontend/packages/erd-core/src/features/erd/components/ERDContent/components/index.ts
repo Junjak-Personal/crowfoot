@@ -3,6 +3,7 @@
 export * from './MemoNode'
 export * from './NonRelatedTableGroupNode'
 export * from './RelationshipEdge'
+export * from './SelectionHud'
 export * from './Spinner'
 export * from './TableGroupNode'
 export * from './TableNode'
