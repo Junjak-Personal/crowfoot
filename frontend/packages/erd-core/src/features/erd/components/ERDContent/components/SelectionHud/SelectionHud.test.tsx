@@ -66,6 +66,13 @@ describe('SelectionHud', () => {
     expect(screen.getByRole('status')).toHaveTextContent('3 tables selected')
   })
 
+  /** `Remove from` lists them, and the panel has to fit beside the toolbar. */
+  it('does not also count the groups they are in', () => {
+    renderHud({ selectedTableNames: ['users'], groups: [core, billing] })
+
+    expect(screen.getByRole('status')).not.toHaveTextContent('group')
+  })
+
   it('counts one table without pluralising it', () => {
     renderHud({ selectedTableNames: ['users'] })
 

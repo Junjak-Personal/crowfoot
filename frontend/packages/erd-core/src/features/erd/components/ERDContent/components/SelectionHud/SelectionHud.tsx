@@ -137,9 +137,10 @@ export const SelectionHud: FC<Props> = ({
 
   return (
     <output className={styles.hud}>
+      {/* No group count: `Remove from` already lists exactly the groups the
+          selection is in, and the panel has to fit beside the toolbar. */}
       <span className={styles.summary}>
         {plural(selectedTableNames.length, 'table')} selected
-        {claiming.length > 0 && ` · in ${plural(claiming.length, 'group')}`}
       </span>
       {selectedTableNames.length >= 2 && (
         <button type="button" className={styles.action} onClick={onGroup}>

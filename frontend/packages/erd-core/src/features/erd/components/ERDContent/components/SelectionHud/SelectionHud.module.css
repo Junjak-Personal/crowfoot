@@ -4,25 +4,42 @@
  */
 
 /*
- * Bottom centre, clear of the edit badge (top right) and the toolbar. Only
- * rendered while something is selected, so it costs no room the rest of the
- * time.
+ * Bottom right, below and to the side of the toolbar rather than under it.
+ * The zoom controls and the show-mode picker are centred on the bottom edge
+ * (`DesktopToolbar`, `bottom: 2rem`) and this sat on top of them; the mobile
+ * toolbar takes the bottom left, and React Flow's attribution goes there too.
+ *
+ * Only rendered while something is selected, so it costs no room the rest of
+ * the time.
  */
 .hud {
   position: absolute;
+  right: 16px;
   bottom: 16px;
-  left: 50%;
   z-index: 6;
   display: flex;
   gap: 8px;
   align-items: center;
+  max-width: calc(100% - 32px);
   padding: 6px 8px;
   color: var(--color-gray-100);
   background-color: var(--color-gray-700);
   border: 1px solid var(--color-gray-500);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
-  transform: translateX(-50%);
+}
+
+/*
+ * The toolbar is 370px wide and centred, so the panel only clears it on the
+ * right once the window is wide enough — about 1210px for the widest the panel
+ * gets. Below that it goes above the toolbar band instead of on top of it.
+ * (Under 768px the desktop toolbar is replaced by one in the bottom left, and
+ * the corner is free again.)
+ */
+@media screen and (min-width: 768px) and (max-width: 1279px) {
+  .hud {
+    bottom: 78px;
+  }
 }
 
 .summary {
@@ -57,11 +74,15 @@
   display: inline-flex;
 }
 
-/* Opens upward — the panel already sits at the bottom of the canvas. */
+/*
+ * Opens upward — the panel already sits at the bottom of the canvas — and
+ * anchored to its right edge, which is the one that stays put now that the
+ * panel itself is in the corner.
+ */
 .menu {
   position: absolute;
+  right: 0;
   bottom: calc(100% + 6px);
-  left: 0;
   min-width: 100%;
   max-height: 240px;
   padding: 4px;
