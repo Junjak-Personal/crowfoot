@@ -13,6 +13,19 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.4.1
+
+### Fixed
+
+- **The selection panel sat on top of the toolbar.** Both were centred on the
+  bottom edge, so the zoom controls and the show-mode picker were underneath
+  it. It goes in the bottom right corner now, and above the toolbar rather than
+  on it when the window is too narrow for both to share the edge.
+- The panel no longer counts the groups a selection is in. `Remove from`
+  already lists exactly those groups, so the count was a second way of saying
+  the same thing — and it was what made the panel too wide to fit beside the
+  toolbar.
+
 ## 0.4.0
 
 The link is the diagram, and the back button undoes it.
