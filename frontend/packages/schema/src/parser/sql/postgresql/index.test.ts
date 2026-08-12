@@ -115,6 +115,90 @@ describe(processor, () => {
       expect(value).toEqual(parserTestCases['default value as boolean'])
     })
 
+    /**
+     * Every case here used to come back null, which reads as "this column has
+     * no default" — a wrong statement about the schema rather than a missing
+     * one. Between them they were most of the DEFAULT clauses in the schemas
+     * this was measured against.
+     */
+    describe('default values', () => {
+      const defaultsOf = async (columns: string) => {
+        const { value } = await processor(/* sql */ `
+          CREATE TABLE users (
+            id BIGSERIAL PRIMARY KEY,
+            ${columns}
+          );
+        `)
+
+        return Object.fromEntries(
+          Object.values(value.tables['users']?.columns ?? {}).map((column) => [
+            column.name,
+            column.default,
+          ]),
+        )
+      }
+
+      it('keeps a falsy default instead of reading it as absent', async () => {
+        expect(
+          await defaultsOf(`
+            active BOOLEAN DEFAULT FALSE,
+            score INTEGER DEFAULT 0,
+            note TEXT DEFAULT ''
+          `),
+        ).toMatchObject({ active: false, score: 0, note: '' })
+      })
+
+      it('reads a negative integer as itself rather than as zero', async () => {
+        expect(
+          await defaultsOf(`
+            rank INTEGER DEFAULT -1,
+            offset_days INTEGER DEFAULT -30
+          `),
+        ).toMatchObject({ rank: -1, offset_days: -30 })
+      })
+
+      it('reads a decimal default', async () => {
+        expect(await defaultsOf('ratio NUMERIC DEFAULT 0.5')).toMatchObject({
+          ratio: 0.5,
+        })
+      })
+
+      it('records the call a function default makes', async () => {
+        expect(
+          await defaultsOf(`
+            created_at TIMESTAMP DEFAULT now(),
+            token UUID DEFAULT gen_random_uuid(),
+            seq INTEGER DEFAULT nextval('users_seq'::regclass)
+          `),
+        ).toMatchObject({
+          created_at: 'now()',
+          token: 'gen_random_uuid()',
+          seq: "nextval('users_seq')",
+        })
+      })
+
+      it('records a keyword function under its keyword', async () => {
+        expect(
+          await defaultsOf('created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+        ).toMatchObject({ created_at: 'CURRENT_TIMESTAMP' })
+      })
+
+      it('takes the value out of a cast and leaves the cast behind', async () => {
+        expect(
+          await defaultsOf(`
+            kind VARCHAR(10) DEFAULT 'manual'::character varying,
+            payload JSONB DEFAULT '{}'::jsonb
+          `),
+        ).toMatchObject({ kind: 'manual', payload: '{}' })
+      })
+
+      it('leaves an expression it cannot represent null rather than guessing', async () => {
+        expect(
+          await defaultsOf("label TEXT DEFAULT ('a' || 'b')"),
+        ).toMatchObject({ label: null })
+      })
+    })
+
     it('unique', async () => {
       const { value } = await processor(/* sql */ `
         CREATE TABLE users (

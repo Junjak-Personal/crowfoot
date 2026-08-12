@@ -55,7 +55,7 @@ exports[`parse > should parse postgresql to JSON correctly 1`] = `
         "created_at": {
           "check": null,
           "comment": null,
-          "default": null,
+          "default": "CURRENT_TIMESTAMP",
           "name": "created_at",
           "notNull": false,
           "type": "timestamp",

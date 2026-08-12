@@ -1,9 +1,11 @@
 import type {
+  A_Const,
   AlterTableStmt,
   CommentStmt,
   CreateEnumStmt,
   CreateExtensionStmt,
   CreateStmt,
+  FuncCall,
   IndexStmt,
   List,
   Node,
@@ -121,43 +123,102 @@ function getConstraintAction(
   }
 }
 
+type DefaultValue = string | number | boolean | null
+
+const LEADING_INTEGER = /^[+-]?\d+/
+
 /**
- * Extract default value from constraints
+ * The literal an `A_Const` holds.
+ *
+ * Two silent traps here. The parser's JSON drops a scalar it considers empty
+ * but keeps its wrapper, so `DEFAULT false` arrives as `boolval: {}` and
+ * `DEFAULT 0` as `ival: {}` — reading the inner field misses every falsy
+ * default. And it drops negative integers the same way: `-1` and `-2` are also
+ * `ival: {}`, indistinguishable from zero. An integer with no value is
+ * therefore read back out of the SQL at the offset the node carries, because
+ * recording 0 where the column said -1 is worse than recording nothing.
  */
+const constValue = (aConst: A_Const, chunkSql: string): DefaultValue => {
+  if (aConst.isnull) return null
+  if (aConst.sval !== undefined) return aConst.sval.sval ?? ''
+  if (aConst.boolval !== undefined) return aConst.boolval.boolval ?? false
+  if (aConst.fval !== undefined) {
+    return aConst.fval.fval === undefined ? null : Number(aConst.fval.fval)
+  }
+  if (aConst.ival === undefined) return null
+  if (aConst.ival.ival !== undefined) return aConst.ival.ival
+
+  if (aConst.location === undefined) return null
+  const start = utf8ByteOffsetToCharIndex(chunkSql, aConst.location)
+  if (start === null) return null
+  const literal = LEADING_INTEGER.exec(chunkSql.slice(start))
+
+  return literal === null ? null : Number(literal[0])
+}
+
+/**
+ * `now()`, `gen_random_uuid()`, `nextval('users_id_seq')`.
+ *
+ * These outnumbered every literal two to one in the schema this was measured
+ * against and all of them used to come back null. A call is dropped whole when
+ * any argument fails to render, rather than shown with pieces missing.
+ */
+const funcCallText = (call: FuncCall, chunkSql: string): string | null => {
+  const name = (call.funcname ?? [])
+    .filter(isStringNode)
+    .map((node) => node.String.sval)
+    .join('.')
+  if (name === '') return null
+
+  const args: string[] = []
+  for (const arg of call.args ?? []) {
+    const value = defaultValueOf(arg, chunkSql)
+    if (value === null) return null
+    args.push(
+      typeof value === 'string'
+        ? `'${value.replace(/'/g, "''")}'`
+        : String(value),
+    )
+  }
+
+  return `${name}(${args.join(', ')})`
+}
+
+/** The expression a `DEFAULT` clause carries, or null if it is not one of these. */
+function defaultValueOf(node: Node, chunkSql: string): DefaultValue {
+  if ('A_Const' in node) return constValue(node.A_Const, chunkSql)
+  // `'x'::character varying`, `'{}'::jsonb` — the value is in the argument, and
+  // the cast says nothing the column's own type does not.
+  if ('TypeCast' in node) {
+    const arg = node.TypeCast.arg
+    return arg === undefined ? null : defaultValueOf(arg, chunkSql)
+  }
+  if ('FuncCall' in node) return funcCallText(node.FuncCall, chunkSql)
+  // `SVFOP_CURRENT_TIMESTAMP` names the keyword it stands for; the `_N` suffix
+  // marks the `CURRENT_TIMESTAMP(n)` form, whose precision is not carried here.
+  if ('SQLValueFunction' in node) {
+    const op = node.SQLValueFunction.op
+    return op === undefined
+      ? null
+      : op.replace(/^SVFOP_/, '').replace(/_N$/, '')
+  }
+
+  return null
+}
+
 function extractDefaultValueFromConstraints(
   constraints: Node[] | undefined,
-): string | number | boolean | null {
+  chunkSql: string,
+): DefaultValue {
   if (!constraints) return null
 
-  const constraintNodes = constraints.filter(isConstraintNode)
-  for (const c of constraintNodes) {
-    const constraint = c.Constraint
-
-    // Skip if not a default constraint or missing required properties
-    if (
-      constraint.contype !== 'CONSTR_DEFAULT' ||
-      !constraint.raw_expr ||
-      !('A_Const' in constraint.raw_expr)
-    ) {
+  for (const node of constraints.filter(isConstraintNode)) {
+    const constraint = node.Constraint
+    if (constraint.contype !== 'CONSTR_DEFAULT' || !constraint.raw_expr) {
       continue
     }
 
-    const aConst = constraint.raw_expr.A_Const
-
-    // Extract string value
-    if ('sval' in aConst && 'sval' in aConst.sval) {
-      return aConst.sval.sval
-    }
-
-    // Extract integer value
-    if ('ival' in aConst && 'ival' in aConst.ival) {
-      return aConst.ival.ival
-    }
-
-    // Extract boolean value
-    if ('boolval' in aConst && 'boolval' in aConst.boolval) {
-      return aConst.boolval.boolval
-    }
+    return defaultValueOf(constraint.raw_expr, chunkSql)
   }
 
   return null
@@ -545,7 +606,7 @@ export const convertToSchema = (
     const column = {
       name: columnName,
       type: extractColumnType(colDef.typeName),
-      default: extractDefaultValueFromConstraints(colDef.constraints) || null,
+      default: extractDefaultValueFromConstraints(colDef.constraints, chunkSql),
       check: null, // TODO
       notNull: isNotNull(colDef.constraints),
       comment: null, // TODO
