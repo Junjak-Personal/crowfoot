@@ -15,6 +15,18 @@ is where a breaking change may appear.
 
 ### Added
 
+- **The back button is undo, and forward is redo** — `Cmd`/`Ctrl` + `Z` and
+  `Cmd`/`Ctrl` + `Shift` + `Z` as well. Every edit is already the whole of the
+  diagram's state written into the link, so the state before an edit is simply
+  the entry before it: there is no separate history to keep in step, and redo
+  costs nothing. Typing into a memo writes over the current entry rather than
+  adding one per character, and commits the sentence when you leave the field.
+  Inside a memo `Cmd`+`Z` is still the browser undoing text.
+- **The viewer says when a link's edits were written against a different
+  deploy.** `?base=` records which documents an edit was made against, and a
+  mismatch raises a notice naming what the edits refer to that has since gone:
+  a group's table that is no longer in the schema, a deletion with nothing left
+  to delete. The edits are still applied.
 - **A panel saying what is selected, and what can be done to it.** It appears
   in edit mode as soon as anything is, and carries the count — which until now
   existed only as a condition on a menu item, so "did the lasso catch four
@@ -26,12 +38,30 @@ is where a breaking change may appear.
   a grouping was to ungroup and build it again, which cost its name and its
   colour too. Resting on a row draws the box that row would produce, in the
   group's own colour, before anything is committed.
+
+### Changed
+
+- **A link carries only what it changed.** `?groups=` and `?memos=` used to
+  carry the entire set and replace what `groups.json` and `memos.json` said, so
+  touching one group meant a redeployed sidecar could never reach anyone
+  holding that link again. They now carry the difference — including a
+  tombstone for a deletion, which is the part a plain merge could not express —
+  and `?positions=` drops entries that say what `layout.json` already says.
+- **An edit lives in the link and nowhere else.** Browser storage used to hold
+  a third copy of the diagram alongside the canvas and the URL; it now holds
+  only a copy of the deployed files, used to describe the mismatch above, and
+  is not touched at all on a plain load. Working copies written by releases up
+  to 0.3.0 are cleared the first time an edit is made. `crowfootLayout.reset()`
+  and friends drop the edit out of the link, which is the equivalent act.
 - **Selecting a group and selecting the tables in it are two different
   things.** Clicking a group's label selects the group; double-clicking steps
   inside and hands you its tables, as does clicking any of them directly. They
   used to be one act — the label put every member into the selection — so
   nothing on screen could say which one a command was about to apply to, and
-  `⌘⇧G` quietly did nothing whenever a group was what you had in mind.
+  `Cmd`+`Shift`+`G` quietly did nothing whenever a group was what you had in
+  mind.
+- Going back no longer re-runs the automatic layout or moves the camera. It
+  restored the diagram by rearranging it, which is not what going back means.
 
 ### Fixed
 

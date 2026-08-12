@@ -3,7 +3,7 @@
 import { type NodeProps, NodeResizer } from '@xyflow/react'
 import clsx from 'clsx'
 import type { FC } from 'react'
-import { useUserEditingOrThrow } from '../../../../../../stores'
+import { type EditWrite, useUserEditingOrThrow } from '../../../../../../stores'
 import { useMemoNodes } from '../../../../hooks'
 import type { MemoNodeType } from '../../../../types'
 import {
@@ -27,11 +27,18 @@ export const MemoNode: FC<Props> = ({ id, data, selected }) => {
   const { editMode } = useUserEditingOrThrow()
   const { commitMemos } = useMemoNodes()
 
-  const setText = (text: string) =>
-    commitMemos((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, text } } : node,
-      ),
+  /**
+   * Every keystroke writes the link, so these are transient: one history entry
+   * per character would make the back button useless for undoing anything
+   * larger than a letter. Leaving the field commits the sentence as one.
+   */
+  const setText = (text: string, write?: EditWrite) =>
+    commitMemos(
+      (nodes) =>
+        nodes.map((node) =>
+          node.id === id ? { ...node, data: { ...node.data, text } } : node,
+        ),
+      write,
     )
 
   const remove = () =>
@@ -74,7 +81,10 @@ export const MemoNode: FC<Props> = ({ id, data, selected }) => {
               className={clsx(styles.input, 'nodrag')}
               value={data.text}
               placeholder="Write a memo"
-              onChange={(event) => setText(event.target.value)}
+              onChange={(event) =>
+                setText(event.target.value, { transient: true })
+              }
+              onBlur={(event) => setText(event.target.value)}
             />
           </>
         ) : (

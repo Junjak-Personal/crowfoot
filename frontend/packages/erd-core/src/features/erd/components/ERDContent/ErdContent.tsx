@@ -165,6 +165,21 @@ const groupingShortcut = (event: KeyboardEvent): 'group' | 'ungroup' | null => {
   return event.shiftKey ? 'ungroup' : 'group'
 }
 
+/**
+ * Undo is the back button.
+ *
+ * Every edit writes the query string and pushes a history entry, so the state
+ * before an edit is the entry before it — there is no separate stack of edits
+ * to keep in step with the URL, and redo comes for free. The ceiling is that
+ * it cannot reach past the entry the page was opened on.
+ */
+const historyShortcut = (event: KeyboardEvent): 'back' | 'forward' | null => {
+  if (event.key.toLowerCase() !== 'z') return null
+  if (!event.metaKey && !event.ctrlKey) return null
+
+  return event.shiftKey ? 'forward' : 'back'
+}
+
 const RELATIONSHIP_KINDS: { kind: RelationshipKind; label: string }[] = [
   { kind: 'MANY_TO_ONE', label: 'many : 1' },
   { kind: 'ONE_TO_ONE', label: '1 : 1' },
@@ -475,9 +490,7 @@ export const ERDContentInner: FC<Props> = ({
     nodes,
     displayArea,
   })
-  useQueryParamsChanged({
-    displayArea,
-  })
+  useQueryParamsChanged()
 
   const { version } = useVersionOrThrow()
   const handleNodeClick = useCallback(
@@ -1118,6 +1131,18 @@ export const ERDContentInner: FC<Props> = ({
       setSelectedGroupId(null)
     }
 
+    const handleHistory = (event: KeyboardEvent) => {
+      const shortcut = historyShortcut(event)
+      // Inside a memo, Cmd+Z is the browser undoing text. Taking it there
+      // would leave no way to take back a keystroke.
+      if (shortcut === null || isTyping()) return
+
+      event.preventDefault()
+
+      if (shortcut === 'forward') window.history.forward()
+      else window.history.back()
+    }
+
     const handleGrouping = (event: KeyboardEvent) => {
       const shortcut = groupingShortcut(event)
       if (shortcut === null || isTyping()) return
@@ -1129,11 +1154,13 @@ export const ERDContentInner: FC<Props> = ({
       else handleGroupSelected()
     }
 
+    document.addEventListener('keydown', handleHistory)
     document.addEventListener('keydown', handleGrouping)
     document.addEventListener('keydown', handleEscape)
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('paste', handlePaste)
     return () => {
+      document.removeEventListener('keydown', handleHistory)
       document.removeEventListener('keydown', handleGrouping)
       document.removeEventListener('keydown', handleEscape)
       document.removeEventListener('keydown', handleKeyDown)

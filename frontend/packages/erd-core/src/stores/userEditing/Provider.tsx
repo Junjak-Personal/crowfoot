@@ -4,6 +4,7 @@
 
 import {
   createParser,
+  type Options,
   parseAsString,
   parseAsStringLiteral,
   useQueryState,
@@ -25,7 +26,7 @@ import {
 import type { ShowMode } from '../../schemas'
 import { compressToEncodedUriComponent } from '../../utils/compressToEncodedUriComponent'
 import { decompressFromEncodedUriComponent } from '../../utils/decompressFromEncodedUriComponent'
-import { UserEditingContext } from './context'
+import { type EditWrite, UserEditingContext } from './context'
 
 const parseAsCompressedStringArray = createParser({
   parse: (value: string): string[] => {
@@ -226,19 +227,32 @@ export const UserEditingProvider: FC<Props> = ({
     parseAsString.withDefault('').withOptions({ history: 'replace' }),
   )
 
+  /**
+   * Wraps an edit setter so it stamps the version, and so it lands in the back
+   * button in the right place.
+   *
+   * A finished edit is a history entry, because the back button is how an edit
+   * is undone. A `transient` one is not: memo text is written on every
+   * keystroke, and a history entry per character would take forty presses to
+   * get back across one sentence. Those write over the current entry and the
+   * gesture pushes once when it ends.
+   */
   const stamped = useCallback(
-    <T,>(set: (value: T) => unknown) =>
-      (value: T) => {
+    <T,>(set: (value: T, options?: Options) => unknown) =>
+      (value: T, { transient = false }: EditWrite = {}) => {
+        const history = transient ? 'replace' : 'push'
         const version = getBaseVersion()
+
         if (version !== '') {
-          setBaseVersionParam(version)
+          setBaseVersionParam(version, { history })
           // The first edit is also when the documents it was made against
           // become worth keeping — see `cacheBaseDocuments`. Subsequent edits
           // cost one small `getItem`.
           const documents = getBaseDocuments()
           if (documents) cacheBaseDocuments(version, documents)
         }
-        return set(value)
+
+        return set(value, { history })
       },
     [setBaseVersionParam],
   )

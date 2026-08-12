@@ -1,63 +1,27 @@
-import { useCallback, useEffect } from 'react'
-import { useUserEditingOrThrow } from '../../../../../stores'
-import { useCustomReactflow } from '../../../../reactflow/hooks'
-import type { DisplayArea } from '../../../types'
-import { computeAutoLayout, highlightNodesAndEdges } from '../../../utils'
-import { hasNonRelatedChildNodes, updateNodesHiddenState } from '../utils'
-import { usePopStateListener } from './usePopStateListener'
+// Added in crowfoot; not part of the original Liam ERD source.
+// See the NOTICE file at the repository root.
+import { useEffect } from 'react'
+import { useApplyUrlState } from './useApplyUrlState'
 
-type Params = {
-  displayArea: DisplayArea
-}
-
-export const useQueryParamsChanged = ({ displayArea }: Params) => {
-  usePopStateListener()
-
-  const { getNodes, getEdges, setNodes, setEdges, fitView } =
-    useCustomReactflow()
-  const { activeTableName, hiddenNodeIds, isPopstateInProgress } =
-    useUserEditingOrThrow()
-
-  const handleChangeQueryParams = useCallback(async () => {
-    // NOTE: Only execute layout calculation during browser navigation
-    if (!isPopstateInProgress) return
-
-    const nodes = getNodes()
-
-    const updatedNodes = updateNodesHiddenState({
-      nodes,
-      hiddenNodeIds,
-      shouldHideGroupNodeId: !hasNonRelatedChildNodes(nodes),
-    })
-
-    const { nodes: highlightedNodes, edges: highlightedEdges } =
-      highlightNodesAndEdges(updatedNodes, getEdges(), {
-        activeTableName: activeTableName ?? undefined,
-      })
-    const { nodes: layoutedNodes, edges: layoutedEdges } =
-      await computeAutoLayout(highlightedNodes, highlightedEdges)
-
-    setNodes(layoutedNodes)
-    setEdges(layoutedEdges)
-
-    const fitViewOptions =
-      displayArea === 'main' && activeTableName
-        ? { maxZoom: 1, duration: 300, nodes: [{ id: activeTableName }] }
-        : { duration: 0 }
-    await fitView(fitViewOptions)
-  }, [
-    isPopstateInProgress,
-    getNodes,
-    getEdges,
-    setNodes,
-    setEdges,
-    fitView,
-    displayArea,
-    activeTableName,
-    hiddenNodeIds,
-  ])
+/**
+ * Puts the diagram back to whatever the URL now says, after the back or
+ * forward button moved it.
+ *
+ * Straight from the event, with no flag and no waiting for a render: the
+ * address bar is already correct when a `popstate` handler runs, and
+ * `useApplyUrlState` reads it directly. Gating on a re-render instead meant
+ * rebuilding from the state being navigated away from, which looked exactly
+ * like the back button doing nothing.
+ *
+ * This used to run the automatic layout and `fitView` here. Both are wrong for
+ * an undo: pressing back should put back what was there, not rearrange the
+ * diagram and move the camera.
+ */
+export const useQueryParamsChanged = () => {
+  const applyUrlState = useApplyUrlState()
 
   useEffect(() => {
-    handleChangeQueryParams()
-  }, [handleChangeQueryParams])
+    window.addEventListener('popstate', applyUrlState)
+    return () => window.removeEventListener('popstate', applyUrlState)
+  }, [applyUrlState])
 }

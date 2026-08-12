@@ -1,9 +1,7 @@
 // Modified from the original Liam ERD source (Apache-2.0, ROUTE06, Inc.).
 // See the NOTICE file at the repository root for what changed.
 import {
-  clearStoredGroups,
-  clearStoredMemos,
-  clearStoredTableLayout,
+  clearEditParams,
   dumpGroups,
   dumpMemos,
   dumpTableLayout,
@@ -188,26 +186,19 @@ function App() {
       return value
     }
 
+    // `reset` drops the edit out of the link, which is where it lives now —
+    // there is no browser-local working copy to clear any more.
     window.crowfootLayout = {
       dump: () => publish(dumpTableLayout()),
-      reset: () => {
-        clearStoredTableLayout()
-        location.reload()
-      },
+      reset: () => clearEditParams(['positions', 'colors']),
     }
     window.crowfootMemos = {
       dump: () => publish(dumpMemos()),
-      reset: () => {
-        clearStoredMemos()
-        location.reload()
-      },
+      reset: () => clearEditParams(['memos']),
     }
     window.crowfootGroups = {
       dump: () => publish(dumpGroups()),
-      reset: () => {
-        clearStoredGroups()
-        location.reload()
-      },
+      reset: () => clearEditParams(['groups']),
     }
   }, [])
 

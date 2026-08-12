@@ -336,7 +336,7 @@ diagram is read-only again immediately.
 
 ### Moving tables
 
-Tables are draggable in edit mode only. Dropping one writes to browser storage and
+Tables are draggable in edit mode only. Dropping one writes to
 to `?positions=` at the same time.
 
 To move **several at once**, drag a selection box across empty canvas with the left
@@ -519,11 +519,13 @@ duplicated row is never counted twice.
 ### Resolution order
 
 ```
-?positions= (link)  >  browser storage  >  layout.json  >  automatic layout (ELK)
+layout.json  +  ?positions= (link)  >  automatic layout (ELK)
 ```
 
-Memos follow the same shape: `?memos=` > browser storage > `memos.json` > none.
-So do groups: `?groups=` > browser storage > `groups.json` > none.
+Memos and groups work the same way: `memos.json` / `groups.json` are the base, and
+`?memos=` / `?groups=` carry **only what the link changed** — a renamed group, an
+added memo, a deleted one. Redeploying a sidecar therefore still reaches everyone
+holding a link, for everything they did not touch themselves.
 
 `?showgroups=` (single view vs group view) is a separate view preference, outside
 this resolution order — it never changes the group data itself, only how it is
@@ -533,22 +535,17 @@ The important part is that **a table pinned nowhere falls back to the automatic
 layout**. Adding a table to the schema therefore does not break an existing
 arrangement — the design deliberately avoids a hand-maintained layout debt.
 
-Browser storage keys:
+When a link's edits were written against different sidecars than the ones now
+deployed, the viewer says so rather than applying them silently: `?base=` records
+which documents an edit was made against, and a mismatch raises a notice naming
+whatever the edit refers to that has since gone — a group's table that is no
+longer in the schema, a deletion with nothing left to delete. The edits are still
+applied.
 
-| Key | Contents |
-|---|---|
-| `crowfoot:tableLayout` | Tables moved or tinted in this browser |
-| `crowfoot:memos` | This browser's working copy of the memos |
-| `crowfoot:groups` | This browser's working copy of the groups |
-
-> These were `liam:*` up to 0.4.0, then `erdkit:*`. A value left under either
-> old name is **moved to the current key on the first read, and the old keys
-> are deleted** — nothing has to be rearranged by hand. The console helpers
-> were renamed alongside them (`liamLayout` → `erdkitLayout` →
-> `crowfootLayout`).
-
-> Browser storage stays **in your browser only**. To show the arrangement to
-> anyone else, share the link or pin it into the sidecar files below.
+> A link stays **in the link**. Nothing is kept in this browser except a copy of
+> the deployed documents, used only to describe such a mismatch. To show an
+> arrangement to anyone else, share the link or pin it into the sidecar files
+> below.
 
 ### Three ways to pin an arrangement
 
@@ -571,7 +568,7 @@ In edit mode: `Export` → `Download layout.json` / `Download memos.json` /
 
 ```js
 crowfootLayout.dump()    // print the current layout and copy it to the clipboard
-crowfootLayout.reset()   // clear this browser's layout edits and reload
+crowfootLayout.reset()   // drop the layout edits from the link and reload
 crowfootMemos.dump()     // same for memos
 crowfootMemos.reset()
 crowfootGroups.dump()    // same for groups
@@ -785,7 +782,7 @@ copy. Ordinary text is ignored on purpose.
 That is edit mode working as intended. Pan with the scroll wheel or a middle/right drag.
 
 **The arrangement only persists in my browser**
-It is still in browser storage. See [Three ways to pin an arrangement](#three-ways-to-pin-an-arrangement).
+It is still only in the link. See [Three ways to pin an arrangement](#three-ways-to-pin-an-arrangement).
 
 **`from-link` fails with "carries no positions, colors, memos or groups"**
 The link has no edits in it. Open with `?edit=1`, actually move or add something,

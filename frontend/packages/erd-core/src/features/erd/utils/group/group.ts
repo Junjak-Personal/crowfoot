@@ -8,6 +8,7 @@ import {
   serializeDiff,
 } from '../../../../utils/recordDiff'
 import type { TableNodeType } from '../../types'
+import { readEditParam } from '../urlEdits'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 /**
@@ -152,6 +153,10 @@ export const getEffectiveGroups = (
   urlDiff: GroupDiff | null = null,
   base: Group[] = baseGroups,
 ): Group[] => applyDiff(base, urlDiff)
+
+/** Snapshot for committing as groups.json, for the console helper. */
+export const dumpGroups = (): Group[] =>
+  getEffectiveGroups(deserializeGroups(readEditParam('groups')))
 
 /** One section of the sidebar list — a named group, or `null` for "Ungrouped". */
 export type TablePartitionSection = {

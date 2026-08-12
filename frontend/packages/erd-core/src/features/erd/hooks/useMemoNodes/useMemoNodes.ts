@@ -3,7 +3,7 @@
 import type { Node } from '@xyflow/react'
 import { useReactFlow } from '@xyflow/react'
 import { useCallback } from 'react'
-import { useUserEditingOrThrow } from '../../../../stores'
+import { type EditWrite, useUserEditingOrThrow } from '../../../../stores'
 import {
   getBaseMemos,
   isMemoNode,
@@ -28,11 +28,14 @@ export const useMemoNodes = () => {
    * the store straight after would still see the old nodes.
    */
   const commitMemos = useCallback(
-    (change: (nodes: Node[]) => Node[]) => {
+    (change: (nodes: Node[]) => Node[], write?: EditWrite) => {
       const next = change(getNodes())
       setNodes(next)
 
-      setMemoEntries(serializeMemos(getBaseMemos(), memosFromNodes(next)))
+      setMemoEntries(
+        serializeMemos(getBaseMemos(), memosFromNodes(next)),
+        write,
+      )
     },
     [getNodes, setNodes, setMemoEntries],
   )

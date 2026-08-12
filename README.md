@@ -162,10 +162,16 @@ without going through a URL. The browser console exposes `crowfootLayout.dump()`
 `crowfootLayout.reset()`, `crowfootMemos.dump()` / `crowfootMemos.reset()` and
 `crowfootGroups.dump()` / `crowfootGroups.reset()` for the same purpose.
 
-Browser storage lives under `crowfoot:tableLayout`, `crowfoot:memos` and
-`crowfoot:groups`. Earlier releases used `liam:*` and then `erdkit:*`; a value left
-under either old name is moved to the current one on first read, so nothing has to
-be rearranged by hand.
+An edit lives in the link and nowhere else. `?positions=`, `?memos=` and
+`?groups=` carry only the difference from the deployed files, so redeploying one
+still reaches everyone holding a link for everything they did not touch; `?base=`
+records which files an edit was made against, and the viewer says so when they no
+longer match. Because the link is the whole of the state, the back button is undo
+(`Cmd`/`Ctrl` + `Z`) and forward is redo.
+
+Browser storage holds one thing: a copy of the deployed files, kept only so that
+mismatch can be described. Working copies written by releases up to 0.3.0
+(`crowfoot:*`, `erdkit:*`, `liam:*`) are cleared the first time an edit is made.
 
 ## Query parameters
 

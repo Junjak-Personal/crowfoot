@@ -33,6 +33,8 @@ vi.mock('@crowfoot/erd-core', async () => {
     setBaseTableLayout: record('setBaseTableLayout'),
     setBaseMemos: record('setBaseMemos'),
     setBaseGroups: record('setBaseGroups'),
+    registerBaseDocuments: record('registerBaseDocuments'),
+    clearEditParams: record('clearEditParams'),
     parseTableLayout: (value: unknown) => value,
     parseMemos: (value: unknown) => value,
     parseGroups: (value: unknown) => value,

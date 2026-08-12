@@ -7,6 +7,7 @@ import {
   type RecordDiff,
   serializeDiff,
 } from '../../../../utils/recordDiff'
+import { readEditParam } from '../urlEdits'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 export type Memo = {
@@ -150,6 +151,10 @@ export const getEffectiveMemos = (
   urlDiff: MemoDiff | null = null,
   base: Memo[] = baseMemos,
 ): Memo[] => applyDiff(base, urlDiff)
+
+/** Snapshot for committing as memos.json, for the console helper. */
+export const dumpMemos = (): Memo[] =>
+  getEffectiveMemos(deserializeMemos(readEditParam('memos')))
 
 export const createMemo = (id: string, x: number, y: number): Memo => ({
   id,
