@@ -143,12 +143,7 @@ export const arrange = (schema: Schema, plan: Plan): ArrangeResult => {
   const unplaceable = unrelatedTables(schema)
   const skip = new Set(unplaceable)
 
-  const groups = plan.groups.map((group) => ({
-    ...group,
-    tables: group.tables.filter((table) => !skip.has(table)),
-  }))
-
-  const grouped = new Set(groups.flatMap((group) => group.tables))
+  const grouped = new Set(plan.groups.flatMap((group) => group.tables))
   const ungrouped = Object.keys(schema.tables).filter(
     (table) => !grouped.has(table) && !skip.has(table),
   )
@@ -157,7 +152,12 @@ export const arrange = (schema: Schema, plan: Plan): ArrangeResult => {
     tableHeight(Object.keys(schema.tables[table]?.columns ?? {}).length)
 
   const { layout, span } = arrangeTables({
-    groups,
+    // Only the coordinate is withheld from a table with no foreign key. Which
+    // group it belongs to is the plan's statement about the schema, and
+    // dropping it from `groups.json` threw that away without saying so.
+    groups: plan.groups.map((group) => ({
+      tables: group.tables.filter((table) => !skip.has(table)),
+    })),
     ungrouped,
     heightOf,
     originX: unplaceable.length > 0 ? UNRELATED_CLEARANCE : 0,
@@ -167,7 +167,7 @@ export const arrange = (schema: Schema, plan: Plan): ArrangeResult => {
 
   return {
     layout,
-    groups: groups.map((group) => ({
+    groups: plan.groups.map((group) => ({
       id: group.id,
       name: group.name,
       ...(group.color === undefined ? {} : { color: group.color }),

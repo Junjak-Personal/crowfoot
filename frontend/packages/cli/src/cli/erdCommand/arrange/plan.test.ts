@@ -40,12 +40,13 @@ const schema = aSchema({
       constraints: fk('fk_mail_log', 'user_id', 'users'),
     }),
     audit_log: aTable({ name: 'audit_log' }),
+    audit_trail: aTable({ name: 'audit_trail' }),
   },
 })
 
 describe('unrelatedTables', () => {
   it('names the tables no foreign key touches', () => {
-    expect(unrelatedTables(schema)).toEqual(['audit_log'])
+    expect(unrelatedTables(schema)).toEqual(['audit_log', 'audit_trail'])
   })
 })
 
@@ -63,10 +64,15 @@ describe('skeletonPlan', () => {
     expect(planned).not.toContain('users')
   })
 
-  it('never plans a table nothing can place', () => {
-    const planned = skeletonPlan(schema).groups.flatMap((group) => group.tables)
+  /**
+   * `arrange` cannot give one a coordinate, but that is a fact about the
+   * viewer's layout and not about which context the table belongs to. Leaving
+   * them out hid from the reader that they could be grouped at all.
+   */
+  it('clusters tables with no foreign key like any other', () => {
+    const clusters = skeletonPlan(schema).groups.map((group) => group.tables)
 
-    expect(planned).not.toContain('audit_log')
+    expect(clusters).toContainEqual(['audit_log', 'audit_trail'])
   })
 
   it('puts the biggest cluster first', () => {

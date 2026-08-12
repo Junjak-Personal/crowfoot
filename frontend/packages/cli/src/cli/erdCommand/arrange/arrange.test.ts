@@ -61,14 +61,27 @@ describe('arrange', () => {
     expect(result.unplaceable).toEqual(['loose'])
   })
 
-  it('drops an unplaceable table from a group rather than pretending it is there', () => {
+  /**
+   * Having no foreign key says nothing about which context a table belongs to.
+   * Only the coordinate is withheld — the membership is the plan's to state.
+   */
+  it('keeps an unplaceable table in the group the plan put it in', () => {
     const result = arrange(schema, {
       groups: [
         { id: 'core', name: 'Core', tables: ['users', 'posts', 'loose'] },
       ],
     })
 
-    expect(result.groups[0]?.tableNames).toEqual(['users', 'posts'])
+    expect(result.groups[0]?.tableNames).toEqual(['users', 'posts', 'loose'])
+    expect(result.layout['loose']).toBeUndefined()
+  })
+
+  it('does not leave a hole where an unplaceable group member would have gone', () => {
+    const result = arrange(schema, {
+      groups: [{ id: 'core', name: 'Core', tables: ['loose', 'users'] }],
+    })
+
+    expect(result.layout['users']?.y).toBe(0)
   })
 
   it('sizes tables from their column count', () => {

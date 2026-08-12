@@ -113,24 +113,27 @@ export const unrelatedTables = (schema: Schema): string[] => {
 }
 
 /**
- * A plan with every table name already in it, grouped by foreign-key island.
+ * A plan with every table name already in it, clustered by shared prefix.
  *
- * The grouping is a starting point, not a claim: islands are what the schema
- * says, and naming them is the part only a reader of the code can do. The names
- * here say so.
+ * The grouping is a starting point, not a claim: the prefixes are what the
+ * schema says, and naming them is the part only a reader of the code can do.
+ * The names here say so.
+ *
+ * A table with no foreign key is clustered like any other. It is the one thing
+ * `arrange` cannot place — the viewer parents it to a group of its own — but
+ * having no relationship says nothing about which context it belongs to, and
+ * leaving it out of the skeleton hid from the reader that it could be grouped
+ * at all.
  */
 export const skeletonPlan = (schema: Schema): Plan => {
-  const unrelated = new Set(unrelatedTables(schema))
-  const placeable = Object.keys(schema.tables).filter(
-    (name) => !unrelated.has(name),
+  const groups = prefixClusters(Object.keys(schema.tables)).map(
+    (tables, index) => ({
+      id: `${tables[0]?.split('_')[0] ?? `group-${index + 1}`}`,
+      name: `Rename me ${index + 1}`,
+      color: PALETTE[index % PALETTE.length] ?? 'sky',
+      tables,
+    }),
   )
-
-  const groups = prefixClusters(placeable).map((tables, index) => ({
-    id: `${tables[0]?.split('_')[0] ?? `group-${index + 1}`}`,
-    name: `Rename me ${index + 1}`,
-    color: PALETTE[index % PALETTE.length] ?? 'sky',
-    tables,
-  }))
 
   return { groups, memos: [] }
 }
