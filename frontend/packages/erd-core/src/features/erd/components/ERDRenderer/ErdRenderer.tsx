@@ -34,6 +34,7 @@ import { LeftPane } from './LeftPane'
 import { RelationshipEdgeParticleMarker } from './RelationshipEdgeParticleMarker'
 import { TableDetailDrawer, TableDetailDrawerRoot } from './TableDetailDrawer'
 import { Toolbar } from './Toolbar'
+import { VersionNotice } from './VersionNotice'
 
 type Props = {
   defaultSidebarOpen?: boolean | undefined
@@ -162,6 +163,7 @@ export const ERDRenderer: FC<Props> = ({
                   <div className={styles.triggerWrapper}>
                     <SidebarTrigger />
                   </div>
+                  <VersionNotice />
                   <TableDetailDrawerRoot>
                     {errorObjects.length > 0 && (
                       <ErrorDisplay errors={errorObjects} />

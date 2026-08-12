@@ -13,9 +13,15 @@ import {
   type PropsWithChildren,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react'
 import type { TableNodeType } from '../../features/erd/types'
+import {
+  cacheBaseDocuments,
+  getBaseDocuments,
+  getBaseVersion,
+} from '../../features/erd/utils/baseVersion'
 import type { ShowMode } from '../../schemas'
 import { compressToEncodedUriComponent } from '../../utils/compressToEncodedUriComponent'
 import { decompressFromEncodedUriComponent } from '../../utils/decompressFromEncodedUriComponent'
@@ -131,28 +137,28 @@ export const UserEditingProvider: FC<Props> = ({
 
   // 'replace' rather than 'push': editing the view should not fill up the back
   // button the way toggling visibility does.
-  const [tablePositions, setTablePositions] = useQueryState(
+  const [tablePositions, _setTablePositions] = useQueryState(
     'positions',
     parseAsCompressedStringArray.withDefault([]).withOptions({
       history: 'replace',
     }),
   )
 
-  const [tableColors, setTableColors] = useQueryState(
+  const [tableColors, _setTableColors] = useQueryState(
     'colors',
     parseAsCompressedStringArray.withDefault([]).withOptions({
       history: 'replace',
     }),
   )
 
-  const [memoEntries, setMemoEntries] = useQueryState(
+  const [memoEntries, _setMemoEntries] = useQueryState(
     'memos',
     parseAsCompressedString.withDefault('').withOptions({
       history: 'replace',
     }),
   )
 
-  const [groupEntries, setGroupEntries] = useQueryState(
+  const [groupEntries, _setGroupEntries] = useQueryState(
     'groups',
     parseAsCompressedString.withDefault('').withOptions({
       history: 'replace',
@@ -196,11 +202,66 @@ export const UserEditingProvider: FC<Props> = ({
     [setEditParam],
   )
 
-  const [schemaEdits, setSchemaEdits] = useQueryState(
+  const [schemaEdits, _setSchemaEdits] = useQueryState(
     'schemaedits',
     parseAsCompressedString.withDefault('').withOptions({
       history: 'replace',
     }),
+  )
+
+  /**
+   * Which deployed documents these edits were written against.
+   *
+   * Every edit parameter above carries only the difference from what the build
+   * shipped, so a link is only meaningful next to the documents it was made
+   * from. Stamping happens here rather than at the five commit sites because
+   * "any edit write also records the version it was made against" is one rule,
+   * and five copies of it is four chances to forget.
+   *
+   * It is never rewritten on load: a mismatch is reported, and the next edit
+   * stamps the current version on its way out.
+   */
+  const [baseVersionParam, setBaseVersionParam] = useQueryState(
+    'base',
+    parseAsString.withDefault('').withOptions({ history: 'replace' }),
+  )
+
+  const stamped = useCallback(
+    <T,>(set: (value: T) => unknown) =>
+      (value: T) => {
+        const version = getBaseVersion()
+        if (version !== '') {
+          setBaseVersionParam(version)
+          // The first edit is also when the documents it was made against
+          // become worth keeping — see `cacheBaseDocuments`. Subsequent edits
+          // cost one small `getItem`.
+          const documents = getBaseDocuments()
+          if (documents) cacheBaseDocuments(version, documents)
+        }
+        return set(value)
+      },
+    [setBaseVersionParam],
+  )
+
+  const setTablePositions = useMemo(
+    () => stamped(_setTablePositions),
+    [stamped, _setTablePositions],
+  )
+  const setTableColors = useMemo(
+    () => stamped(_setTableColors),
+    [stamped, _setTableColors],
+  )
+  const setMemoEntries = useMemo(
+    () => stamped(_setMemoEntries),
+    [stamped, _setMemoEntries],
+  )
+  const setGroupEntries = useMemo(
+    () => stamped(_setGroupEntries),
+    [stamped, _setGroupEntries],
+  )
+  const setSchemaEdits = useMemo(
+    () => stamped(_setSchemaEdits),
+    [stamped, _setSchemaEdits],
   )
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set())
@@ -355,6 +416,7 @@ export const UserEditingProvider: FC<Props> = ({
         setEditMode,
         schemaEdits,
         setSchemaEdits,
+        baseVersionParam,
         // Local state
         selectedNodeIds,
         updateSelectedNodeIds,

@@ -52,6 +52,12 @@ export type UserEditingContextValue = {
   schemaEdits: string
   setSchemaEdits: (edits: string | null) => void
 
+  /**
+   * Which deployed documents every edit parameter above was written against.
+   * Empty when the link carries no edits, or was made before this existed.
+   */
+  baseVersionParam: string
+
   // Local state
   selectedNodeIds: Set<string>
   updateSelectedNodeIds: (

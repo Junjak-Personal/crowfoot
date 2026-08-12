@@ -16,6 +16,7 @@ import {
   parseGroups,
   parseMemos,
   parseTableLayout,
+  registerBaseDocuments,
   setBaseGroups,
   setBaseMemos,
   setBaseTableLayout,
@@ -139,6 +140,9 @@ function App() {
   useEffect(() => {
     // Every sidecar has to be registered before the schema lands, otherwise
     // the first auto-layout pass runs without the pinned positions.
+    /** Held so the four can be hashed together once the schema is in too. */
+    let sidecars: [unknown, unknown, unknown] = [{}, [], []]
+
     ResultAsync.combine([
       loadOptionalJson('layout.json', {}),
       loadOptionalJson('memos.json', []),
@@ -148,11 +152,24 @@ function App() {
         setBaseTableLayout(parseTableLayout(layout))
         setBaseMemos(parseMemos(memos))
         setBaseGroups(parseGroups(groups))
+        sidecars = [layout, memos, groups]
         return null
       })
       .andThen(loadSchemaContent)
       .match(
-        (val) => setSchema(val ?? emptySchema),
+        (val) => {
+          const [layout, memos, groups] = sidecars
+          // A link carries only the difference from these four, so it is only
+          // meaningful next to them. Registering them is what lets the viewer
+          // notice when a link was written against a different deploy.
+          registerBaseDocuments({
+            schema: val ?? emptySchema,
+            layout,
+            memos,
+            groups,
+          })
+          setSchema(val ?? emptySchema)
+        },
         (error) => {
           console.error('Error loading schema content:', error)
           setSchema(emptySchema)

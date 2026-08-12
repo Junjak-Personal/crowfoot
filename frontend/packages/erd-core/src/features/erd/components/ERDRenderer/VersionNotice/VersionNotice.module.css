@@ -1,0 +1,50 @@
+/*
+ * Added in crowfoot; not part of the original Liam ERD source.
+ * See the NOTICE file at the repository root.
+ */
+
+/*
+ * A band across the top rather than a toast: it reports something about the
+ * data on screen for as long as that data is on screen, and a toast that
+ * disappears on its own would be read as "something happened just now".
+ */
+.notice {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 7;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: min(720px, calc(100% - 24px));
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-gray-100);
+  background-color: var(--color-gray-700);
+  border: 1px solid var(--color-gold-300);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+  transform: translateX(-50%);
+}
+
+.body {
+  flex: 1;
+}
+
+.dismiss {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-gray-100);
+  white-space: nowrap;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--color-gray-400);
+  border-radius: 6px;
+}
+
+.dismiss:hover {
+  background-color: var(--color-gray-600);
+}
