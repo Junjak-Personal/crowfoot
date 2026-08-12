@@ -1,7 +1,6 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { Node } from '@xyflow/react'
-import { readStoredItem, removeStoredItem } from '../storage'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 /**
@@ -15,10 +14,6 @@ export type TablePosition = {
   color?: ViewColorKey | undefined
 }
 export type TableLayout = Record<string, TablePosition>
-
-const STORAGE_KEY = 'crowfoot:tableLayout'
-/** Newest first. Read once, then migrated away — see `readStoredItem`. */
-const LEGACY_STORAGE_KEYS = ['erdkit:tableLayout', 'liam:tableLayout']
 
 /**
  * Canonical layout shipped with the build (layout.json), set by the host app.
@@ -82,37 +77,6 @@ const mergeNodePositions = (
 
 export const setBaseTableLayout = (layout: TableLayout): void => {
   baseLayout = layout
-}
-
-export const loadStoredTableLayout = (): TableLayout => {
-  if (typeof localStorage === 'undefined') return {}
-
-  try {
-    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
-    if (!raw) return {}
-    return parseTableLayout(JSON.parse(raw))
-  } catch {
-    // Corrupted or unreadable storage falls back to the canonical layout.
-    return {}
-  }
-}
-
-const saveStoredTableLayout = (layout: TableLayout): void => {
-  if (typeof localStorage === 'undefined') return
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(layout))
-  } catch {
-    // Storage full or blocked; positions just won't survive a reload.
-  }
-}
-
-export const clearStoredTableLayout = (): void => {
-  try {
-    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
-  } catch {
-    // Nothing to do; the caller only asked for a best-effort reset.
-  }
 }
 
 /**
@@ -195,7 +159,6 @@ export const getEffectiveTableLayout = (
   urlLayout: TableLayout = {},
 ): TableLayout => ({
   ...baseLayout,
-  ...loadStoredTableLayout(),
   ...urlLayout,
 })
 
@@ -232,18 +195,35 @@ export const setResolvedTableLayout = (nodes: Node[]): void => {
 }
 
 /**
- * Persist the tables the user just dragged, leaving the rest untouched.
- * Returns every locally stored table so the caller can mirror it into the URL.
+ * Records the tables the user just dragged in the module's resolved snapshot,
+ * and hands them back for the caller to merge into `?positions=`.
+ *
+ * Only the tables that moved: the link accumulates the rest by merging, and
+ * `pruneToBaseLayout` drops whatever ends up back where layout.json put it.
  */
 export const rememberTablePositions = (nodes: Node[]): TableLayout => {
   const tables = tableNodesOnly(nodes)
   resolvedLayout = mergeNodePositions(resolvedLayout, tables)
 
-  const stored = mergeNodePositions(loadStoredTableLayout(), tables)
-  saveStoredTableLayout(stored)
-
-  return stored
+  return mergeNodePositions({}, tables)
 }
+
+/**
+ * Drops entries that say exactly what layout.json already says, so dragging a
+ * table back where it shipped removes it from the link rather than pinning it
+ * to a position the deploy might later move.
+ *
+ * Colour is not a position: an entry carrying one is kept even when its
+ * coordinates match, or the tint would be lost.
+ */
+export const pruneToBaseLayout = (layout: TableLayout): TableLayout =>
+  Object.fromEntries(
+    Object.entries(layout).filter(([name, entry]) => {
+      if (entry.color !== undefined) return true
+      const shipped = baseLayout[name]
+      return !shipped || shipped.x !== entry.x || shipped.y !== entry.y
+    }),
+  )
 
 /** Colour is stored alongside the position, in the same layout entry. */
 export const setTableColor = (
@@ -255,10 +235,6 @@ export const setTableColor = (
   const next = { ...current, color: color ?? undefined }
 
   resolvedLayout = { ...resolvedLayout, [tableName]: next }
-  saveStoredTableLayout({
-    ...loadStoredTableLayout(),
-    [tableName]: next,
-  })
 }
 
 export const getTableColor = (tableName: string): ViewColorKey | undefined =>
@@ -281,11 +257,11 @@ const renameKey = <T>(
  * Follows a table rename through every place a position or colour is filed
  * under the table's name.
  *
- * `getEffectiveTableLayout` **merges** layout.json, browser storage and the
- * link rather than taking the first that answers, so all three have to be
- * renamed — a table pinned only by layout.json would otherwise lose its spot.
- * The module's resolved snapshot goes too, because that is what
- * `dumpTableLayout` commits and what `getTableColor` reads.
+ * `getEffectiveTableLayout` **merges** layout.json and the link rather than
+ * taking the first that answers, so both have to be renamed — a table pinned
+ * only by layout.json would otherwise lose its spot. The module's resolved
+ * snapshot goes too, because that is what `dumpTableLayout` commits and what
+ * `getTableColor` reads.
  *
  * The URL entries are returned rather than written: they are query state the
  * caller owns. Everything else is module or browser state and is updated here.
@@ -297,7 +273,6 @@ export const renameTableInLayout = (
 ): { positions: string[]; colors: string[] } => {
   baseLayout = renameKey(baseLayout, from, to)
   resolvedLayout = renameKey(resolvedLayout, from, to)
-  saveStoredTableLayout(renameKey(loadStoredTableLayout(), from, to))
 
   return {
     positions: serializeTableLayout(

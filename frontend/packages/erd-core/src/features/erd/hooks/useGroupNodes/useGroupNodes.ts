@@ -4,14 +4,14 @@ import type { Node } from '@xyflow/react'
 import { useReactFlow } from '@xyflow/react'
 import { useCallback } from 'react'
 import { useUserEditingOrThrow } from '../../../../stores'
-import { groupsFromNodes, saveStoredGroups, serializeGroups } from '../../utils'
+import { getBaseGroups, groupsFromNodes, serializeGroups } from '../../utils'
 
 /**
  * Groups live in React Flow's node state, which is what gives them
  * selection, multi-selection and dragging (via the members' own multi-
- * select drag) for free. Browser storage and the shareable link are mirrors
- * of that state, refreshed whenever an edit settles — the group counterpart
- * of useMemoNodes.
+ * select drag) for free. The link is refreshed whenever an edit settles, and
+ * carries only the difference from `groups.json` — the group counterpart of
+ * useMemoNodes.
  */
 export const useGroupNodes = () => {
   const { getNodes, setNodes } = useReactFlow()
@@ -30,9 +30,7 @@ export const useGroupNodes = () => {
       const next = change(getNodes())
       setNodes(next)
 
-      const groups = groupsFromNodes(next)
-      saveStoredGroups(groups)
-      setGroupEntries(serializeGroups(groups))
+      setGroupEntries(serializeGroups(getBaseGroups(), groupsFromNodes(next)))
     },
     [getNodes, setNodes, setGroupEntries],
   )

@@ -1,6 +1,12 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { readStoredItem, removeStoredItem } from '../storage'
+import {
+  applyDiff,
+  deserializeDiff,
+  diffRecords,
+  type RecordDiff,
+  serializeDiff,
+} from '../../../../utils/recordDiff'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 export type Memo = {
@@ -13,10 +19,6 @@ export type Memo = {
   color?: ViewColorKey | undefined
   fontSize?: number | undefined
 }
-
-const STORAGE_KEY = 'crowfoot:memos'
-/** Newest first. Read once, then migrated away — see `readStoredItem`. */
-const LEGACY_STORAGE_KEYS = ['erdkit:memos', 'liam:memos']
 
 export const DEFAULT_MEMO_WIDTH = 220
 export const DEFAULT_MEMO_HEIGHT = 120
@@ -120,68 +122,34 @@ export const setBaseMemos = (memos: Memo[]): void => {
   baseMemos = memos
 }
 
-/**
- * Local edits replace memos.json wholesale rather than merging into it.
- * Merging would make deletions impossible to express, and memos are few
- * enough that a full working copy costs nothing.
- */
-export const loadStoredMemos = (): Memo[] | null => {
-  if (typeof localStorage === 'undefined') return null
+/** What a diff is measured against, for callers that have to build one. */
+export const getBaseMemos = (): Memo[] => baseMemos
 
-  try {
-    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
-    if (!raw) return null
-    return parseMemos(JSON.parse(raw))
-  } catch {
-    return null
-  }
-}
-
-export const saveStoredMemos = (memos: Memo[]): void => {
-  if (typeof localStorage === 'undefined') return
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(memos))
-  } catch {
-    // Storage full or blocked; edits just won't survive a reload.
-  }
-}
-
-export const clearStoredMemos = (): void => {
-  try {
-    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
-  } catch {
-    // Best-effort reset only.
-  }
-}
+export type MemoDiff = RecordDiff<Memo>
 
 /**
  * Memos travel in the URL as JSON rather than a compact field list: the text
  * is free-form and would need escaping anyway, and the value is compressed
  * before it reaches the query string.
+ *
+ * What travels is the *difference* from `memos.json`, not the whole set — see
+ * `RecordDiff`.
  */
-export const serializeMemos = (memos: Memo[]): string => JSON.stringify(memos)
+export const serializeMemos = (base: Memo[], next: Memo[]): string =>
+  serializeDiff(diffRecords(base, next))
 
-export const deserializeMemos = (raw: string): Memo[] | null => {
-  if (raw === '') return null
-
-  try {
-    return parseMemos(JSON.parse(raw))
-  } catch {
-    return null
-  }
-}
+export const deserializeMemos = (raw: string): MemoDiff | null =>
+  deserializeDiff(raw, parseMemo)
 
 /**
- * A shared link wins, then the local working copy, then what shipped with the
- * build. `null` from the link means "the link said nothing", which is not the
- * same as a link that deliberately carries no memos.
+ * What shipped with the build, plus whatever the link changed. `null` from the
+ * link means "the link said nothing", which is not the same as a link that
+ * deliberately deletes every memo.
  */
-export const getEffectiveMemos = (urlMemos: Memo[] | null = null): Memo[] =>
-  urlMemos ?? loadStoredMemos() ?? baseMemos
-
-/** Snapshot for committing as memos.json. */
-export const dumpMemos = (): Memo[] => getEffectiveMemos()
+export const getEffectiveMemos = (
+  urlDiff: MemoDiff | null = null,
+  base: Memo[] = baseMemos,
+): Memo[] => applyDiff(base, urlDiff)
 
 export const createMemo = (id: string, x: number, y: number): Memo => ({
   id,

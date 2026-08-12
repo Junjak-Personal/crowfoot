@@ -5,16 +5,16 @@ import { useReactFlow } from '@xyflow/react'
 import { useCallback } from 'react'
 import { useUserEditingOrThrow } from '../../../../stores'
 import {
+  getBaseMemos,
   isMemoNode,
   memosFromNodes,
-  saveStoredMemos,
   serializeMemos,
 } from '../../utils'
 
 /**
  * Memos live in React Flow's node state, which is what gives them selection,
- * multi-selection, dragging and resizing for free. Browser storage and the
- * shareable link are mirrors of that state, refreshed whenever an edit settles.
+ * multi-selection, dragging and resizing for free. The link is refreshed
+ * whenever an edit settles, and carries only the difference from `memos.json`.
  */
 export const useMemoNodes = () => {
   const { getNodes, setNodes } = useReactFlow()
@@ -32,9 +32,7 @@ export const useMemoNodes = () => {
       const next = change(getNodes())
       setNodes(next)
 
-      const memos = memosFromNodes(next)
-      saveStoredMemos(memos)
-      setMemoEntries(serializeMemos(memos))
+      setMemoEntries(serializeMemos(getBaseMemos(), memosFromNodes(next)))
     },
     [getNodes, setNodes, setMemoEntries],
   )

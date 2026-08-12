@@ -5,15 +5,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { zIndex } from '../../constants'
 import type { TableNodeData, TableNodeType } from '../../types'
 import {
-  clearStoredGroups,
   deserializeGroups,
-  dumpGroups,
   type Group,
   getEffectiveGroups,
-  loadStoredGroups,
   parseGroups,
   partitionTablesByGroup,
-  saveStoredGroups,
   serializeGroups,
   setBaseGroups,
 } from './group'
@@ -203,107 +199,107 @@ describe(parseGroups, () => {
   })
 })
 
-describe('group persistence', () => {
+describe('groups on top of groups.json', () => {
   beforeEach(() => {
-    clearStoredGroups()
     setBaseGroups([])
   })
 
-  it('falls back to groups.json when nothing is stored', () => {
+  /** The link said nothing, so the diagram is exactly what was deployed. */
+  it('is groups.json when the link carries nothing', () => {
     setBaseGroups([group('shipped', ['orders'])])
 
     expect(getEffectiveGroups()).toEqual([group('shipped', ['orders'])])
   })
 
-  it('lets local edits replace groups.json entirely', () => {
-    setBaseGroups([group('shipped', ['orders']), group('other', ['users'])])
-    saveStoredGroups([group('shipped', ['orders'], { name: 'edited' })])
-
-    expect(getEffectiveGroups()).toEqual([
+  it('carries only the group that changed', () => {
+    const base = [group('shipped', ['orders']), group('other', ['users'])]
+    const next = [
       group('shipped', ['orders'], { name: 'edited' }),
+      group('other', ['users']),
+    ]
+
+    expect(JSON.parse(serializeGroups(base, next))).toEqual({
+      changed: { shipped: next[0] },
+      removed: [],
+    })
+  })
+
+  /**
+   * The whole point of the diff: a redeployed groups.json still reaches
+   * someone holding a link, for every group they did not touch.
+   */
+  it('lets a redeployed group through for anything the link did not touch', () => {
+    const base = [group('shipped', ['orders']), group('other', ['users'])]
+    const link = deserializeGroups(
+      serializeGroups(base, [
+        group('shipped', ['orders'], { name: 'edited' }),
+        group('other', ['users']),
+      ]),
+    )
+
+    const redeployed = [
+      group('shipped', ['orders']),
+      group('other', ['users'], { name: 'renamed upstream' }),
+    ]
+
+    expect(getEffectiveGroups(link, redeployed)).toEqual([
+      group('shipped', ['orders'], { name: 'edited' }),
+      group('other', ['users'], { name: 'renamed upstream' }),
     ])
   })
 
-  it('treats an empty local list as a real edit, not as absent', () => {
-    setBaseGroups([group('shipped', ['orders'])])
-    saveStoredGroups([])
+  it('expresses a deletion, which a plain merge could not', () => {
+    const kept = group('other', ['users'])
+    const base = [group('shipped', ['orders']), kept]
+    const link = deserializeGroups(serializeGroups(base, [kept]))
 
-    expect(getEffectiveGroups()).toEqual([])
+    expect(getEffectiveGroups(link, base)).toEqual([kept])
   })
 
-  it('restores groups.json once local edits are cleared', () => {
-    setBaseGroups([group('shipped', ['orders'])])
-    saveStoredGroups([group('local', ['users'])])
-    clearStoredGroups()
+  it('keeps a group the viewer added', () => {
+    const base = [group('shipped', ['orders'])]
+    const link = deserializeGroups(
+      serializeGroups(base, [...base, group('added', ['users'])]),
+    )
 
-    expect(loadStoredGroups()).toBeNull()
-    expect(getEffectiveGroups()).toEqual([group('shipped', ['orders'])])
-  })
-
-  it('returns null instead of throwing when storage holds malformed JSON directly, and falls through', () => {
-    // Bypasses saveStoredGroups' own JSON.stringify to simulate a hand-edited
-    // or corrupted localStorage entry, not just a value this module wrote.
-    localStorage.setItem('crowfoot:groups', 'not json')
-
-    expect(loadStoredGroups()).toBeNull()
-    expect(getEffectiveGroups()).toEqual([])
-  })
-
-  it('dumps what is effective so groups.json can be regenerated', () => {
-    setBaseGroups([group('shipped', ['orders'])])
-    saveStoredGroups([
-      group('shipped', ['orders'], { name: 'edited' }),
+    expect(getEffectiveGroups(link, base)).toEqual([
+      group('shipped', ['orders']),
       group('added', ['users']),
     ])
-
-    expect(dumpGroups()).toEqual([
-      group('shipped', ['orders'], { name: 'edited' }),
-      group('added', ['users']),
-    ])
   })
 
-  it('lets a link win over both storage and the shipped file', () => {
-    setBaseGroups([group('shipped', ['orders'])])
-    saveStoredGroups([group('local', ['users'])])
+  it('says nothing at all once every edit is undone by hand', () => {
+    const base = [group('shipped', ['orders'])]
 
-    expect(getEffectiveGroups([group('linked', ['payments'])])).toEqual([
-      group('linked', ['payments']),
-    ])
-  })
-
-  it('falls through to storage when the link is null, not empty', () => {
-    setBaseGroups([group('shipped', ['orders'])])
-    saveStoredGroups([group('local', ['users'])])
-
-    expect(getEffectiveGroups(null)).toEqual([group('local', ['users'])])
-  })
-
-  it('treats an explicitly empty link as real data, not as absent', () => {
-    setBaseGroups([group('shipped', ['orders'])])
-    saveStoredGroups([group('local', ['users'])])
-
-    expect(getEffectiveGroups([])).toEqual([])
+    expect(serializeGroups(base, [...base])).toBe('')
   })
 })
 
 describe('url encoding', () => {
-  it('round-trips through JSON, including an empty name, a color, and separator characters', () => {
-    const groups: Group[] = [
+  const base = [group('a', ['orders'])]
+
+  it('round-trips through JSON, including an empty name, a colour, and separator characters', () => {
+    const next: Group[] = [
       group('a', ['orders', 'payments'], { name: '', color: 'gold' }),
       group('b:x', ['weird,name'], { name: 'has:colon,and,comma' }),
     ]
 
-    expect(deserializeGroups(serializeGroups(groups))).toEqual(groups)
+    expect(
+      getEffectiveGroups(deserializeGroups(serializeGroups(base, next)), base),
+    ).toEqual(next)
   })
 
-  it('returns null for an empty value, distinct from an explicitly empty list', () => {
+  it('reads an empty value as "the link said nothing"', () => {
     expect(deserializeGroups('')).toBeNull()
-    expect(deserializeGroups('[]')).toEqual([])
   })
 
-  it('returns null instead of throwing on malformed JSON', () => {
-    expect(deserializeGroups('not json')).toBeNull()
-    expect(deserializeGroups('{"broken":')).toBeNull()
+  it('reads malformed JSON as no edits rather than throwing', () => {
+    expect(getEffectiveGroups(deserializeGroups('not json'), base)).toEqual(
+      base,
+    )
+    expect(getEffectiveGroups(deserializeGroups('{"broken":'), base)).toEqual(
+      base,
+    )
   })
 })
 
@@ -636,36 +632,5 @@ describe(padGroupRect, () => {
       width: 50 + GROUP_BOX_PADDING * 2,
       height: 30 + GROUP_BOX_PADDING * 2,
     })
-  })
-})
-
-describe('storage key migration', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    setBaseGroups([])
-  })
-
-  it('reads groups left behind under the pre-0.4.1 liam: key and moves them', () => {
-    // Written through saveStoredGroups so the payload is exactly what an old
-    // build would have left, rather than a hand-rolled guess at the shape.
-    saveStoredGroups([group('billing', ['orders'])])
-    const stored = localStorage.getItem('crowfoot:groups')
-    localStorage.clear()
-    localStorage.setItem('liam:groups', String(stored))
-
-    expect(loadStoredGroups()).toEqual([group('billing', ['orders'])])
-    expect(localStorage.getItem('crowfoot:groups')).toBe(stored)
-    expect(localStorage.getItem('liam:groups')).toBeNull()
-  })
-
-  it('clears both names, so a reset is not undone by the migration', () => {
-    saveStoredGroups([group('billing', ['orders'])])
-    const stored = localStorage.getItem('crowfoot:groups')
-    localStorage.clear()
-    localStorage.setItem('liam:groups', String(stored))
-
-    clearStoredGroups()
-
-    expect(loadStoredGroups()).toBeNull()
   })
 })

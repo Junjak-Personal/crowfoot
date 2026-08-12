@@ -6,89 +6,131 @@ import { NuqsTestingAdapter, type UrlUpdateEvent } from 'nuqs/adapters/testing'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { UserEditingProvider } from '../../../../stores'
-import { compressToEncodedUriComponent } from '../../../../utils/compressToEncodedUriComponent'
-import { clearStoredGroups, groupToNode, loadStoredGroups } from '../../utils'
+import { decompressFromEncodedUriComponent } from '../../../../utils/decompressFromEncodedUriComponent'
+import {
+  deserializeGroups,
+  type Group,
+  getEffectiveGroups,
+  groupToNode,
+  setBaseGroups,
+} from '../../utils'
 import { useGroupNodes } from './useGroupNodes'
 
 const mockDefaultNodes = vi.fn<() => Node[]>()
-const onUrlUpdate = vi.fn<() => [UrlUpdateEvent]>()
+
+/** The last query string a commit wrote. */
+let committed = new URLSearchParams()
 
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <NuqsTestingAdapter onUrlUpdate={onUrlUpdate}>
+  <NuqsTestingAdapter
+    onUrlUpdate={(event: UrlUpdateEvent) => {
+      committed = event.searchParams
+    }}
+  >
     <ReactFlowProvider defaultNodes={mockDefaultNodes()}>
       <UserEditingProvider>{children}</UserEditingProvider>
     </ReactFlowProvider>
   </NuqsTestingAdapter>
 )
 
-describe('commitGroups', () => {
-  beforeEach(() => {
-    clearStoredGroups()
+/** The raw `?groups=` payload, decompressed — the diff, not the whole set. */
+const committedDiff = () =>
+  decompressFromEncodedUriComponent(committed.get('groups') ?? '') ?? ''
+
+/** What a reload of the captured URL would put on the canvas. */
+const committedGroups = (): Group[] =>
+  getEffectiveGroups(deserializeGroups(committedDiff()))
+
+const payments: Group = {
+  id: 'payment',
+  name: 'Payments',
+  tableNames: ['orders'],
+}
+
+const ordersNode: Node = {
+  id: 'orders',
+  type: 'table',
+  data: {},
+  position: { x: 0, y: 0 },
+}
+
+const settled = () =>
+  waitFor(() => {
+    expect(committed.has('groups')).toBe(true)
   })
 
-  it('mirrors an added group to storage and the link', async () => {
-    mockDefaultNodes.mockReturnValueOnce([
-      { id: 'orders', type: 'table', data: {}, position: { x: 0, y: 0 } },
-    ])
+describe('commitGroups', () => {
+  beforeEach(() => {
+    committed = new URLSearchParams()
+    setBaseGroups([])
+  })
+
+  it('writes a group the build did not ship into the link', async () => {
+    mockDefaultNodes.mockReturnValueOnce([ordersNode])
 
     const { result } = renderHook(() => useGroupNodes(), { wrapper })
 
-    const added = groupToNode({
-      id: 'payment',
-      name: 'Payments',
-      tableNames: ['orders'],
-    })
-
     act(() => {
-      result.current.commitGroups((nodes) => [...nodes, added])
+      result.current.commitGroups((nodes) => [...nodes, groupToNode(payments)])
     })
 
-    expect(loadStoredGroups()).toEqual([
-      { id: 'payment', name: 'Payments', tableNames: ['orders'] },
-    ])
-
-    await waitFor(() => {
-      expect(onUrlUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          queryString: expect.stringContaining('groups='),
-        }),
-      )
-    })
+    await settled()
+    expect(committedGroups()).toEqual([payments])
   })
 
-  it('mirrors a removed group by leaving storage and the link empty', async () => {
-    const group = groupToNode({
-      id: 'payment',
-      name: 'Payments',
-      tableNames: ['orders'],
-    })
-    mockDefaultNodes.mockReturnValueOnce([
-      { id: 'orders', type: 'table', data: {}, position: { x: 0, y: 0 } },
-      group,
-    ])
+  /**
+   * The link has to be able to say "this one is gone", which is what it could
+   * not do while it carried the whole set and simply replaced `groups.json`.
+   */
+  it('writes a tombstone when a group that shipped is removed', async () => {
+    setBaseGroups([payments])
+    const node = groupToNode(payments)
+    mockDefaultNodes.mockReturnValueOnce([ordersNode, node])
 
     const { result } = renderHook(() => useGroupNodes(), { wrapper })
 
     act(() => {
       result.current.commitGroups((nodes) =>
-        nodes.filter((node) => node.id !== group.id),
+        nodes.filter((current) => current.id !== node.id),
       )
     })
 
-    expect(loadStoredGroups()).toEqual([])
-
-    await waitFor(() => {
-      expect(onUrlUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          queryString: `?groups=${compressToEncodedUriComponent('[]')}`,
-        }),
-      )
+    await settled()
+    expect(JSON.parse(committedDiff())).toEqual({
+      changed: {},
+      removed: ['payment'],
     })
+    expect(committedGroups()).toEqual([])
   })
 
-  it('only mirrors group nodes, leaving table and memo nodes out of storage', async () => {
+  /** The link must not accumulate entries for edits that were undone. */
+  it('empties the link again once the canvas matches what shipped', async () => {
+    setBaseGroups([payments])
+    const node = groupToNode(payments)
+    mockDefaultNodes.mockReturnValueOnce([ordersNode, node])
+
+    const { result } = renderHook(() => useGroupNodes(), { wrapper })
+
+    act(() => {
+      result.current.commitGroups((nodes) =>
+        nodes.filter((current) => current.id !== node.id),
+      )
+    })
+    await settled()
+    expect(committedDiff()).not.toBe('')
+
+    act(() => {
+      result.current.commitGroups((nodes) => [...nodes, node])
+    })
+    await waitFor(() => {
+      expect(committedDiff()).toBe('')
+    })
+    expect(committedGroups()).toEqual([payments])
+  })
+
+  it('writes only group nodes, leaving table and memo nodes out of the link', async () => {
     mockDefaultNodes.mockReturnValueOnce([
-      { id: 'orders', type: 'table', data: {}, position: { x: 0, y: 0 } },
+      ordersNode,
       {
         id: 'note-1',
         type: 'memo',
@@ -99,18 +141,11 @@ describe('commitGroups', () => {
 
     const { result } = renderHook(() => useGroupNodes(), { wrapper })
 
-    const added = groupToNode({
-      id: 'payment',
-      name: 'Payments',
-      tableNames: ['orders'],
-    })
-
     act(() => {
-      result.current.commitGroups((nodes) => [...nodes, added])
+      result.current.commitGroups((nodes) => [...nodes, groupToNode(payments)])
     })
 
-    expect(loadStoredGroups()).toEqual([
-      { id: 'payment', name: 'Payments', tableNames: ['orders'] },
-    ])
+    await settled()
+    expect(committedGroups()).toEqual([payments])
   })
 })

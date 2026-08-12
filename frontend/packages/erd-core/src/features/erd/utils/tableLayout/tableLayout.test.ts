@@ -4,13 +4,12 @@ import type { Node } from '@xyflow/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   applyTableLayout,
-  clearStoredTableLayout,
   deserializeTableLayout,
   dumpTableLayout,
   getEffectiveTableLayout,
   getTableColor,
-  loadStoredTableLayout,
   parseTableLayout,
+  pruneToBaseLayout,
   rememberTablePositions,
   renameTableInLayout,
   serializeTableLayout,
@@ -52,43 +51,70 @@ describe(parseTableLayout, () => {
 
 describe('layout precedence', () => {
   beforeEach(() => {
-    clearStoredTableLayout()
     setBaseTableLayout({})
     setResolvedTableLayout([])
   })
 
-  it('falls back to layout.json when nothing is stored', () => {
+  it('is layout.json when the link carries nothing', () => {
     setBaseTableLayout({ users: { x: 1, y: 2 } })
 
     expect(getEffectiveTableLayout()).toEqual({ users: { x: 1, y: 2 } })
   })
 
-  it('lets a dragged table override layout.json', () => {
+  it('lets a link override layout.json for the tables it names', () => {
     setBaseTableLayout({ users: { x: 1, y: 2 }, posts: { x: 3, y: 4 } })
-    rememberTablePositions([node('users', 99, 99)])
 
-    expect(getEffectiveTableLayout()).toEqual({
+    expect(
+      getEffectiveTableLayout(deserializeTableLayout(['users:99:99'])),
+    ).toEqual({
       users: { x: 99, y: 99 },
       posts: { x: 3, y: 4 },
     })
   })
 
-  it('keeps previously dragged tables when another one moves', () => {
-    rememberTablePositions([node('users', 10, 10)])
-    rememberTablePositions([node('posts', 20, 20)])
-
-    expect(loadStoredTableLayout()).toEqual({
+  it('hands back only the tables the gesture moved', () => {
+    expect(rememberTablePositions([node('users', 10, 10)])).toEqual({
       users: { x: 10, y: 10 },
-      posts: { x: 20, y: 20 },
+    })
+  })
+})
+
+describe(pruneToBaseLayout, () => {
+  beforeEach(() => {
+    setBaseTableLayout({})
+    setResolvedTableLayout([])
+  })
+
+  /** Dragging a table back where it shipped should stop pinning it. */
+  it('drops an entry that says what layout.json already says', () => {
+    setBaseTableLayout({ users: { x: 1, y: 2 } })
+
+    expect(pruneToBaseLayout({ users: { x: 1, y: 2 } })).toEqual({})
+  })
+
+  it('keeps an entry that moved the table', () => {
+    setBaseTableLayout({ users: { x: 1, y: 2 } })
+
+    expect(pruneToBaseLayout({ users: { x: 9, y: 9 } })).toEqual({
+      users: { x: 9, y: 9 },
     })
   })
 
-  it('restores the canonical layout once local edits are cleared', () => {
-    setBaseTableLayout({ users: { x: 1, y: 2 } })
-    rememberTablePositions([node('users', 99, 99)])
-    clearStoredTableLayout()
+  it('keeps a table layout.json never pinned', () => {
+    expect(pruneToBaseLayout({ users: { x: 0, y: 0 } })).toEqual({
+      users: { x: 0, y: 0 },
+    })
+  })
 
-    expect(getEffectiveTableLayout()).toEqual({ users: { x: 1, y: 2 } })
+  /** Colour rides in the same entry, and is not a position. */
+  it('keeps an entry carrying a colour even where the position matches', () => {
+    setBaseTableLayout({ users: { x: 1, y: 2 } })
+
+    expect(pruneToBaseLayout({ users: { x: 1, y: 2, color: 'gold' } })).toEqual(
+      {
+        users: { x: 1, y: 2, color: 'gold' },
+      },
+    )
   })
 })
 
@@ -117,10 +143,8 @@ describe('url encoding', () => {
     ).toEqual({ users: { x: 1, y: 2 } })
   })
 
-  it('lets a shared link win over local edits', () => {
-    clearStoredTableLayout()
+  it('lets a shared link win over layout.json', () => {
     setBaseTableLayout({ users: { x: 1, y: 1 } })
-    rememberTablePositions([node('users', 2, 2)])
 
     const fromUrl = deserializeTableLayout(['users:3:3'])
 
@@ -142,7 +166,6 @@ describe(applyTableLayout, () => {
 
 describe(dumpTableLayout, () => {
   beforeEach(() => {
-    clearStoredTableLayout()
     setBaseTableLayout({})
     setResolvedTableLayout([])
   })
@@ -169,7 +192,6 @@ describe(dumpTableLayout, () => {
 
 describe('table color', () => {
   beforeEach(() => {
-    clearStoredTableLayout()
     setBaseTableLayout({})
     setResolvedTableLayout([])
   })
@@ -206,36 +228,8 @@ describe('table color', () => {
   })
 })
 
-describe('storage key migration', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    setBaseTableLayout({})
-    setResolvedTableLayout([])
-  })
-
-  it('reads a layout left behind under the pre-0.4.1 liam: key and moves it', () => {
-    const stored = JSON.stringify({ users: { x: 1, y: 2 } })
-    localStorage.setItem('liam:tableLayout', stored)
-
-    expect(loadStoredTableLayout()).toEqual({ users: { x: 1, y: 2 } })
-    expect(localStorage.getItem('crowfoot:tableLayout')).toBe(stored)
-    expect(localStorage.getItem('liam:tableLayout')).toBeNull()
-  })
-
-  it('clears both names, so a reset is not undone by the migration', () => {
-    localStorage.setItem(
-      'liam:tableLayout',
-      JSON.stringify({ users: { x: 1, y: 2 } }),
-    )
-    clearStoredTableLayout()
-
-    expect(loadStoredTableLayout()).toEqual({})
-  })
-})
-
 describe(renameTableInLayout, () => {
   beforeEach(() => {
-    clearStoredTableLayout()
     setBaseTableLayout({})
     setResolvedTableLayout([])
   })
@@ -263,7 +257,7 @@ describe(renameTableInLayout, () => {
     expect(getEffectiveTableLayout()['users']).toBeUndefined()
   })
 
-  it('renames the browser-storage copy and the resolved snapshot', () => {
+  it('renames the resolved snapshot', () => {
     setResolvedTableLayout([node('users', 3, 4)])
     setTableColor('users', 'gold')
 
@@ -272,7 +266,6 @@ describe(renameTableInLayout, () => {
     expect(getTableColor('accounts')).toBe('gold')
     expect(getTableColor('users')).toBeUndefined()
     expect(dumpTableLayout()['accounts']).toEqual({ x: 3, y: 4, color: 'gold' })
-    expect(loadStoredTableLayout()['accounts']?.color).toBe('gold')
   })
 
   it('leaves everything alone when the table is not pinned anywhere', () => {

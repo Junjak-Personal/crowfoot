@@ -2,15 +2,13 @@
 // See the NOTICE file at the repository root.
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
-  clearStoredMemos,
   createMemo,
   DEFAULT_MEMO_FONT_SIZE,
   DEFAULT_MEMO_HEIGHT,
   DEFAULT_MEMO_WIDTH,
-  dumpMemos,
+  deserializeMemos,
   duplicateMemo,
   getEffectiveMemos,
-  loadStoredMemos,
   MAX_MEMO_FONT_SIZE,
   MEMO_DUPLICATE_OFFSET,
   type Memo,
@@ -18,7 +16,7 @@ import {
   parseMemos,
   parseMemosFromClipboard,
   placeMemos,
-  saveStoredMemos,
+  serializeMemos,
   serializeMemosToClipboard,
   setBaseMemos,
   stepMemoFontSize,
@@ -74,47 +72,49 @@ describe(parseMemos, () => {
   })
 })
 
-describe('memo persistence', () => {
+describe('memos on top of memos.json', () => {
   beforeEach(() => {
-    clearStoredMemos()
     setBaseMemos([])
   })
 
-  it('falls back to memos.json when nothing is stored', () => {
+  it('is memos.json when the link carries nothing', () => {
     setBaseMemos([memo('shipped')])
 
     expect(getEffectiveMemos()).toEqual([memo('shipped')])
   })
 
-  it('lets local edits replace memos.json entirely', () => {
-    setBaseMemos([memo('shipped'), memo('other')])
-    // A wholesale replace is what makes deletion expressible.
-    saveStoredMemos([memo('shipped', 'edited')])
+  it('carries only the memo that changed', () => {
+    const base = [memo('shipped'), memo('other')]
+    const next = [memo('shipped', 'edited'), memo('other')]
 
-    expect(getEffectiveMemos()).toEqual([memo('shipped', 'edited')])
+    expect(JSON.parse(serializeMemos(base, next))).toEqual({
+      changed: { shipped: next[0] },
+      removed: [],
+    })
   })
 
-  it('treats an empty local list as a real edit, not as absent', () => {
-    setBaseMemos([memo('shipped')])
-    saveStoredMemos([])
+  it('lets a redeployed memo through for anything the link did not touch', () => {
+    const base = [memo('shipped'), memo('other')]
+    const link = deserializeMemos(
+      serializeMemos(base, [memo('shipped', 'edited'), memo('other')]),
+    )
 
-    expect(getEffectiveMemos()).toEqual([])
+    expect(
+      getEffectiveMemos(link, [memo('shipped'), memo('other', 'rewritten')]),
+    ).toEqual([memo('shipped', 'edited'), memo('other', 'rewritten')])
   })
 
-  it('restores memos.json once local edits are cleared', () => {
-    setBaseMemos([memo('shipped')])
-    saveStoredMemos([memo('local')])
-    clearStoredMemos()
+  it('expresses a deletion, which a plain merge could not', () => {
+    const base = [memo('shipped'), memo('other')]
+    const link = deserializeMemos(serializeMemos(base, [memo('other')]))
 
-    expect(loadStoredMemos()).toBeNull()
-    expect(getEffectiveMemos()).toEqual([memo('shipped')])
+    expect(getEffectiveMemos(link, base)).toEqual([memo('other')])
   })
 
-  it('dumps what is on screen so memos.json can be regenerated', () => {
-    setBaseMemos([memo('shipped')])
-    saveStoredMemos([memo('shipped', 'edited'), memo('added')])
+  it('says nothing at all once every edit is undone by hand', () => {
+    const base = [memo('shipped')]
 
-    expect(dumpMemos()).toEqual([memo('shipped', 'edited'), memo('added')])
+    expect(serializeMemos(base, [...base])).toBe('')
   })
 })
 
@@ -256,36 +256,5 @@ describe(stepMemoFontSize, () => {
       parseMemos([{ id: 'a', text: '', x: 0, y: 0, fontSize: 'big' }])[0]
         ?.fontSize,
     ).toBeUndefined()
-  })
-})
-
-describe('storage key migration', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    setBaseMemos([])
-  })
-
-  it('reads memos left behind under the pre-0.4.1 liam: key and moves them', () => {
-    // Written through saveStoredMemos so the payload is exactly what an old
-    // build would have left, rather than a hand-rolled guess at the shape.
-    saveStoredMemos([memo('kept')])
-    const stored = localStorage.getItem('crowfoot:memos')
-    localStorage.clear()
-    localStorage.setItem('liam:memos', String(stored))
-
-    expect(loadStoredMemos()).toEqual([memo('kept')])
-    expect(localStorage.getItem('crowfoot:memos')).toBe(stored)
-    expect(localStorage.getItem('liam:memos')).toBeNull()
-  })
-
-  it('clears both names, so a reset is not undone by the migration', () => {
-    saveStoredMemos([memo('kept')])
-    const stored = localStorage.getItem('crowfoot:memos')
-    localStorage.clear()
-    localStorage.setItem('liam:memos', String(stored))
-
-    clearStoredMemos()
-
-    expect(loadStoredMemos()).toBeNull()
   })
 })

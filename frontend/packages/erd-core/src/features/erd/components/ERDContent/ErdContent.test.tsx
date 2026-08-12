@@ -2,7 +2,13 @@
 // See the NOTICE file at the repository root.
 import { aSchema, aTable } from '@crowfoot/schema'
 import { ToastProvider } from '@crowfoot/ui'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import { type Node, ReactFlowProvider } from '@xyflow/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'
@@ -10,23 +16,49 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { VersionProvider } from '../../../../providers'
 import type { Version } from '../../../../schemas/version'
 import { SchemaProvider, UserEditingProvider } from '../../../../stores'
+import { decompressFromEncodedUriComponent } from '../../../../utils/decompressFromEncodedUriComponent'
 import type { TableNodeData, TableNodeType } from '../../types'
 import {
-  clearStoredGroups,
-  loadStoredGroups,
-  saveStoredGroups,
+  deserializeGroups,
+  type Group,
+  getEffectiveGroups,
+  setBaseGroups,
 } from '../../utils'
 import { ERDContent } from './ErdContent'
 
 /**
  * The context-menu group actions (`Group selected tables`, `Remove from
  * group`, rename, ungroup, colour) live entirely inside ErdContent.tsx and
- * had zero coverage before this file. Assertions read back through
- * `loadStoredGroups()` — `commitGroups` mirrors to `crowfoot:groups`
- * synchronously (see useGroupNodes.ts) — rather than through rendered DOM,
- * because the derived group box depends on React Flow's async
- * ResizeObserver-driven `measured` size, which this test does not need.
+ * had zero coverage before this file. Assertions read the committed `?groups=`
+ * back out of the URL and apply it to `groups.json` — which is what a reload
+ * would do — rather than the rendered DOM, because the derived group box
+ * depends on React Flow's async ResizeObserver-driven `measured` size, which
+ * this test does not need.
  */
+
+/** The last query string any commit wrote, captured from the nuqs adapter. */
+let committed = new URLSearchParams()
+
+/**
+ * Exactly what a reload of the captured URL would put on the canvas.
+ *
+ * Use `settledGroups()` after an action: nuqs flushes URL writes on a timer,
+ * so what a reload would see is not available synchronously — unlike the
+ * localStorage mirror these assertions used to read.
+ */
+const committedGroups = (): Group[] =>
+  getEffectiveGroups(
+    deserializeGroups(
+      decompressFromEncodedUriComponent(committed.get('groups') ?? '') ?? '',
+    ),
+  )
+
+const settledGroups = async (): Promise<Group[]> => {
+  await waitFor(() => {
+    expect(committed.has('groups')).toBe(true)
+  })
+  return committedGroups()
+}
 
 const version: Version = {
   version: '0.0.0',
@@ -58,7 +90,12 @@ const schema = aSchema({
 })
 
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
-  <NuqsTestingAdapter searchParams="?edit=1">
+  <NuqsTestingAdapter
+    searchParams="?edit=1"
+    onUrlUpdate={(event) => {
+      committed = event.searchParams
+    }}
+  >
     <ToastProvider>
       <ReactFlowProvider>
         <VersionProvider version={version}>
@@ -107,7 +144,8 @@ const renderErdContent = () =>
   })
 
 beforeEach(() => {
-  clearStoredGroups()
+  committed = new URLSearchParams()
+  setBaseGroups([])
 })
 
 afterEach(() => {
@@ -116,9 +154,7 @@ afterEach(() => {
 
 describe('ErdContent context-menu group actions', () => {
   it('"Group selected tables" is a pure append and does not strip existing membership', async () => {
-    saveStoredGroups([
-      { id: 'billing', name: 'Billing', tableNames: ['orders'] },
-    ])
+    setBaseGroups([{ id: 'billing', name: 'Billing', tableNames: ['orders'] }])
 
     renderErdContent()
 
@@ -127,17 +163,17 @@ describe('ErdContent context-menu group actions', () => {
 
     fireEvent.click(await screen.findByText('Group selected tables'))
 
-    const groups = loadStoredGroups()
-    expect(groups?.find((g) => g.id === 'billing')?.tableNames).toEqual([
+    const groups = await settledGroups()
+    expect(groups.find((g: Group) => g.id === 'billing')?.tableNames).toEqual([
       'orders',
     ])
 
-    const created = groups?.find((g) => g.id !== 'billing')
+    const created = groups.find((g: Group) => g.id !== 'billing')
     expect(created?.tableNames.slice().sort()).toEqual(['orders', 'payments'])
   })
 
   it('"Remove from" a group only touches that one membership, and drops an emptied group entirely', async () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
       {
         id: 'shipping',
@@ -151,16 +187,16 @@ describe('ErdContent context-menu group actions', () => {
     rightClickCtrl('rf__node-orders')
     fireEvent.click(await screen.findByText('Remove from "Billing"'))
 
-    const groups = loadStoredGroups()
-    expect(groups?.map((g) => g.id)).toEqual(['shipping'])
-    expect(groups?.find((g) => g.id === 'shipping')?.tableNames).toEqual([
+    const groups = await settledGroups()
+    expect(groups.map((g: Group) => g.id)).toEqual(['shipping'])
+    expect(groups.find((g: Group) => g.id === 'shipping')?.tableNames).toEqual([
       'orders',
       'shipments',
     ])
   })
 
   it('renaming a group applies to the right-clicked group only', async () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'alpha', name: 'Alpha', tableNames: ['orders'] },
       { id: 'beta', name: 'Beta', tableNames: ['payments'] },
     ])
@@ -172,13 +208,13 @@ describe('ErdContent context-menu group actions', () => {
       target: { value: 'Renamed' },
     })
 
-    const groups = loadStoredGroups()
-    expect(groups?.find((g) => g.id === 'alpha')?.name).toBe('Renamed')
-    expect(groups?.find((g) => g.id === 'beta')?.name).toBe('Beta')
+    const groups = await settledGroups()
+    expect(groups.find((g: Group) => g.id === 'alpha')?.name).toBe('Renamed')
+    expect(groups.find((g: Group) => g.id === 'beta')?.name).toBe('Beta')
   })
 
   it('ungrouping removes only the right-clicked group, once confirmed', async () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'alpha', name: 'Alpha', tableNames: ['orders'] },
       { id: 'beta', name: 'Beta', tableNames: ['payments'] },
     ])
@@ -189,12 +225,12 @@ describe('ErdContent context-menu group actions', () => {
     fireEvent.click(await screen.findByText('Ungroup'))
     fireEvent.click(await screen.findByRole('button', { name: 'Ungroup' }))
 
-    const groups = loadStoredGroups()
-    expect(groups?.map((g) => g.id)).toEqual(['beta'])
+    const groups = await settledGroups()
+    expect(groups.map((g: Group) => g.id)).toEqual(['beta'])
   })
 
   it('leaves the group alone when the confirmation is cancelled', async () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'alpha', name: 'Alpha', tableNames: ['orders'] },
       { id: 'beta', name: 'Beta', tableNames: ['payments'] },
     ])
@@ -205,11 +241,11 @@ describe('ErdContent context-menu group actions', () => {
     fireEvent.click(await screen.findByText('Ungroup'))
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }))
 
-    expect(loadStoredGroups()?.map((g) => g.id)).toEqual(['alpha', 'beta'])
+    expect(committedGroups().map((g: Group) => g.id)).toEqual(['alpha', 'beta'])
   })
 
   it('applying a colour applies to the right-clicked group only', async () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'alpha', name: 'Alpha', tableNames: ['orders'] },
       { id: 'beta', name: 'Beta', tableNames: ['payments'] },
     ])
@@ -219,8 +255,8 @@ describe('ErdContent context-menu group actions', () => {
     rightClickCtrl('rf__node-tableGroup:alpha')
     fireEvent.click(await screen.findByRole('button', { name: 'gold' }))
 
-    const groups = loadStoredGroups()
-    expect(groups?.find((g) => g.id === 'alpha')?.color).toBe('gold')
-    expect(groups?.find((g) => g.id === 'beta')?.color).toBeUndefined()
+    const groups = await settledGroups()
+    expect(groups.find((g: Group) => g.id === 'alpha')?.color).toBe('gold')
+    expect(groups.find((g: Group) => g.id === 'beta')?.color).toBeUndefined()
   })
 })

@@ -13,12 +13,7 @@ import type { Version } from '../../../../../schemas/version'
 import { UserEditingProvider } from '../../../../../stores'
 import { compressToEncodedUriComponent } from '../../../../../utils/compressToEncodedUriComponent'
 import type { TableNodeData, TableNodeType } from '../../../types'
-import {
-  clearStoredGroups,
-  groupToNode,
-  saveStoredGroups,
-  setBaseGroups,
-} from '../../../utils'
+import { groupToNode, setBaseGroups } from '../../../utils'
 import { LeftPane } from './LeftPane'
 import styles from './LeftPane.module.css'
 
@@ -107,7 +102,6 @@ const sectionsFromDom = (container: HTMLElement) => {
 }
 
 beforeEach(() => {
-  clearStoredGroups()
   setBaseGroups([])
   onUrlUpdate.mockClear()
 })
@@ -118,7 +112,7 @@ afterEach(() => {
 
 describe('LeftPane group sectioning', () => {
   it('renders one section per group plus Ungrouped, and a table in two groups renders under both labels', () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
       {
         id: 'shipping',
@@ -148,7 +142,7 @@ describe('LeftPane group sectioning', () => {
   })
 
   it('counts a duplicated table once in the (n/m visible) header, never once per section row', () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
       {
         id: 'shipping',
@@ -169,7 +163,7 @@ describe('LeftPane group sectioning', () => {
   })
 
   it('single view (showgroups=off) is a flat alphabetical list with every table exactly once and no section labels', () => {
-    saveStoredGroups([
+    setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
       {
         id: 'shipping',
@@ -197,7 +191,7 @@ describe('LeftPane group sectioning', () => {
     ]
 
     const noGroupsAtAll = () => {
-      clearStoredGroups()
+      setBaseGroups([])
       const { container, unmount } = renderLeftPane(nodes)
       const html = container.querySelector(`ul.${styles.tablesMenu}`)?.outerHTML
       unmount()
@@ -208,7 +202,7 @@ describe('LeftPane group sectioning', () => {
       // References a table that does not exist in `nodes` — every member is
       // dropped at render time, so this group contributes no section either
       // (§5.5 / UI/UX ruling 10).
-      saveStoredGroups([{ id: 'ghost', name: 'Ghost', tableNames: ['none'] }])
+      setBaseGroups([{ id: 'ghost', name: 'Ghost', tableNames: ['none'] }])
       const { container, unmount } = renderLeftPane(nodes)
       const html = container.querySelector(`ul.${styles.tablesMenu}`)?.outerHTML
       unmount()
@@ -216,7 +210,7 @@ describe('LeftPane group sectioning', () => {
     }
 
     const singleViewBaseline = () => {
-      clearStoredGroups()
+      setBaseGroups([])
       const { container, unmount } = renderLeftPane(nodes, '?showgroups=off')
       const html = container.querySelector(`ul.${styles.tablesMenu}`)?.outerHTML
       unmount()
@@ -231,9 +225,7 @@ describe('LeftPane group sectioning', () => {
   })
 
   it('gives "Ungrouped" no colour dot, while a named-but-uncoloured group still gets one', () => {
-    saveStoredGroups([
-      { id: 'billing', name: 'Billing', tableNames: ['orders'] },
-    ])
+    setBaseGroups([{ id: 'billing', name: 'Billing', tableNames: ['orders'] }])
 
     renderLeftPane([aTableNode('orders'), aTableNode('payments')])
 
@@ -251,10 +243,10 @@ describe('LeftPane group sectioning', () => {
 
 describe('LeftPane regressions', () => {
   /**
-   * Every other test here seeds groups through `saveStoredGroups`, which is a
-   * synchronous localStorage read and is therefore already in place on the
-   * first render. `groups.json` is not: the host app fetches it and calls
-   * `setBaseGroups` when that resolves, which is after LeftPane has mounted.
+   * Every other test here seeds groups before rendering, so they are already
+   * in place on the first render. A real deploy is not: the host app fetches
+   * `groups.json` and calls `setBaseGroups` when that resolves, which is after
+   * LeftPane has mounted.
    * Memoising on `groupEntries` alone pinned the empty pre-fetch value, so a
    * deployed ERD whose only group source was groups.json showed boxes on the
    * canvas (rebuilt by the `schemaKey` remount) and a flat sidebar forever.

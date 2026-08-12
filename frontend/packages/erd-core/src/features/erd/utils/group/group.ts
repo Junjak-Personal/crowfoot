@@ -1,7 +1,13 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
+import {
+  applyDiff,
+  deserializeDiff,
+  diffRecords,
+  type RecordDiff,
+  serializeDiff,
+} from '../../../../utils/recordDiff'
 import type { TableNodeType } from '../../types'
-import { readStoredItem, removeStoredItem } from '../storage'
 import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 /**
@@ -15,10 +21,6 @@ export type Group = {
   tableNames: string[]
   color?: ViewColorKey | undefined
 }
-
-const STORAGE_KEY = 'crowfoot:groups'
-/** Newest first. Read once, then migrated away — see `readStoredItem`. */
-const LEGACY_STORAGE_KEYS = ['erdkit:groups', 'liam:groups']
 
 /** Groups shipped with the build (groups.json), set by the host app. */
 let baseGroups: Group[] = []
@@ -119,76 +121,37 @@ export const subscribeBaseGroups = (notify: () => void): (() => void) => {
   }
 }
 
-/**
- * Local edits replace groups.json wholesale rather than merging into it, for
- * the same reason memos do (see memo.ts): merging would make deletions
- * inexpressible, and groups are few enough that a full working copy is cheap.
- */
-export const loadStoredGroups = (): Group[] | null => {
-  if (typeof localStorage === 'undefined') return null
-
-  try {
-    const raw = readStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
-    if (!raw) return null
-    return parseGroups(JSON.parse(raw))
-  } catch {
-    return null
-  }
-}
-
-export const saveStoredGroups = (groups: Group[]): void => {
-  if (typeof localStorage === 'undefined') return
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(groups))
-  } catch {
-    // Storage full or blocked; edits just won't survive a reload.
-  }
-}
-
-export const clearStoredGroups = (): void => {
-  try {
-    removeStoredItem(STORAGE_KEY, LEGACY_STORAGE_KEYS)
-  } catch {
-    // Best-effort reset only.
-  }
-}
+export type GroupDiff = RecordDiff<Group>
 
 /**
  * Groups travel in the URL as one JSON blob rather than a compact field list,
  * exactly like memos: `name` is free-form text that would be shredded by a
  * comma-joined list, and the value is compressed before it reaches the query
  * string.
+ *
+ * What travels is the *difference* from `groups.json`, not the whole set — see
+ * `RecordDiff`. A link that renames one group says only that, so redeploying
+ * `groups.json` still reaches everyone holding one.
  */
-export const serializeGroups = (groups: Group[]): string =>
-  JSON.stringify(groups)
+export const serializeGroups = (base: Group[], next: Group[]): string =>
+  serializeDiff(diffRecords(base, next))
 
-export const deserializeGroups = (raw: string): Group[] | null => {
-  if (raw === '') return null
-
-  try {
-    return parseGroups(JSON.parse(raw))
-  } catch {
-    return null
-  }
-}
+export const deserializeGroups = (raw: string): GroupDiff | null =>
+  deserializeDiff(raw, parseGroup)
 
 /**
- * A shared link wins, then the local working copy, then what shipped with the
- * build. `null` from the link means "the link said nothing", which is not the
- * same as a link that deliberately carries zero groups.
+ * What shipped with the build, plus whatever the link changed. `null` from the
+ * link means "the link said nothing", which is not the same as a link that
+ * deliberately empties every group.
  *
  * `base` defaults to the module value for callers that remount when it lands.
  * A caller that does not remount passes the value it subscribed to, so React
  * sees the dependency it has to recompute on.
  */
 export const getEffectiveGroups = (
-  urlGroups: Group[] | null = null,
+  urlDiff: GroupDiff | null = null,
   base: Group[] = baseGroups,
-): Group[] => urlGroups ?? loadStoredGroups() ?? base
-
-/** Snapshot for committing as groups.json. */
-export const dumpGroups = (): Group[] => getEffectiveGroups()
+): Group[] => applyDiff(base, urlDiff)
 
 /** One section of the sidebar list — a named group, or `null` for "Ungrouped". */
 export type TablePartitionSection = {

@@ -28,12 +28,14 @@ import {
 } from '../../../../../../stores'
 import {
   captureDiagram,
-  dumpGroups,
-  dumpMemos,
+  deserializeGroups,
+  deserializeMemos,
   dumpTableLayout,
   findViewport,
   frameForBounds,
   frameForPane,
+  getEffectiveGroups,
+  getEffectiveMemos,
   isEmptyBounds,
   resolveCanvasBackground,
 } from '../../../../utils'
@@ -49,7 +51,7 @@ const PNG_FILE_NAMES: Record<PngMode, string> = {
 export const ExportDropdown: FC = () => {
   const toast = useToast()
   const schema = useSchemaOrThrow()
-  const { editMode } = useUserEditingOrThrow()
+  const { editMode, groupEntries, memoEntries } = useUserEditingOrThrow()
   /**
    * `getNodesBounds` from the hook, not the free function: tables with no
    * relationships are parented to the non-related group box, and React Flow
@@ -290,14 +292,14 @@ export const ExportDropdown: FC = () => {
   const downloadMemos = () =>
     download(
       'memos.json',
-      `${JSON.stringify(dumpMemos(), null, 2)}\n`,
+      `${JSON.stringify(getEffectiveMemos(deserializeMemos(memoEntries)), null, 2)}\n`,
       'application/json',
     )
 
   const downloadGroups = () =>
     download(
       'groups.json',
-      `${JSON.stringify(dumpGroups(), null, 2)}\n`,
+      `${JSON.stringify(getEffectiveGroups(deserializeGroups(groupEntries)), null, 2)}\n`,
       'application/json',
     )
 

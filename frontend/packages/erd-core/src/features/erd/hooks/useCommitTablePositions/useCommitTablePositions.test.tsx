@@ -10,7 +10,7 @@ import type { Version } from '../../../../schemas/version'
 import { UserEditingProvider } from '../../../../stores'
 import { compressToEncodedUriComponent } from '../../../../utils/compressToEncodedUriComponent'
 import { decompressFromEncodedUriComponent } from '../../../../utils/decompressFromEncodedUriComponent'
-import { clearStoredTableLayout } from '../../utils'
+import { setBaseTableLayout } from '../../utils'
 import { useCommitTablePositions } from './useCommitTablePositions'
 
 const version: Version = {
@@ -74,7 +74,7 @@ const writtenPositions = async (): Promise<string[]> => {
 }
 
 beforeEach(() => {
-  clearStoredTableLayout()
+  setBaseTableLayout({})
   onUrlUpdate.mockClear()
 })
 

@@ -8,12 +8,13 @@ import { repositionTableLogEvent } from '../../../gtm/utils/repositionTableLogEv
 import {
   deserializeTableLayout,
   isTableNode,
+  pruneToBaseLayout,
   rememberTablePositions,
   serializeTableLayout,
 } from '../../utils'
 
 /**
- * Persists moved tables to browser storage and `?positions=`.
+ * Persists moved tables to `?positions=`.
  *
  * Two gestures write positions — React Flow's own node drag and the group
  * label drag — and the merge below is the part that must not diverge between
@@ -33,12 +34,13 @@ export const useCommitTablePositions = () => {
       const tables = moved.filter(isTableNode)
       if (tables.length === 0) return
 
-      const stored = rememberTablePositions(tables)
       setTablePositions(
-        serializeTableLayout({
-          ...deserializeTableLayout(tablePositions),
-          ...stored,
-        }),
+        serializeTableLayout(
+          pruneToBaseLayout({
+            ...deserializeTableLayout(tablePositions),
+            ...rememberTablePositions(tables),
+          }),
+        ),
       )
 
       const operationId = `id_${Date.now()}`
