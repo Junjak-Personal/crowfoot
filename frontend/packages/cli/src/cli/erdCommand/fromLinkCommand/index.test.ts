@@ -3,7 +3,8 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { deflateSync } from 'node:zlib'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fromLinkCommand, parseLink } from './index.js'
 
 // Produced by the same deflate → base64 → URL-safe pipeline the browser uses.
@@ -20,28 +21,39 @@ const LEGACY_GROUPS = 'eJyLrlbKTFGyUko3VNJRykvMTVWyUsrPSVGqjQUAZC8Hpg'
 
 const link = (query: string) => `https://erd.example/?edit=1&${query}`
 
+/** The same deflate → base64 → URL-safe pipeline, for links built in a test. */
+const encode = (raw: string) =>
+  deflateSync(Buffer.from(raw, 'utf8'))
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
 describe('parseLink', () => {
   it('splits a position entry from the right so a table name may contain ":"', () => {
-    const { layout } = parseLink(link(`positions=${POSITIONS}`))
+    const { positions } = parseLink(link(`positions=${POSITIONS}`))
 
-    expect(layout).toEqual({
+    expect(positions).toEqual({
       'a:b': { x: 1, y: -2 },
       plain: { x: 10, y: 20 },
     })
   })
 
-  it('keeps the position of a table that was also recoloured', () => {
-    const { layout } = parseLink(
+  /**
+   * Kept apart rather than folded together, so that a table the link only
+   * recoloured carries no position — an invented (0, 0) here would overwrite
+   * the deployed one on merge.
+   */
+  it('reads colours as their own map, not as positions', () => {
+    const { positions, colors } = parseLink(
       link(`positions=${POSITIONS}&colors=${COLORS}`),
     )
 
-    expect(layout?.plain).toEqual({ x: 10, y: 20, color: 'teal' })
-  })
-
-  it('places a colour-only table at the origin rather than dropping it', () => {
-    const { layout } = parseLink(link(`colors=${COLORS}`))
-
-    expect(layout?.onlycolor).toEqual({ x: 0, y: 0, color: 'orange' })
+    expect(positions).toEqual({
+      'a:b': { x: 1, y: -2 },
+      plain: { x: 10, y: 20 },
+    })
+    expect(colors).toEqual({ plain: 'teal', onlycolor: 'orange' })
   })
 
   it('decodes the memos a link changed, and the ones it deleted', () => {
@@ -82,12 +94,14 @@ describe('parseLink', () => {
   // carries, so `{}` never overwrites a good layout.json.
   it('reports an absent param as null rather than empty', () => {
     expect(parseLink(link(`positions=${POSITIONS}`))).toEqual({
-      layout: { 'a:b': { x: 1, y: -2 }, plain: { x: 10, y: 20 } },
+      positions: { 'a:b': { x: 1, y: -2 }, plain: { x: 10, y: 20 } },
+      colors: null,
       memos: null,
       groups: null,
     })
     expect(parseLink(link('show=all'))).toEqual({
-      layout: null,
+      positions: null,
+      colors: null,
       memos: null,
       groups: null,
     })
@@ -111,6 +125,140 @@ describe('fromLinkCommand', () => {
 
   const groupsIn = (dir: string): { id: string; name?: string }[] =>
     JSON.parse(readFileSync(join(dir, 'groups.json'), 'utf8'))
+
+  const layoutIn = (
+    dir: string,
+  ): Record<string, { x: number; y: number; color?: string }> =>
+    JSON.parse(readFileSync(join(dir, 'layout.json'), 'utf8'))
+
+  /** 86 deployed tables, the size the loss was found at. */
+  const deployed = Object.fromEntries(
+    Array.from({ length: 86 }, (_, index) => [
+      `t${index}`,
+      { x: index, y: index * 2 },
+    ]),
+  )
+
+  /** What a person who dragged 33 of them, and added 3 tables, would share. */
+  const draggedLink = link(
+    `positions=${encode(
+      [
+        ...Array.from(
+          { length: 33 },
+          (_, index) => `t${index}:${1000 + index}:${2000 + index}`,
+        ),
+        'fresh1:1:1',
+        'fresh2:2:2',
+        'fresh3:3:3',
+      ].join(','),
+    )}`,
+  )
+
+  /**
+   * A link carries only the tables that were touched. Writing it out on its
+   * own dropped every other table's position without a word, and the viewer
+   * then auto-laid those tables out — 56 of 86 in the report this fixes.
+   */
+  it('keeps the deployed position of every table a link never moved', async () => {
+    writeFileSync(
+      join(outDir, 'layout.json'),
+      JSON.stringify(deployed, null, 2),
+    )
+
+    await fromLinkCommand(draggedLink, outDir)
+
+    const written = layoutIn(outDir)
+    expect(Object.keys(written)).toHaveLength(89)
+    expect(
+      Object.fromEntries(
+        Object.entries(written).filter(
+          ([name]) => name.startsWith('t') && Number(name.slice(1)) >= 33,
+        ),
+      ),
+    ).toEqual(
+      Object.fromEntries(
+        Object.entries(deployed).filter(
+          ([name]) => Number(name.slice(1)) >= 33,
+        ),
+      ),
+    )
+  })
+
+  it('moves the tables the link did move, and adds the ones it introduced', async () => {
+    writeFileSync(
+      join(outDir, 'layout.json'),
+      JSON.stringify(deployed, null, 2),
+    )
+
+    await fromLinkCommand(draggedLink, outDir)
+
+    const written = layoutIn(outDir)
+    expect(written.t0).toEqual({ x: 1000, y: 2000 })
+    expect(written.fresh1).toEqual({ x: 1, y: 1 })
+  })
+
+  /**
+   * The count is the only thing on screen. `(33 tables)` read exactly like a
+   * job well done while 56 positions were being deleted.
+   */
+  it('says how many tables it kept, updated and added', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    writeFileSync(
+      join(outDir, 'layout.json'),
+      JSON.stringify(deployed, null, 2),
+    )
+
+    await fromLinkCommand(draggedLink, outDir)
+
+    expect(info.mock.calls.join('\n')).toContain(
+      'layout.json (89 tables: 53 kept, 33 updated, 3 added)',
+    )
+    info.mockRestore()
+  })
+
+  it('says so when there was no deployed layout.json to merge into', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    await fromLinkCommand(link(`positions=${POSITIONS}`), outDir)
+
+    expect(layoutIn(outDir)).toEqual({
+      'a:b': { x: 1, y: -2 },
+      plain: { x: 10, y: 20 },
+    })
+    expect(info.mock.calls.join('\n')).toContain('there was no layout.json in')
+    info.mockRestore()
+  })
+
+  it('keeps the colour of a table the link only moved', async () => {
+    writeFileSync(
+      join(outDir, 'layout.json'),
+      JSON.stringify({ plain: { x: 1, y: 2, color: 'sky' } }),
+    )
+
+    await fromLinkCommand(link(`positions=${POSITIONS}`), outDir)
+
+    expect(layoutIn(outDir).plain).toEqual({ x: 10, y: 20, color: 'sky' })
+  })
+
+  /**
+   * The other half of "per field, not per entry": a table can be recoloured
+   * without ever being dragged, and the link then says nothing about where it
+   * is. Reading that as a position is how it would end up at the origin.
+   */
+  it('keeps the position of a table the link only recoloured', async () => {
+    writeFileSync(
+      join(outDir, 'layout.json'),
+      JSON.stringify({ onlycolor: { x: 900, y: 900 } }),
+    )
+
+    await fromLinkCommand(link(`colors=${COLORS}`), outDir)
+
+    expect(layoutIn(outDir).onlycolor).toEqual({
+      x: 900,
+      y: 900,
+      color: 'orange',
+    })
+  })
 
   /**
    * The whole reason a link is a diff: what it does not mention has to survive
@@ -155,6 +303,27 @@ describe('fromLinkCommand', () => {
     await fromLinkCommand(link(`groups=${GROUPS}`), outDir)
 
     expect(groupsIn(outDir).map((group) => group.id)).toEqual(['g1'])
+  })
+
+  /** The same three paths as groups — kept, replaced in place, tombstoned. */
+  it('applies a memo diff to the deployed memos', async () => {
+    writeFileSync(
+      join(outDir, 'memos.json'),
+      JSON.stringify([
+        { id: 'untouched', text: 'Untouched' },
+        { id: 'gone', text: 'Gone' },
+        { id: 'm1', text: 'Before' },
+      ]),
+    )
+
+    await fromLinkCommand(link(`memos=${MEMOS}`), outDir)
+
+    expect(
+      JSON.parse(readFileSync(join(outDir, 'memos.json'), 'utf8')),
+    ).toEqual([
+      { id: 'untouched', text: 'Untouched' },
+      { id: 'm1', text: 'hi', x: 1, y: 2, width: 3, height: 4 },
+    ])
   })
 
   it('does not touch a file the link says nothing about', async () => {

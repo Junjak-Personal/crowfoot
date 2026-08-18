@@ -82,14 +82,18 @@ const decodeParam = (value: string): string => {
   return inflateSync(Buffer.from(base64, 'base64')).toString('utf8')
 }
 
-type TableEntry = { x: number; y: number; color?: string }
+/** One entry of layout.json. Extra fields a future viewer adds survive a merge. */
+type LayoutEntry = { x: number; y: number; color?: string }
+type TableLayout = Record<string, LayoutEntry>
 
 /**
  * `name:x:y`, split from the right — a table name may itself contain ':'.
  * Same rule as erd-core's `deserializeTableLayout`; keep the two in step.
  */
-const parsePositions = (raw: string): Record<string, TableEntry> => {
-  const layout: Record<string, TableEntry> = {}
+const parsePositions = (
+  raw: string,
+): Record<string, { x: number; y: number }> => {
+  const positions: Record<string, { x: number; y: number }> = {}
 
   for (const entry of raw.split(',')) {
     const yAt = entry.lastIndexOf(':')
@@ -101,38 +105,40 @@ const parsePositions = (raw: string): Record<string, TableEntry> => {
     const y = Number(entry.slice(yAt + 1))
     if (!Number.isFinite(x) || !Number.isFinite(y)) continue
 
-    layout[entry.slice(0, xAt)] = { x, y }
+    positions[entry.slice(0, xAt)] = { x, y }
   }
 
-  return layout
+  return positions
 }
 
 /**
- * `name:colorkey`, also split from the right. A table can be recoloured
- * without ever having been moved, so an unknown name starts at the origin.
+ * `name:colorkey`, also split from the right.
+ *
+ * Colours stay a map of their own rather than being folded into the positions,
+ * for the same reason erd-core's `getEffectiveTableLayout` keeps them out: a
+ * table can be recoloured without ever having been moved, and an entry
+ * invented for it would carry a position — (0, 0) — that the link never said
+ * anything about, and that would then overwrite the deployed one.
+ *
  * The palette is not validated here — the viewer drops unknown keys on load,
  * and duplicating the key list would just let it drift.
  */
-const applyColors = (
-  layout: Record<string, TableEntry>,
-  raw: string,
-): Record<string, TableEntry> => {
+const parseColors = (raw: string): Record<string, string> => {
+  const colors: Record<string, string> = {}
+
   for (const entry of raw.split(',')) {
     const at = entry.lastIndexOf(':')
     if (at <= 0) continue
 
-    const name = entry.slice(0, at)
-    layout[name] = {
-      ...(layout[name] ?? { x: 0, y: 0 }),
-      color: entry.slice(at + 1),
-    }
+    colors[entry.slice(0, at)] = entry.slice(at + 1)
   }
 
-  return layout
+  return colors
 }
 
 type LinkContents = {
-  layout: Record<string, TableEntry> | null
+  positions: Record<string, { x: number; y: number }> | null
+  colors: Record<string, string> | null
   memos: RecordDiff | null
   groups: RecordDiff | null
 }
@@ -150,10 +156,6 @@ export const parseLink = (url: string): LinkContents => {
   const colors = params.get('colors')
   const memos = params.get('memos')
   const groups = params.get('groups')
-
-  let layout: Record<string, TableEntry> | null = null
-  if (positions) layout = parsePositions(decodeParam(positions))
-  if (colors) layout = applyColors(layout ?? {}, decodeParam(colors))
 
   // Applied raw against the deployed file — the CLI is not a sanitization
   // boundary, the viewer's parseMemos / parseGroups re-validate on load.
@@ -183,7 +185,103 @@ export const parseLink = (url: string): LinkContents => {
     parsedGroups = { changed: decoded.changed, removed: decoded.removed ?? [] }
   }
 
-  return { layout, memos: parsedMemos, groups: parsedGroups }
+  return {
+    positions: positions ? parsePositions(decodeParam(positions)) : null,
+    colors: colors ? parseColors(decodeParam(colors)) : null,
+    memos: parsedMemos,
+    groups: parsedGroups,
+  }
+}
+
+const isLayoutEntry = (value: unknown): value is LayoutEntry =>
+  typeof value === 'object' &&
+  value !== null &&
+  'x' in value &&
+  typeof value.x === 'number' &&
+  'y' in value &&
+  typeof value.y === 'number'
+
+/**
+ * The deployed `layout.json`, or `null` when there is none to merge into.
+ *
+ * Entries are kept by reference, so anything in one beyond `x`/`y`/`color`
+ * survives being written back out. A non-object entry is dropped because the
+ * viewer's `parseTableLayout` drops it too — keeping it would mean writing a
+ * file whose contents the viewer does not agree with.
+ */
+const readBaseLayout = (outDir: string): TableLayout | null => {
+  const path = join(outDir, 'layout.json')
+  if (!existsSync(path)) return null
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'))
+  } catch {
+    return null
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return null
+  }
+
+  const layout: TableLayout = {}
+  const entries: [string, unknown][] = Object.entries(parsed)
+  for (const [tableName, entry] of entries) {
+    if (isLayoutEntry(entry)) layout[tableName] = entry
+  }
+
+  return layout
+}
+
+type LayoutMerge = {
+  layout: TableLayout
+  /** In the deployed file, untouched by the link. */
+  kept: number
+  /** In both. */
+  updated: number
+  /** In the link only. */
+  added: number
+}
+
+/**
+ * The deployed layout with the link's edits laid over it, per table.
+ *
+ * A link carries only the tables that were dragged and the ones that were
+ * coloured, so writing it out on its own deletes the position of every table
+ * the person who made it never touched — silently, since the file still parses
+ * and the viewer just auto-lays the rest out. Merging is what makes the
+ * documented "share a link, run from-link, commit" loop safe to repeat.
+ *
+ * Per *field*, not per entry: a table that was moved but not recoloured keeps
+ * the colour the deploy gave it, and vice versa.
+ */
+const mergeLayout = (
+  base: TableLayout | null,
+  { positions, colors }: Pick<LinkContents, 'positions' | 'colors'>,
+): LayoutMerge => {
+  const layout: TableLayout = { ...base }
+
+  for (const [tableName, { x, y }] of Object.entries(positions ?? {})) {
+    layout[tableName] = { ...layout[tableName], x, y }
+  }
+  // A colour-only table absent from the deploy has no position anywhere to
+  // recover, and layout.json cannot hold an entry without one.
+  for (const [tableName, color] of Object.entries(colors ?? {})) {
+    layout[tableName] = { ...(layout[tableName] ?? { x: 0, y: 0 }), color }
+  }
+
+  const deployed = new Set(Object.keys(base ?? {}))
+  const touched = new Set([
+    ...Object.keys(positions ?? {}),
+    ...Object.keys(colors ?? {}),
+  ])
+  const updated = [...touched].filter((name) => deployed.has(name)).length
+
+  return {
+    layout,
+    kept: deployed.size - updated,
+    updated,
+    added: touched.size - updated,
+  }
 }
 
 export const fromLinkCommand = async (
@@ -200,8 +298,13 @@ export const fromLinkCommand = async (
     return [new ArgumentError(`Could not read the link: ${error}`)]
   }
 
-  const { layout, memos, groups } = contents
-  if (layout === null && memos === null && groups === null) {
+  const { positions, colors, memos, groups } = contents
+  if (
+    positions === null &&
+    colors === null &&
+    memos === null &&
+    groups === null
+  ) {
     return [
       new ArgumentError(
         'The link carries no `positions`, `colors`, `memos` or `groups`. Open the ERD with `?edit=1`, arrange it, then copy the URL.',
@@ -216,12 +319,20 @@ export const fromLinkCommand = async (
 
   try {
     mkdirSync(resolvedOutDir, { recursive: true })
-    if (layout !== null) {
+    if (positions !== null || colors !== null) {
+      const base = readBaseLayout(resolvedOutDir)
+      const merged = mergeLayout(base, { positions, colors })
+      const total = Object.keys(merged.layout).length
+
       writeFileSync(
         join(resolvedOutDir, 'layout.json'),
-        `${JSON.stringify(layout, null, 2)}\n`,
+        `${JSON.stringify(merged.layout, null, 2)}\n`,
       )
-      written.push(`layout.json (${Object.keys(layout).length} tables)`)
+      written.push(
+        base === null
+          ? `layout.json (${total} tables, and only the tables the link carries: there was no layout.json in \`${outDir}/\` to merge into)`
+          : `layout.json (${total} tables: ${merged.kept} kept, ${merged.updated} updated, ${merged.added} added)`,
+      )
     }
     if (memos !== null) {
       const next = applyRecordDiff(

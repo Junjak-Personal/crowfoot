@@ -137,6 +137,14 @@ Behaviour:
 
 - Only the files the link **actually carries** are written. A link with no memos
   will not blow away an existing `memos.json`.
+- **All three files are merged into what is already in `--output-dir`, never
+  replaced.** A link carries only what was changed — the tables that were
+  dragged, the groups and memos that were edited — so everything it does not
+  mention is taken from the deployed file sitting there. `layout.json` merges
+  per field as well: a table that was moved but not recoloured keeps its
+  colour, and one that was recoloured but not moved keeps its position.
+- `layout.json` reports what it did — `(89 tables: 53 kept, 33 updated, 3
+  added)` — and says so when there was no deployed file to merge into.
 - If the link carries none of `positions` / `colors` / `memos` / `groups`, nothing
   is written and the command exits with an error.
 - Colour keys are not validated here — the viewer drops unknown keys on load.
@@ -787,6 +795,12 @@ It is still only in the link. See [Three ways to pin an arrangement](#three-ways
 **`from-link` fails with "carries no positions, colors, memos or groups"**
 The link has no edits in it. Open with `?edit=1`, actually move or add something,
 then copy the URL again with the **Copy Link** button.
+
+**`from-link` left only a handful of tables in `layout.json`**
+A defect in 0.4.1 and earlier: it wrote out the tables the link carried and deleted
+every other table's position. **From 0.4.2 it merges** into the `layout.json`
+already in `--output-dir`, and reports what it did — `(89 tables: 53 kept, 33
+updated, 3 added)`. Restore the file from git and re-run it with 0.4.2 or later.
 
 **`from-link` only picks up part of the URL**
 The shell cut the command at `&`. Wrap the whole URL in single quotes.

@@ -142,6 +142,12 @@ npx crowfoot erd from-link --input '<the ?edit=1 URL>' --output-dir dist
 Quote the URL — it contains `&`. Only the files the link actually carries are
 written, so a link with no memos will not blow away an existing `memos.json`.
 
+**Point `--output-dir` at the sidecars you already deploy.** A link carries only
+what was changed, and all three files — `layout.json` included — are merged into
+the ones already there rather than replacing them. A table nobody dragged keeps
+the position the deploy gave it; `layout.json` reports what it did, as
+`(89 tables: 53 kept, 33 updated, 3 added)`.
+
 `layout.json`, `memos.json` and `groups.json` are loaded from the same directory
 as `schema.json`, so keep them next to it and commit them to whatever your deploy
 copies in — a rebuild overwrites the directory otherwise.
