@@ -13,6 +13,55 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.4.2
+
+### Breaking
+
+- **A table belongs to at most one group.** The group box is derived from its
+  members' bounding box on every render, so a table in two groups forced the
+  two boxes to cross and made dragging either one deform the other — and
+  `erd arrange`, which packs each group into its own column, could not place
+  such a table in two columns at once: it wrote the last column's coordinate
+  and left the first group's box stretched across the diagram to reach a table
+  that was no longer next to it.
+  - A `groups.json` or a link that names a table twice still opens. The group
+    that names it **first** keeps it; a group left with no table of its own is
+    dropped. The same resolution runs on every read, so the canvas, the sidebar
+    and an export never disagree about which group owns a table.
+  - `erd arrange` **refuses** such a plan instead, naming the table and the two
+    groups. A plan is written now, not inherited, and quietly picking one group
+    would teach whoever wrote it that the plan meant something it did not.
+  - In the selection panel, `Add to` is now **`Move to`** — joining a group is
+    the same act as leaving the one before it — and the `Remove from` menu is a
+    single `Remove from group` button, since there is only ever one to leave.
+    Hovering a `Move to` row previews both boxes changing at once.
+
+### Fixed
+
+- **`erd from-link` deleted the position of every table the link did not
+  mention.** A link carries only the tables that were dragged, and
+  `layout.json` was written from the link alone while `groups.json` and
+  `memos.json` were merged into the deployed files. Updating an 86-table
+  `layout.json` from a link that had moved 33 of them left 33 — the other 56
+  positions were gone, with no error, no warning, and a `Wrote layout.json (33
+  tables)` that read like success. `layout.json` is now merged like the other
+  two.
+  - Merged **per field**, not per entry: a table that was moved but not
+    recoloured keeps the colour the deploy gave it, and one that was recoloured
+    but not moved keeps its position. The second half of that was its own quiet
+    loss — a colour-only edit used to arrive carrying an invented `(0, 0)`.
+  - The report says what happened — `layout.json (89 tables: 53 kept, 33
+    updated, 3 added)` — and says so when there was no deployed `layout.json`
+    to merge into. The old count could not tell a merge from a deletion.
+- **A rejected input printed a stack trace instead of its message.** Commands
+  report a bad input two ways — some return the error, some throw it — and only
+  the returned ones were being read out. Every check in `erd arrange`
+  (unreadable plan, invalid plan, unknown table, duplicate group id, and now a
+  shared table) throws, so all of them surfaced as a raw V8 trace with the
+  message buried in it. They print as `ERROR: …` and exit 1 like everything
+  else now. An error that is *not* a CLI error still keeps its stack trace —
+  that one is a defect in this tool, and the trace is the point.
+
 ## 0.4.1
 
 ### Fixed
@@ -46,6 +95,10 @@ The link is the diagram, and the back button undoes it.
   the build or a previous `from-link`. Records the link never mentions survive
   it; before, they would have been deleted. A link from 0.3.0 or earlier is
   refused with a message rather than misread.
+  - `layout.json` is missing from that sentence because it was missing from the
+    code: it kept being written from the link alone, which deleted the position
+    of every table the link did not mention. Fixed in 0.4.2 — **all three files
+    are merged.**
 - The browser-storage working copies (`crowfoot:tableLayout`, `crowfoot:memos`,
   `crowfoot:groups`, and their `erdkit:` / `liam:` ancestors) are no longer read
   at all, and are deleted the first time an edit is made. An arrangement that
