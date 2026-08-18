@@ -11,18 +11,22 @@ type Props = {
   selectedGroup: Group | undefined
   /** The panel is an editing surface; outside edit mode there is nothing on it. */
   editMode: boolean
-  /** Every group on the canvas, for the two menus. */
+  /** Every group on the canvas, for the menu. */
   groups: Group[]
   onGroup: () => void
-  onAddToGroup: (groupId: string) => void
-  onRemoveFromGroup: (groupId: string) => void
+  onMoveToGroup: (groupId: string) => void
+  onRemoveFromGroups: () => void
   onEnterGroup: (group: Group) => void
   onUngroup: () => void
   /**
-   * The membership a row would produce, while the pointer is on it, or null on
-   * the way out. The canvas draws it instead of the real one.
+   * The membership every group would have, while the pointer is on a row, or
+   * null on the way out. The canvas draws these instead of the real ones.
+   *
+   * Keyed by group id rather than carrying one group, because a move shrinks
+   * the group the tables are leaving at the same moment it grows the one they
+   * join — previewing only the growth would show a state that never exists.
    */
-  onPreview: (preview: { groupId: string; tableNames: string[] } | null) => void
+  onPreview: (preview: Record<string, string[]> | null) => void
 }
 
 const label = (group: Group) => group.name || 'Unnamed group'
@@ -96,8 +100,8 @@ export const SelectionHud: FC<Props> = ({
   editMode,
   groups,
   onGroup,
-  onAddToGroup,
-  onRemoveFromGroup,
+  onMoveToGroup,
+  onRemoveFromGroups,
   onEnterGroup,
   onUngroup,
   onPreview,
@@ -135,10 +139,25 @@ export const SelectionHud: FC<Props> = ({
     selectedTableNames.some((name) => !group.tableNames.includes(name)),
   )
 
+  /** Where every group would stand after the selection moved into `target`. */
+  const previewMove = (target: Group): Record<string, string[]> =>
+    Object.fromEntries(
+      groups.map((group) => [
+        group.id,
+        group.id === target.id
+          ? group.tableNames.concat(
+              selectedTableNames.filter(
+                (name) => !group.tableNames.includes(name),
+              ),
+            )
+          : group.tableNames.filter((name) => !selected.has(name)),
+      ]),
+    )
+
   return (
     <output className={styles.hud}>
-      {/* No group count: `Remove from` already lists exactly the groups the
-          selection is in, and the panel has to fit beside the toolbar. */}
+      {/* No group count: the panel has to fit beside the toolbar, and a table
+          is in one group, so there is nothing to enumerate. */}
       <span className={styles.summary}>
         {plural(selectedTableNames.length, 'table')} selected
       </span>
@@ -149,37 +168,32 @@ export const SelectionHud: FC<Props> = ({
       )}
       {joinable.length > 0 && (
         <GroupMenu
-          title="Add to"
+          title="Move to"
           groups={joinable}
-          onPick={onAddToGroup}
-          onPreviewRow={(group) =>
-            onPreview({
-              groupId: group.id,
-              tableNames: group.tableNames.concat(
-                selectedTableNames.filter(
-                  (name) => !group.tableNames.includes(name),
-                ),
-              ),
-            })
-          }
+          onPick={onMoveToGroup}
+          onPreviewRow={(group) => onPreview(previewMove(group))}
           onPreviewEnd={() => onPreview(null)}
         />
       )}
       {claiming.length > 0 && (
-        <GroupMenu
-          title="Remove from"
-          groups={claiming}
-          onPick={onRemoveFromGroup}
-          onPreviewRow={(group) =>
-            onPreview({
-              groupId: group.id,
-              tableNames: group.tableNames.filter(
-                (name) => !selected.has(name),
+        <button
+          type="button"
+          className={styles.action}
+          onClick={onRemoveFromGroups}
+          onMouseEnter={() =>
+            onPreview(
+              Object.fromEntries(
+                claiming.map((group) => [
+                  group.id,
+                  group.tableNames.filter((name) => !selected.has(name)),
+                ]),
               ),
-            })
+            )
           }
-          onPreviewEnd={() => onPreview(null)}
-        />
+          onMouseLeave={() => onPreview(null)}
+        >
+          Remove from group
+        </button>
       )}
     </output>
   )

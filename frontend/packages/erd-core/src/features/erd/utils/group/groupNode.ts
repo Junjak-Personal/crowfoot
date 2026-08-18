@@ -63,6 +63,44 @@ export const groupsFromNodes = (nodes: Node[]): Group[] =>
 export const tableGroupNodesFrom = (groups: Group[]): TableGroupNodeType[] =>
   groups.map(groupToNode)
 
+/**
+ * Takes `tableNames` out of every group node but `keptGroupId`, and drops any
+ * group left with no members.
+ *
+ * A table belongs to at most one group, so joining one is the same act as
+ * leaving the others — there is no "add" that does not also release. `null`
+ * for `keptGroupId` releases from all of them, which is both "remove from its
+ * group" and the first half of building a new group out of the selection.
+ *
+ * An empty `tableNames` is not representable in `groups.json` (`parseGroups`
+ * discards it), so a node kept here would make the canvas and a reloaded
+ * `?groups=` disagree.
+ */
+export const releaseTables = (
+  nodes: Node[],
+  tableNames: string[],
+  keptGroupId: string | null,
+): Node[] => {
+  const released = new Set(tableNames)
+
+  return nodes
+    .map((node) => {
+      if (!isTableGroupNode(node) || node.data.groupId === keptGroupId) {
+        return node
+      }
+
+      const remaining = node.data.tableNames.filter(
+        (name) => !released.has(name),
+      )
+      if (remaining.length === node.data.tableNames.length) return node
+
+      return { ...node, data: { ...node.data, tableNames: remaining } }
+    })
+    .filter(
+      (node) => !isTableGroupNode(node) || node.data.tableNames.length > 0,
+    )
+}
+
 const isMeasured = (node: Node): boolean =>
   node.measured?.width !== undefined && node.measured?.height !== undefined
 

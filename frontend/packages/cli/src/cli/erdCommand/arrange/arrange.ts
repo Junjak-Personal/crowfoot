@@ -58,6 +58,33 @@ const checkTablesExist = (schema: Schema, plan: Plan) => {
   }
 }
 
+/**
+ * A table belongs to one group. Two groups naming it cannot both be honoured:
+ * `arrangeTables` packs each group into its own column and writes one position
+ * per table, so the second column silently wins and the first group's box
+ * stretches across the diagram to reach a table that is no longer in it.
+ *
+ * Rejected rather than resolved, because this file is what an agent writes:
+ * quietly picking a group would teach it that the plan meant something it did
+ * not. The viewer, which has to open files that already exist, resolves
+ * instead — see `claimEachTableOnce`.
+ */
+const checkNoSharedTables = (plan: Plan) => {
+  const owner = new Map<string, string>()
+
+  for (const group of plan.groups) {
+    for (const table of group.tables) {
+      const first = owner.get(table)
+      if (first !== undefined && first !== group.id) {
+        throw new ArgumentError(
+          `The plan puts "${table}" in two groups, "${first}" and "${group.id}". A table belongs to one group.`,
+        )
+      }
+      owner.set(table, group.id)
+    }
+  }
+}
+
 const checkNoDuplicateGroupIds = (plan: Plan) => {
   const seen = new Set<string>()
   for (const group of plan.groups) {
@@ -139,6 +166,7 @@ const arrangeMemos = (
 export const arrange = (schema: Schema, plan: Plan): ArrangeResult => {
   checkTablesExist(schema, plan)
   checkNoDuplicateGroupIds(plan)
+  checkNoSharedTables(plan)
 
   const unplaceable = unrelatedTables(schema)
   const skip = new Set(unplaceable)

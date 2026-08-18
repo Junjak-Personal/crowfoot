@@ -149,7 +149,8 @@ Behaviour:
   is written and the command exits with an error.
 - Colour keys are not validated here — the viewer drops unknown keys on load.
 - `groups` is written just as raw, unvalidated — the CLI is not a sanitization
-  boundary. Real validation happens in the viewer's `parseGroups` on load.
+  boundary. Real validation happens in the viewer's `parseGroups` on load, which
+  is also where a table named by two groups is resolved to the first of them.
   `?showgroups=` is a pure view preference, so `from-link` never reads it.
 
 ### `crowfoot erd plan`
@@ -486,10 +487,17 @@ Keys outside this list are silently dropped on load.
 ### Groups
 
 A group is a human-authored set of tables, drawn as a dashed, labelled box on the
-canvas. Never inferred from foreign keys — always explicit. **A table can belong to
-several groups at once** (multi-membership). Overlapping domains — payments and
-settlement sharing a table, for example — are represented as-is, and overlapping
-boxes and labels are treated as a normal state, not an edge case.
+canvas. Never inferred from foreign keys — always explicit. **A table belongs to at
+most one group.** The box is derived from its members' bounding box on every
+render, so a shared table would force two boxes to cross and make dragging either
+one deform the other; `erd arrange` cannot place a shared table in two columns
+either. Overlapping domains — payments and settlement sharing a table — are
+expressed by picking one grouping for it.
+
+> Before 0.4.2 a table could be in several groups. A `groups.json` or a link from
+> then still opens: the group that names the table **first** keeps it, and a group
+> left with no tables of its own is dropped. `erd arrange` refuses such a plan
+> outright rather than resolving it, because a plan is written, not inherited.
 
 - **Creating one** — select two or more tables, then `Ctrl`/`Cmd` + right-click →
   `Group selected tables`.
@@ -497,8 +505,11 @@ boxes and labels are treated as a normal state, not an edge case.
   together. The header sits as a label just outside the box's top-left corner.
 - **Right-clicking the group header** — colour palette, rename, `Ungroup` (removes
   the grouping only; the tables themselves are untouched).
-- **Right-clicking a table already in a group** — `Remove from "name"` drops that
-  table from that one group only; its other memberships are unaffected.
+- **Right-clicking a table already in a group** — `Remove from "name"` takes it out
+  of the group it is in.
+- **Moving one** — select the tables, then `Move to` in the selection panel. Joining
+  a group is the same act as leaving the one before it, and a group left empty by
+  the move is dropped.
 
 #### Single view vs group view
 
@@ -509,16 +520,12 @@ sidebar **together**.
 |---|---|---|
 | Canvas | No boxes or labels | Boxes and labels drawn |
 | Left sidebar | Flat alphabetical list, one row per table | Sectioned by group, "Ungrouped" always last |
-| A table in N groups | Listed **once** | Listed **N times** — once per group |
+
+Every table has exactly one row in either mode, because it is in exactly one group.
 
 With no groups defined (or every defined group's members all gone), the sidebar in
 both modes is **byte-identical** — group view shows no stray "Ungrouped" header
 either.
-
-If a table appearing several times in the sidebar is confusing, **single view is
-the escape hatch**: one toggle click returns today's flat list. The sidebar's
-`(n/m visible)` count is based on the actual table count in both modes, so a
-duplicated row is never counted twice.
 
 ---
 
@@ -660,7 +667,7 @@ An array of group objects.
 |---|---|---|---|
 | `id` | string | ✅ | Must not be empty. New groups use `crypto.randomUUID()`. A duplicate `id` keeps whichever entry appeared first. |
 | `name` | string | ✅ | Group name. May be empty. |
-| `tableNames` | string[] | ✅ | Member table names. **The same table name may appear in more than one entry (a different group)** — this is how a table's membership in several groups at once is represented. An empty array drops the whole entry. Duplicate names within one entry are merged into one. |
+| `tableNames` | string[] | ✅ | Member table names. **A table belongs to one group**: if a later entry names a table an earlier one already has, the later entry loses it, and is dropped entirely if that leaves it empty. An empty array drops the whole entry. Duplicate names within one entry are merged into one. |
 | `color` | string | | Palette key. Values outside the list are ignored. |
 
 Entries missing a required field or with the wrong type are skipped silently. A

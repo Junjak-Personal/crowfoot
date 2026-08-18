@@ -82,6 +82,7 @@ import {
   nodeToMemo,
   parseMemosFromClipboard,
   placeMemos,
+  releaseTables,
   serializeMemosToClipboard,
   serializeTableLayout,
   setTableColor,
@@ -327,15 +328,16 @@ const UngroupConfirm: FC<UngroupConfirmProps> = ({
 }
 
 type TableGroupMenuItemsProps = {
-  groups: Group[]
+  /** The group holding the right-clicked table, if one does. */
+  group: Group | undefined
   canGroup: boolean
   onGroupSelected: () => void
-  onRemoveFromGroup: (groupId: string) => void
+  onRemoveFromGroup: () => void
 }
 
 /** The grouping rows injected into the table right-click menu. */
 const TableGroupMenuItems: FC<TableGroupMenuItemsProps> = ({
-  groups,
+  group,
   canGroup,
   onGroupSelected,
   onRemoveFromGroup,
@@ -350,18 +352,17 @@ const TableGroupMenuItems: FC<TableGroupMenuItemsProps> = ({
         Group selected tables
       </button>
     )}
-    {groups.map((group) => (
+    {group && (
       <button
-        key={group.id}
         type="button"
         className={styles.contextMenuItem}
-        onClick={() => onRemoveFromGroup(group.id)}
+        onClick={onRemoveFromGroup}
       >
         {group.name
           ? `Remove from "${group.name}"`
           : 'Remove from unnamed group'}
       </button>
-    ))}
+    )}
   </>
 )
 
@@ -462,9 +463,9 @@ export const ERDContentInner: FC<Props> = ({
   const { commitMemos, selectedMemos } = useMemoNodes()
   const { commitGroups } = useGroupNodes()
   const {
-    addSelectionToGroup,
-    removeSelectionFromGroup,
-    removeTableFromGroup,
+    moveSelectionToGroup,
+    removeSelectionFromGroups,
+    removeTableFromItsGroup,
     enterGroup,
     dropGroupSelection,
   } = useGroupMembership()
@@ -972,8 +973,12 @@ export const ERDContentInner: FC<Props> = ({
     [menu, applyTableColor, applyMemoColor, applyGroupColor],
   )
 
-  /** Turns the current multi-selection into a new group (F9, a pure append —
-   * existing group memberships of the selected tables are never touched). */
+  /**
+   * Turns the current multi-selection into a new group (F9). The selected
+   * tables leave whatever groups they were in: a table belongs to one group,
+   * so the new group takes them rather than sharing them, and any group left
+   * empty by that goes with them.
+   */
   const handleGroupSelected = useCallback(() => {
     const tableNames = selectedIdsOf('table')
     if (tableNames.length < 2) {
@@ -987,22 +992,19 @@ export const ERDContentInner: FC<Props> = ({
     }
 
     commitGroups((current) => [
-      ...current,
+      ...releaseTables(current, tableNames, null),
       groupToNode({ id: crypto.randomUUID(), name: '', tableNames }),
     ])
     setMenu(null)
   }, [selectedIdsOf, commitGroups, toast])
 
-  /** Removes the right-clicked table from one group. */
-  const handleRemoveFromGroup = useCallback(
-    (groupId: string) => {
-      if (menu?.kind !== 'table') return
+  /** Removes the right-clicked table from the group it is in. */
+  const handleRemoveFromGroup = useCallback(() => {
+    if (menu?.kind !== 'table') return
 
-      removeTableFromGroup(groupId, menu.tableName)
-      setMenu(null)
-    },
-    [menu, removeTableFromGroup],
-  )
+    removeTableFromItsGroup(menu.tableName)
+    setMenu(null)
+  }, [menu, removeTableFromItsGroup])
 
   const handleRenameGroup = useCallback(
     (name: string) => {
@@ -1281,10 +1283,10 @@ export const ERDContentInner: FC<Props> = ({
       ? groups.find((group) => group.id === menu.groupId)
       : undefined
 
-  const menuTableGroups =
+  const menuTableGroup =
     menu?.kind === 'table'
-      ? groups.filter((group) => group.tableNames.includes(menu.tableName))
-      : []
+      ? groups.find((group) => group.tableNames.includes(menu.tableName))
+      : undefined
 
   const selectedTableNames = nodes
     .filter((node) => node.selected && node.type === 'table')
@@ -1329,8 +1331,8 @@ export const ERDContentInner: FC<Props> = ({
         selectedGroup={selectedGroup}
         groups={groups}
         onGroup={handleGroupSelected}
-        onAddToGroup={addSelectionToGroup}
-        onRemoveFromGroup={removeSelectionFromGroup}
+        onMoveToGroup={moveSelectionToGroup}
+        onRemoveFromGroups={removeSelectionFromGroups}
         onEnterGroup={enterGroup}
         onUngroup={handleUngroupSelected}
         onPreview={setGroupPreview}
@@ -1448,7 +1450,7 @@ export const ERDContentInner: FC<Props> = ({
                 ))}
               </div>
               <TableGroupMenuItems
-                groups={menuTableGroups}
+                group={menuTableGroup}
                 canGroup={selectedTableCount >= 2}
                 onGroupSelected={handleGroupSelected}
                 onRemoveFromGroup={handleRemoveFromGroup}

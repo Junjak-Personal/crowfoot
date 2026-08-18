@@ -20,23 +20,23 @@ type ErdContentContextState = {
    */
   selectedGroupId: string | null
   /**
-   * A membership a group would have, drawn instead of the one it has, while
-   * the pointer rests on the menu row that would do it.
+   * The membership each group would have, drawn instead of the one it has,
+   * while the pointer rests on the menu row that would do it. Keyed by group
+   * id; a group absent from the record is drawn as it stands.
    *
-   * It is the *result*, not the change, so adding and removing are the same
+   * It is the *result*, not the change, so moving and removing are the same
    * shape here — and an empty one draws no box at all, which is what emptying
-   * a group means. The box is derived from its members' bounds every render,
-   * so nothing else has to know this exists.
+   * a group means. Several groups at once because a move takes tables out of
+   * one group as it puts them in another. The box is derived from its members'
+   * bounds every render, so nothing else has to know this exists.
    */
-  groupPreview: { groupId: string; tableNames: string[] } | null
+  groupPreview: Record<string, string[]> | null
 }
 
 type ErdContentContextActions = {
   setLoading: (loading: boolean) => void
   setSelectedGroupId: (groupId: string | null) => void
-  setGroupPreview: (
-    preview: { groupId: string; tableNames: string[] } | null,
-  ) => void
+  setGroupPreview: (preview: Record<string, string[]> | null) => void
 }
 
 type ErdContentConextValue = {
@@ -62,10 +62,10 @@ export const useErdContentContext = () => useContext(ErdContentContext)
 export const ErdContentProvider: FC<PropsWithChildren> = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
-  const [groupPreview, setGroupPreview] = useState<{
-    groupId: string
-    tableNames: string[]
-  } | null>(null)
+  const [groupPreview, setGroupPreview] = useState<Record<
+    string,
+    string[]
+  > | null>(null)
 
   return (
     <ErdContentContext.Provider

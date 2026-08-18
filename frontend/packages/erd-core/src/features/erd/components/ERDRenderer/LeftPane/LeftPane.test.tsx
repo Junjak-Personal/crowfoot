@@ -111,7 +111,32 @@ afterEach(() => {
 })
 
 describe('LeftPane group sectioning', () => {
-  it('renders one section per group plus Ungrouped, and a table in two groups renders under both labels', () => {
+  it('renders one section per group, plus Ungrouped', () => {
+    setBaseGroups([
+      { id: 'billing', name: 'Billing', tableNames: ['orders'] },
+      { id: 'shipping', name: 'Shipping', tableNames: ['shipments'] },
+    ])
+
+    const { container } = renderLeftPane([
+      aTableNode('orders'),
+      aTableNode('payments'),
+      aTableNode('shipments'),
+    ])
+
+    expect(sectionsFromDom(container)).toEqual([
+      { label: 'Billing', tableIds: ['orders'] },
+      { label: 'Shipping', tableIds: ['shipments'] },
+      { label: 'Ungrouped', tableIds: ['payments'] },
+    ])
+  })
+
+  /**
+   * A `groups.json` written before 0.4.2 can name a table twice. One row for
+   * it, under the group that named it first — two rows would mean two nodes
+   * with the same testid, and a shift-range selection that indexes past its
+   * own list.
+   */
+  it('gives a table two deployed groups claim a single row, under the first', () => {
     setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
       {
@@ -129,26 +154,18 @@ describe('LeftPane group sectioning', () => {
 
     expect(sectionsFromDom(container)).toEqual([
       { label: 'Billing', tableIds: ['orders'] },
-      { label: 'Shipping', tableIds: ['orders', 'shipments'] },
+      { label: 'Shipping', tableIds: ['shipments'] },
       { label: 'Ungrouped', tableIds: ['payments'] },
     ])
-
-    // The query constraint from the plan: a duplicated table produces a
-    // duplicate testid, so `getByTestId` would throw — `getAllByTestId` is
-    // required here.
     expect(screen.getAllByTestId('table-name-menu-button-orders')).toHaveLength(
-      2,
+      1,
     )
   })
 
-  it('counts a duplicated table once in the (n/m visible) header, never once per section row', () => {
+  it('counts each table once in the (n/m visible) header', () => {
     setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
-      {
-        id: 'shipping',
-        name: 'Shipping',
-        tableNames: ['orders', 'shipments'],
-      },
+      { id: 'shipping', name: 'Shipping', tableNames: ['shipments'] },
     ])
 
     renderLeftPane([
@@ -157,19 +174,13 @@ describe('LeftPane group sectioning', () => {
       aTableNode('shipments'),
     ])
 
-    // 3 distinct tables, all visible — not 4/3, which is what counting the
-    // duplicated "orders" row twice would produce.
     expect(screen.getByText('(3/3 visible)')).toBeInTheDocument()
   })
 
   it('single view (showgroups=off) is a flat alphabetical list with every table exactly once and no section labels', () => {
     setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
-      {
-        id: 'shipping',
-        name: 'Shipping',
-        tableNames: ['orders', 'shipments'],
-      },
+      { id: 'shipping', name: 'Shipping', tableNames: ['shipments'] },
     ])
 
     renderLeftPane(

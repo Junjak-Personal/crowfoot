@@ -153,8 +153,10 @@ afterEach(() => {
 })
 
 describe('ErdContent context-menu group actions', () => {
-  it('"Group selected tables" is a pure append and does not strip existing membership', async () => {
-    setBaseGroups([{ id: 'billing', name: 'Billing', tableNames: ['orders'] }])
+  it('"Group selected tables" takes the tables out of the group they were in', async () => {
+    setBaseGroups([
+      { id: 'billing', name: 'Billing', tableNames: ['orders', 'shipments'] },
+    ])
 
     renderErdContent()
 
@@ -165,20 +167,35 @@ describe('ErdContent context-menu group actions', () => {
 
     const groups = await settledGroups()
     expect(groups.find((g: Group) => g.id === 'billing')?.tableNames).toEqual([
-      'orders',
+      'shipments',
     ])
 
     const created = groups.find((g: Group) => g.id !== 'billing')
     expect(created?.tableNames.slice().sort()).toEqual(['orders', 'payments'])
   })
 
-  it('"Remove from" a group only touches that one membership, and drops an emptied group entirely', async () => {
+  /** The group it emptied goes with it — an empty group is not a group. */
+  it('"Group selected tables" drops a group it empties', async () => {
+    setBaseGroups([{ id: 'billing', name: 'Billing', tableNames: ['orders'] }])
+
+    renderErdContent()
+
+    multiSelect(['orders', 'payments'])
+    rightClickCtrl('rf__node-orders')
+
+    fireEvent.click(await screen.findByText('Group selected tables'))
+
+    const groups = await settledGroups()
+    expect(groups.map((g: Group) => g.id)).not.toContain('billing')
+  })
+
+  it('"Remove from" leaves every other group alone, and drops an emptied group entirely', async () => {
     setBaseGroups([
       { id: 'billing', name: 'Billing', tableNames: ['orders'] },
       {
         id: 'shipping',
         name: 'Shipping',
-        tableNames: ['orders', 'shipments'],
+        tableNames: ['payments', 'shipments'],
       },
     ])
 
@@ -190,8 +207,53 @@ describe('ErdContent context-menu group actions', () => {
     const groups = await settledGroups()
     expect(groups.map((g: Group) => g.id)).toEqual(['shipping'])
     expect(groups.find((g: Group) => g.id === 'shipping')?.tableNames).toEqual([
-      'orders',
+      'payments',
       'shipments',
+    ])
+  })
+
+  /**
+   * A `groups.json` written before 0.4.2 can name a table twice. The first
+   * group keeps it, and the menu offers exactly one membership to leave.
+   */
+  it('offers one group to leave for a table two deployed groups claim', async () => {
+    setBaseGroups([
+      { id: 'billing', name: 'Billing', tableNames: ['orders'] },
+      { id: 'shipping', name: 'Shipping', tableNames: ['orders'] },
+    ])
+
+    renderErdContent()
+
+    rightClickCtrl('rf__node-orders')
+
+    expect(await screen.findByText('Remove from "Billing"')).toBeVisible()
+    expect(screen.queryByText('Remove from "Shipping"')).toBeNull()
+  })
+
+  /**
+   * The selection panel's one membership command. Joining a group is the same
+   * act as leaving the one before it — there is no state in which `orders` is
+   * in both.
+   */
+  it('"Move to" takes the selection out of the group it was in', async () => {
+    setBaseGroups([
+      { id: 'billing', name: 'Billing', tableNames: ['orders', 'payments'] },
+      { id: 'shipping', name: 'Shipping', tableNames: ['shipments'] },
+    ])
+
+    renderErdContent()
+
+    fireEvent.click(screen.getByTestId('rf__node-orders'), { ctrlKey: true })
+    fireEvent.click(await screen.findByRole('button', { name: /Move to/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Shipping' }))
+
+    const groups = await settledGroups()
+    expect(groups.find((g: Group) => g.id === 'billing')?.tableNames).toEqual([
+      'payments',
+    ])
+    expect(groups.find((g: Group) => g.id === 'shipping')?.tableNames).toEqual([
+      'shipments',
+      'orders',
     ])
   })
 

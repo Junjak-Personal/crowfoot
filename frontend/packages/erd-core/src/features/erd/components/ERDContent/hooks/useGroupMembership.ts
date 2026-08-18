@@ -7,42 +7,18 @@ import {
 } from '@xyflow/react'
 import { useCallback } from 'react'
 import { useGroupNodes } from '../../../hooks'
-import { type Group, isTableGroupNode } from '../../../utils'
+import { type Group, isTableGroupNode, releaseTables } from '../../../utils'
 import { useErdContentContext } from '../ErdContentContext'
 
 /**
- * One group with `tableNames` taken out of it, and dropped entirely if that
- * empties it: an empty `tableNames` is not representable in `groups.json`
- * (`parseGroups` discards it), so a node kept here would make the canvas and a
- * reloaded `?groups=` disagree. Memberships of the same tables in *other*
- * groups are untouched — a table may belong to several.
+ * `tableNames` moved into one group and out of every other: a table belongs to
+ * at most one group, so there is no membership to add that is not also a
+ * membership given up.
  */
-const withoutMembers =
-  (groupId: string, tableNames: Set<string>) =>
-  (current: Node[]): Node[] =>
-    current
-      .map((node) =>
-        isTableGroupNode(node) && node.data.groupId === groupId
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                tableNames: node.data.tableNames.filter(
-                  (name) => !tableNames.has(name),
-                ),
-              },
-            }
-          : node,
-      )
-      .filter(
-        (node) => !isTableGroupNode(node) || node.data.tableNames.length > 0,
-      )
-
-/** One group with `tableNames` appended, skipping the ones already in it. */
-const withMembers =
+const movedTo =
   (groupId: string, tableNames: string[]) =>
   (current: Node[]): Node[] =>
-    current.map((node) =>
+    releaseTables(current, tableNames, groupId).map((node) =>
       isTableGroupNode(node) && node.data.groupId === groupId
         ? {
             ...node,
@@ -80,27 +56,25 @@ export const useGroupMembership = () => {
     [getNodes],
   )
 
-  const addSelectionToGroup = useCallback(
+  const moveSelectionToGroup = useCallback(
     (groupId: string) => {
       const tableNames = selectedTableNames()
-      if (tableNames.length > 0) commitGroups(withMembers(groupId, tableNames))
+      if (tableNames.length > 0) commitGroups(movedTo(groupId, tableNames))
     },
     [selectedTableNames, commitGroups],
   )
 
-  const removeSelectionFromGroup = useCallback(
-    (groupId: string) => {
-      const tableNames = selectedTableNames()
-      if (tableNames.length > 0) {
-        commitGroups(withoutMembers(groupId, new Set(tableNames)))
-      }
-    },
-    [selectedTableNames, commitGroups],
-  )
+  const removeSelectionFromGroups = useCallback(() => {
+    const tableNames = selectedTableNames()
+    if (tableNames.length > 0) {
+      commitGroups((current) => releaseTables(current, tableNames, null))
+    }
+  }, [selectedTableNames, commitGroups])
 
-  const removeTableFromGroup = useCallback(
-    (groupId: string, tableName: string) =>
-      commitGroups(withoutMembers(groupId, new Set([tableName]))),
+  /** The group is not named: a table is in one, so there is only one to leave. */
+  const removeTableFromItsGroup = useCallback(
+    (tableName: string) =>
+      commitGroups((current) => releaseTables(current, [tableName], null)),
     [commitGroups],
   )
 
@@ -132,9 +106,9 @@ export const useGroupMembership = () => {
   )
 
   return {
-    addSelectionToGroup,
-    removeSelectionFromGroup,
-    removeTableFromGroup,
+    moveSelectionToGroup,
+    removeSelectionFromGroups,
+    removeTableFromItsGroup,
     enterGroup,
     dropGroupSelection,
   }

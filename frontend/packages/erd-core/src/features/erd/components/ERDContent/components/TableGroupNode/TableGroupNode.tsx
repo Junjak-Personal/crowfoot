@@ -68,8 +68,7 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
   const commitTablePositions = useCommitTablePositions()
 
   const selected = selectedGroupId === data.groupId
-  const preview =
-    groupPreview?.groupId === data.groupId ? groupPreview.tableNames : null
+  const preview = groupPreview?.[data.groupId] ?? null
 
   const drag = useRef<DragState | null>(null)
   const [dragging, setDragging] = useState(false)

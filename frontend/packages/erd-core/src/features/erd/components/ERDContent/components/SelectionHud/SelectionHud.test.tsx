@@ -22,8 +22,8 @@ const billing: Group = {
 const renderHud = (props: Partial<Parameters<typeof SelectionHud>[0]> = {}) => {
   const handlers = {
     onGroup: vi.fn(),
-    onAddToGroup: vi.fn(),
-    onRemoveFromGroup: vi.fn(),
+    onMoveToGroup: vi.fn(),
+    onRemoveFromGroups: vi.fn(),
     onEnterGroup: vi.fn(),
     onUngroup: vi.fn(),
     onPreview: vi.fn(),
@@ -66,11 +66,11 @@ describe('SelectionHud', () => {
     expect(screen.getByRole('status')).toHaveTextContent('3 tables selected')
   })
 
-  /** `Remove from` lists them, and the panel has to fit beside the toolbar. */
-  it('does not also count the groups they are in', () => {
+  /** A table is in one group, so there is nothing to enumerate. */
+  it('does not also name the groups they are in', () => {
     renderHud({ selectedTableNames: ['users'], groups: [core, billing] })
 
-    expect(screen.getByRole('status')).not.toHaveTextContent('group')
+    expect(screen.getByRole('status')).not.toHaveTextContent('Core')
   })
 
   it('counts one table without pluralising it', () => {
@@ -99,51 +99,72 @@ describe('SelectionHud', () => {
     expect(onGroup).toHaveBeenCalled()
   })
 
-  it('offers no group to join when there are none', () => {
+  it('offers no group to move to when there are none', () => {
     renderHud({ selectedTableNames: ['users'] })
 
-    expect(screen.queryByRole('button', { name: /Add to/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Move to/ })).toBeNull()
   })
 
-  it('offers no group to join when every one already has the selection', () => {
+  it('offers no group to move to when every one already has the selection', () => {
     renderHud({ selectedTableNames: ['users', 'posts'], groups: [core] })
 
-    expect(screen.queryByRole('button', { name: /Add to/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Move to/ })).toBeNull()
   })
 
-  it('adds the selection to a group picked from the menu', async () => {
-    const { onAddToGroup } = renderHud({
+  it('moves the selection into a group picked from the menu', async () => {
+    const { onMoveToGroup } = renderHud({
       selectedTableNames: ['comments'],
       groups: [core, billing],
     })
 
-    await userEvent.click(screen.getByRole('button', { name: /Add to/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Move to/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Billing' }))
 
-    expect(onAddToGroup).toHaveBeenCalledWith('billing')
+    expect(onMoveToGroup).toHaveBeenCalledWith('billing')
   })
 
-  it('offers removal only from the groups the selection is actually in', async () => {
-    renderHud({ selectedTableNames: ['users'], groups: [core, billing] })
-
-    await userEvent.click(screen.getByRole('button', { name: /Remove from/ }))
-
-    expect(screen.getByRole('button', { name: 'Core' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Billing' })).toBeNull()
-  })
-
-  it('previews the membership joining would produce, not the change', async () => {
-    const { onPreview } = renderHud({
-      selectedTableNames: ['comments'],
-      groups: [core],
+  /**
+   * One button, no menu: a table is in one group, so there is never a choice
+   * of which membership to give up.
+   */
+  it('offers removal only when the selection is in a group at all', async () => {
+    const { onRemoveFromGroups } = renderHud({
+      selectedTableNames: ['users'],
+      groups: [core, billing],
     })
 
-    await userEvent.click(screen.getByRole('button', { name: /Add to/ }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Remove from group' }),
+    )
+
+    expect(onRemoveFromGroups).toHaveBeenCalled()
+  })
+
+  it('offers no removal when the selection is in no group', () => {
+    renderHud({ selectedTableNames: ['comments'], groups: [core, billing] })
+
+    expect(
+      screen.queryByRole('button', { name: 'Remove from group' }),
+    ).toBeNull()
+  })
+
+  /**
+   * A move is two changes at once. Previewing only the group that grows would
+   * draw a moment in which the table is in both — the state this release
+   * exists to make impossible.
+   */
+  it('previews the group being left shrinking as the one joined grows', async () => {
+    const { onPreview } = renderHud({
+      selectedTableNames: ['orders'],
+      groups: [core, billing],
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: /Move to/ }))
     await userEvent.hover(screen.getByRole('button', { name: 'Core' }))
 
     expect(onPreview).toHaveBeenCalledWith({
-      groupId: 'core',
-      tableNames: ['users', 'posts', 'comments'],
+      core: ['users', 'posts', 'orders'],
+      billing: [],
     })
   })
 
@@ -153,13 +174,11 @@ describe('SelectionHud', () => {
       groups: [core],
     })
 
-    await userEvent.click(screen.getByRole('button', { name: /Remove from/ }))
-    await userEvent.hover(screen.getByRole('button', { name: 'Core' }))
+    await userEvent.hover(
+      screen.getByRole('button', { name: 'Remove from group' }),
+    )
 
-    expect(onPreview).toHaveBeenCalledWith({
-      groupId: 'core',
-      tableNames: ['users'],
-    })
+    expect(onPreview).toHaveBeenCalledWith({ core: ['users'] })
   })
 
   describe('with a group selected', () => {
@@ -200,7 +219,7 @@ describe('SelectionHud', () => {
       renderHud({ selectedGroup: core, groups: [core, billing] })
 
       expect(screen.queryByRole('button', { name: 'Group' })).toBeNull()
-      expect(screen.queryByRole('button', { name: /Add to/ })).toBeNull()
+      expect(screen.queryByRole('button', { name: /Move to/ })).toBeNull()
     })
   })
 })

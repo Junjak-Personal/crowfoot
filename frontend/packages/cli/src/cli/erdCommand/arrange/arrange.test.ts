@@ -130,6 +130,22 @@ describe('arrange', () => {
     ).toThrow(/share the id/)
   })
 
+  /**
+   * `arrangeTables` writes one position per table, so the second group's
+   * column would silently win and stretch the first group's box across the
+   * diagram to reach it.
+   */
+  it('refuses a plan that puts one table in two groups', () => {
+    expect(() =>
+      arrange(schema, {
+        groups: [
+          { id: 'core', name: 'Core', tables: ['users', 'posts'] },
+          { id: 'audit', name: 'Audit', tables: ['users'] },
+        ],
+      }),
+    ).toThrow(/belongs to one group/)
+  })
+
   it('clears the space the viewer parks its own group in, but only when it has to', () => {
     const withUnrelated = arrange(schema, plan)
     const allRelated = arrange(

@@ -13,8 +13,14 @@ import { isViewColorKey, type ViewColorKey } from '../viewColor'
 
 /**
  * A human-authored, view-only grouping of tables. Groups never affect foreign
- * keys, relationship edges or any export output. A table may belong to
- * several groups — overlap, not nesting.
+ * keys, relationship edges or any export output.
+ *
+ * **A table belongs to at most one group.** The box a group draws is derived
+ * from its members' bounding box every render, so a shared table forces two
+ * boxes to cross and makes dragging either one deform the other; `erd arrange`
+ * cannot place a shared table in two columns either, and quietly gives it the
+ * last one, stretching the first group's box across the diagram. Overlapping
+ * domains are expressed by picking one grouping, not by sharing tables.
  */
 export type Group = {
   id: string
@@ -30,11 +36,11 @@ const readColor = (entry: object): ViewColorKey | undefined =>
   'color' in entry && isViewColorKey(entry.color) ? entry.color : undefined
 
 /**
- * `tableNames` is deduplicated within one entry (`['a','a']` -> `['a']`): the
- * invariant `partitionTablesByGroup` relies on is "N *groups* name this
- * table", not "N mentions inside one group". A non-string name inside the
- * array is dropped rather than failing the whole entry, matching the
- * per-entry, best-effort salvage every other sidecar field gets.
+ * `tableNames` is deduplicated within one entry (`['a','a']` -> `['a']`), so
+ * that a repeated mention is not mistaken for anything. Across entries is
+ * `claimEachTableOnce`'s job. A non-string name inside the array is dropped
+ * rather than failing the whole entry, matching the per-entry, best-effort
+ * salvage every other sidecar field gets.
  */
 const readTableNames = (entry: object): string[] | null => {
   if (!('tableNames' in entry) || !Array.isArray(entry.tableNames)) return null
@@ -73,7 +79,7 @@ const parseGroup = (entry: unknown): Group | null => {
  * check below is `typeof` / `Array.isArray` / `in`, none of which can throw
  * on a `JSON.parse`-derived value — do not replace this with `v.parse`.
  */
-export const parseGroups = (value: unknown): Group[] => {
+const parseGroupList = (value: unknown): Group[] => {
   if (!Array.isArray(value)) return []
 
   // A `Set`, not `record[group.id] = ...`: `id: "__proto__"` is a valid
@@ -92,6 +98,45 @@ export const parseGroups = (value: unknown): Group[] => {
 
   return groups
 }
+
+/**
+ * Enforces one group per table: the first group that names it keeps it, every
+ * later one loses it, and a group left with nothing is dropped.
+ *
+ * First-wins rather than last-wins to match the duplicate-id rule right below,
+ * and because `groups.json` order is the order the author wrote — the earlier
+ * entry is the one they reached for first.
+ *
+ * A group with no members is not representable in `groups.json` (`parseGroups`
+ * discards it), so keeping one here would make the canvas and a reloaded
+ * `?groups=` disagree.
+ *
+ * This runs on every read rather than only on write because `groups.json`
+ * files authored before 0.4.2, and links made against them, can still name a
+ * table twice. Resolving that the same way everywhere is what keeps the
+ * canvas, the sidebar and an export agreeing on which group owns a table.
+ */
+export const claimEachTableOnce = (groups: Group[]): Group[] => {
+  const claimed = new Set<string>()
+  const result: Group[] = []
+
+  for (const group of groups) {
+    const tableNames = group.tableNames.filter((name) => !claimed.has(name))
+    if (tableNames.length === 0) continue
+
+    for (const name of tableNames) claimed.add(name)
+    result.push(
+      tableNames.length === group.tableNames.length
+        ? group
+        : { ...group, tableNames },
+    )
+  }
+
+  return result
+}
+
+export const parseGroups = (value: unknown): Group[] =>
+  claimEachTableOnce(parseGroupList(value))
 
 /**
  * The host app calls `setBaseGroups` from the sidecar fetch, which resolves
@@ -148,11 +193,16 @@ export const deserializeGroups = (raw: string): GroupDiff | null =>
  * `base` defaults to the module value for callers that remount when it lands.
  * A caller that does not remount passes the value it subscribed to, so React
  * sees the dependency it has to recompute on.
+ *
+ * Every reader of a group — canvas boxes, sidebar sections, the export — comes
+ * through here, which is what makes it the one place one-group-per-table has
+ * to hold. A link can still hand a table to a second group even when the base
+ * is clean, so the rule is applied *after* the diff, not only at parse.
  */
 export const getEffectiveGroups = (
   urlDiff: GroupDiff | null = null,
   base: Group[] = baseGroups,
-): Group[] => applyDiff(base, urlDiff)
+): Group[] => claimEachTableOnce(applyDiff(base, urlDiff))
 
 /** Snapshot for committing as groups.json, for the console helper. */
 export const dumpGroups = (): Group[] =>
@@ -175,15 +225,16 @@ export type TablePartition = {
   /** Group sections in `groups.json` order, "Ungrouped" last. `[]` when `!sectioned`. */
   sections: TablePartitionSection[]
   /**
-   * `sections` flattened, deduplicated to first appearance. This is the
-   * group-view `nodes` prop for `TableNameMenuButton` — shift-range selection
-   * indexes into it, so its order must match the visual render order.
+   * `sections` flattened. Each table appears once, because each is in one
+   * section. This is the group-view `nodes` prop for `TableNameMenuButton` —
+   * shift-range selection indexes into it, so its order must match the visual
+   * render order.
    */
   flattenedUnique: TableNodeType[]
   /**
    * Every table exactly once, alphabetical — today's list. This is both the
    * single-view render source AND the source of every `(n/m visible)` count
-   * in both modes, so a duplicated group-view row is never double-counted.
+   * in both modes.
    */
   flat: TableNodeType[]
 }
@@ -197,15 +248,14 @@ const compareTableNodes = (a: TableNodeType, b: TableNodeType): number => {
 }
 
 /**
- * Sections tables by the groups that name them. A table may surface in
- * several sections (multi-group membership) and always lands in `flat`
- * exactly once, however many groups claim it.
+ * Sections tables by the groups that name them, each table in exactly one
+ * section — the first group that names it, "Ungrouped" for the rest.
  *
- * There is deliberately no `claimed` set that removes a table from
- * consideration once it is placed in one group — `groupedIds` below only
- * ever records "has a group at all", which is what makes "Ungrouped" its
- * complement rather than a leftover, and is what lets the same table appear
- * in every group that names it.
+ * The `claimed` set makes that structural rather than a precondition on the
+ * caller: everything upstream already comes through `getEffectiveGroups`, but
+ * this is exported and pure, and a second section repeating a table would give
+ * the sidebar two rows for it and throw off the shift-range indexing into
+ * `flattenedUnique`.
  *
  * Sections are built by iterating `groups` directly and pushing onto an
  * array — never by indexing an object or Map keyed on `group.id` — so a
@@ -218,15 +268,11 @@ export const partitionTablesByGroup = (
 ): TablePartition => {
   const flat = [...tableNodes].sort(compareTableNodes)
 
-  // First-wins on a repeated `group.id`, identical to `parseGroups`. Callers
-  // today only ever pass already-deduped `parseGroups` output, but this
-  // function is exported and pure — without this, a caller that didn't
-  // dedupe would get two sections sharing one id, and the sidebar keys its
-  // section elements on `section.group?.id ?? 'ungrouped'`, so that would
-  // produce duplicate React keys. This makes section-id uniqueness
-  // structural instead of a caller-trust precondition.
+  // First-wins on a repeated `group.id`, identical to `parseGroups`: the
+  // sidebar keys its section elements on `section.group?.id ?? 'ungrouped'`,
+  // so two sections sharing an id would produce duplicate React keys.
   const seenGroupIds = new Set<string>()
-  const groupedIds = new Set<string>()
+  const claimed = new Set<string>()
   const groupSections: TablePartitionSection[] = []
 
   for (const group of groups) {
@@ -234,10 +280,12 @@ export const partitionTablesByGroup = (
     seenGroupIds.add(group.id)
 
     const memberIds = new Set(group.tableNames)
-    const nodes = flat.filter((node) => memberIds.has(node.id))
+    const nodes = flat.filter(
+      (node) => memberIds.has(node.id) && !claimed.has(node.id),
+    )
     if (nodes.length === 0) continue
 
-    for (const node of nodes) groupedIds.add(node.id)
+    for (const node of nodes) claimed.add(node.id)
     groupSections.push({ group, nodes })
   }
 
@@ -246,21 +294,16 @@ export const partitionTablesByGroup = (
     return { sectioned: false, sections: [], flattenedUnique: [], flat }
   }
 
-  const ungroupedNodes = flat.filter((node) => !groupedIds.has(node.id))
+  const ungroupedNodes = flat.filter((node) => !claimed.has(node.id))
   const sections: TablePartitionSection[] =
     ungroupedNodes.length > 0
       ? [...groupSections, { group: null, nodes: ungroupedNodes }]
       : groupSections
 
-  const seen = new Set<string>()
-  const flattenedUnique: TableNodeType[] = []
-  for (const section of sections) {
-    for (const node of section.nodes) {
-      if (seen.has(node.id)) continue
-      seen.add(node.id)
-      flattenedUnique.push(node)
-    }
+  return {
+    sectioned,
+    sections,
+    flattenedUnique: sections.flatMap((section) => section.nodes),
+    flat,
   }
-
-  return { sectioned, sections, flattenedUnique, flat }
 }

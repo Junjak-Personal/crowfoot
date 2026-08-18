@@ -20,6 +20,7 @@ import {
   isTableGroupNode,
   nodeToGroup,
   padGroupRect,
+  releaseTables,
   resolveGroupMemberIds,
   tableGroupNodesFrom,
 } from './groupNode'
@@ -199,6 +200,39 @@ describe(parseGroups, () => {
   })
 })
 
+describe('one group per table', () => {
+  /**
+   * A `groups.json` written before 0.4.2 can name a table twice. Resolving it
+   * the same way on every read is what keeps the canvas, the sidebar and an
+   * export agreeing on which group owns it.
+   */
+  it('gives a table named twice to the group that named it first', () => {
+    expect(
+      parseGroups([
+        { id: 'payment', name: 'Payment', tableNames: ['orders', 'payments'] },
+        {
+          id: 'settlement',
+          name: 'Settlement',
+          tableNames: ['payments', 'ledger'],
+        },
+      ]),
+    ).toEqual([
+      group('payment', ['orders', 'payments'], { name: 'Payment' }),
+      group('settlement', ['ledger'], { name: 'Settlement' }),
+    ])
+  })
+
+  /** An empty group is not representable in `groups.json`, so it goes. */
+  it('drops a group whose every table an earlier one already named', () => {
+    expect(
+      parseGroups([
+        { id: 'payment', name: 'Payment', tableNames: ['orders'] },
+        { id: 'settlement', name: 'Settlement', tableNames: ['orders'] },
+      ]),
+    ).toEqual([group('payment', ['orders'], { name: 'Payment' })])
+  })
+})
+
 describe('groups on top of groups.json', () => {
   beforeEach(() => {
     setBaseGroups([])
@@ -273,6 +307,35 @@ describe('groups on top of groups.json', () => {
 
     expect(serializeGroups(base, [...base])).toBe('')
   })
+
+  /**
+   * One group per table has to hold after the diff, not only at parse: the
+   * deployed file can be clean and the link still hand a table to a second
+   * group. Every reader — canvas, sidebar, export — comes through here.
+   */
+  it('leaves a table the link gave to a second group in the first one', () => {
+    const shipped = group('shipped', ['orders'])
+    const base = [shipped, group('other', ['users'])]
+    const link = deserializeGroups(
+      serializeGroups(base, [shipped, group('other', ['users', 'orders'])]),
+    )
+
+    expect(getEffectiveGroups(link, base)).toEqual([
+      group('shipped', ['orders']),
+      group('other', ['users']),
+    ])
+  })
+
+  it('drops a group the link left with nothing of its own', () => {
+    const base = [group('shipped', ['orders'])]
+    const link = deserializeGroups(
+      serializeGroups(base, [...base, group('added', ['orders'])]),
+    )
+
+    expect(getEffectiveGroups(link, base)).toEqual([
+      group('shipped', ['orders']),
+    ])
+  })
 })
 
 describe('url encoding', () => {
@@ -323,7 +386,7 @@ describe(partitionTablesByGroup, () => {
     ])
   })
 
-  it('a table named by two surviving groups appears in both sections and not in Ungrouped', () => {
+  it('a table named by two groups appears under the first one only, and not in Ungrouped', () => {
     const partition = partitionTablesByGroup(
       [orders, payments, shipments],
       [
@@ -335,10 +398,27 @@ describe(partitionTablesByGroup, () => {
     const paymentsSections = partition.sections.filter((section) =>
       section.nodes.some((n) => n.id === 'payments'),
     )
-    expect(paymentsSections).toHaveLength(2)
+    expect(paymentsSections.map((section) => section.group?.id)).toEqual([
+      'payment',
+    ])
 
     const ungrouped = partition.sections.find((s) => s.group === null)
     expect(ungrouped?.nodes.map((n) => n.id)).toEqual(['shipments'])
+  })
+
+  /** Nothing to put in it once the first group has claimed its only member. */
+  it('drops a section whose every member an earlier group already claimed', () => {
+    const partition = partitionTablesByGroup(
+      [orders, payments],
+      [
+        group('payment', ['orders', 'payments']),
+        group('settlement', ['payments']),
+      ],
+    )
+
+    expect(partition.sections.map((section) => section.group?.id)).toEqual([
+      'payment',
+    ])
   })
 
   it('a table named by zero groups lands in Ungrouped exactly once', () => {
@@ -368,7 +448,7 @@ describe(partitionTablesByGroup, () => {
     expect(idsAcrossSections).toEqual(idsInFlat)
   })
 
-  it('flattenedUnique set-equals flat, has no duplicate ids, and follows first-appearance order', () => {
+  it('flattenedUnique set-equals flat, has no duplicate ids, and follows section order', () => {
     const partition = partitionTablesByGroup(
       [orders, payments, shipments],
       [
@@ -382,13 +462,13 @@ describe(partitionTablesByGroup, () => {
     )
     const ids = partition.flattenedUnique.map((n) => n.id)
     expect(new Set(ids).size).toBe(ids.length)
-    // First-appearance order of the concatenated sections: `payment`
-    // (orders, payments) then `settlement` (payments again, skipped) then
-    // Ungrouped (shipments).
+    // Section order: `payment` (orders, payments), `settlement` (nothing left
+    // to claim, so no section at all), then Ungrouped (shipments).
     expect(ids).toEqual(['orders', 'payments', 'shipments'])
   })
 
-  it('flattenedUnique.length equals flat.length even when the sections total more (the shift-range discriminator)', () => {
+  /** What the shift-range selection indexes into has to be the rendered rows. */
+  it('flattenedUnique holds exactly the rows the sections render', () => {
     const partition = partitionTablesByGroup(
       [orders, payments],
       [
@@ -401,9 +481,7 @@ describe(partitionTablesByGroup, () => {
       (sum, s) => sum + s.nodes.length,
       0,
     )
-    expect(totalAcrossSections).toBeGreaterThan(
-      partition.flattenedUnique.length,
-    )
+    expect(totalAcrossSections).toBe(partition.flattenedUnique.length)
     expect(partition.flattenedUnique).toHaveLength(partition.flat.length)
   })
 
@@ -521,6 +599,41 @@ describe(isTableGroupNode, () => {
 
     expect(isTableGroupNode(node)).toBe(true)
     expect(isTableGroupNode(aTableNode('orders'))).toBe(false)
+  })
+})
+
+describe(releaseTables, () => {
+  const nodes = [
+    aTableNode('orders'),
+    groupToNode(group('payment', ['orders', 'payments'])),
+    groupToNode(group('shipping', ['shipments'])),
+  ]
+
+  it('takes the tables out of every group but the one keeping them', () => {
+    expect(
+      groupsFromNodes(releaseTables(nodes, ['orders'], 'shipping')),
+    ).toEqual([
+      group('payment', ['payments']),
+      group('shipping', ['shipments']),
+    ])
+  })
+
+  it('takes them out of all of them when nothing is keeping them', () => {
+    expect(groupsFromNodes(releaseTables(nodes, ['orders'], null))).toEqual([
+      group('payment', ['payments']),
+      group('shipping', ['shipments']),
+    ])
+  })
+
+  /** `parseGroups` discards an empty one, so keeping it here would desync. */
+  it('drops a group it empties', () => {
+    expect(
+      groupsFromNodes(releaseTables(nodes, ['orders', 'payments'], null)),
+    ).toEqual([group('shipping', ['shipments'])])
+  })
+
+  it('leaves the table nodes alone', () => {
+    expect(releaseTables(nodes, ['orders'], null)[0]).toBe(nodes[0])
   })
 })
 
