@@ -32,6 +32,7 @@ export {
   Rows3,
   Scan,
   Search,
+  SlidersHorizontal,
   Table2,
   Trash2,
   Ungroup,

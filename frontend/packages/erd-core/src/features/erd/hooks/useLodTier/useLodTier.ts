@@ -1,7 +1,7 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import { useStore } from '@xyflow/react'
-import { GROUP_ONLY_ZOOM, NAME_ONLY_ZOOM } from '../../../reactflow/constants'
+import { useLodSettings } from '../useLodSettings/useLodSettings.js'
 
 /**
  * How much of itself the canvas is drawing.
@@ -19,10 +19,13 @@ type LodTier = 'none' | 'table' | 'group'
  * range instead of on every frame of a gesture, so a node re-renders when it
  * has something different to draw and not before.
  */
-export const useLodTier = (): LodTier =>
-  useStore((store) => {
+export const useLodTier = (): LodTier => {
+  const { nameOnlyZoom, groupOnlyZoom } = useLodSettings()
+
+  return useStore((store) => {
     const zoom = store.transform[2]
-    if (zoom < GROUP_ONLY_ZOOM) return 'group'
-    if (zoom < NAME_ONLY_ZOOM) return 'table'
+    if (zoom < groupOnlyZoom) return 'group'
+    if (zoom < nameOnlyZoom) return 'table'
     return 'none'
   })
+}

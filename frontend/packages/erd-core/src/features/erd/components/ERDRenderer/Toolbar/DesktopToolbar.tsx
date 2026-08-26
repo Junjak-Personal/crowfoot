@@ -3,6 +3,7 @@
 import * as ToolbarPrimitive from '@radix-ui/react-toolbar'
 import type { FC, ReactNode } from 'react'
 import styles from './DesktopToolbar.module.css'
+import { DetailSettings } from './DetailSettings'
 import { FitviewButton } from './FitviewButton'
 import { GroupToggleButton } from './GroupToggleButton'
 import { ShowModeMenu } from './ShowModeMenu'
@@ -26,6 +27,7 @@ export const DesktopToolbar: FC<Props> = ({ customActions }) => {
         <FitviewButton />
         <TidyUpButton />
         <GroupToggleButton />
+        <DetailSettings />
         {customActions}
       </div>
       <ToolbarPrimitive.Separator className={styles.separator} />

@@ -3,6 +3,7 @@
 export * from './useCommitTablePositions'
 export * from './useGroupNodes'
 export * from './useLabelScale'
+export * from './useLodSettings'
 export * from './useLodTier'
 export * from './useMemoNodes'
 export * from './useSchemaEditing'

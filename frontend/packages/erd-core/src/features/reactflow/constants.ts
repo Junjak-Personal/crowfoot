@@ -6,7 +6,7 @@ export const MAX_ZOOM = 2
  * names only. Rendering only — `?show=` and the toolbar keep the viewer's
  * choice, and zooming back in restores it.
  */
-export const NAME_ONLY_ZOOM = 0.5
+export const NAME_ONLY_ZOOM = 0.4
 
 /**
  * Below this only the group labels are left: the boxes, their member tables and
@@ -16,7 +16,7 @@ export const NAME_ONLY_ZOOM = 0.5
  * The third rung of the ladder. Above `NAME_ONLY_ZOOM` a table draws its
  * columns; between the two it draws its name; below this its group draws for it.
  */
-export const GROUP_ONLY_ZOOM = 0.25
+export const GROUP_ONLY_ZOOM = 0.2
 
 /**
  * The zoom whose on-screen name size is the one worth holding on to. Stated as

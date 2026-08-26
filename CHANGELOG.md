@@ -27,6 +27,13 @@ is where a breaking change may appear.
     React Flow puts neither endpoint on the element, so telling them apart
     means driving `edge.hidden` from state and holding it there through every
     reconcile — and at this zoom an edge is a hairline.
+- **The zoom each rung starts at is a setting**, under `Detail` in the toolbar
+  and remembered in the browser. How dense a diagram is, and how far away
+  whoever is reading it sits, are things only they know: 23 tables and 300
+  tables stop being legible at very different zooms. Defaults are 40% for names
+  only and 20% for groups only. A group rung asked to sit above the table rung
+  is brought back down to it — above it there would be no zoom left at which a
+  table draws its name.
 
 ### Fixed
 
