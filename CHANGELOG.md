@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.6.0
+
 ### Added
 
 - **`erd build --json`** prints what the build read — tables, columns,
@@ -21,7 +23,21 @@ is where a breaking change may appear.
   numbers describe the file every consumer downstream reads. stdout carries
   only the report; everything for a person moves to stderr, so
   `erd build --json > report.json` is a file and not a transcript.
+- **`unparsed`** names each such clause by table, column, clause and the source
+  text as written. A `DEFAULT` the postgres parser cannot render used to come
+  back `null` — which is exactly what a column with *no* default looks like,
+  and no count of the output could tell the two apart. A one-line warning is
+  printed with or without `--json`.
 - **`--strict`** exits 1 when anything was read but not represented.
+- **`schema.json` records what it was built from.** `meta` carries every source
+  file with its sha256 (over the source bytes, so `sha256sum` agrees), the
+  crowfoot version and the build time. `curl .../schema.json | jq .meta`
+  answers it, and so does the help menu — a screenshot of the diagram now
+  carries its own provenance. Optional, so a file written before this still
+  loads.
+
+### Fixed
+
 - **`erd plan --update <plan>`** brings an existing plan back in step with a
   schema that moved under it. Tables the schema no longer has are dropped,
   groups they empty go with them, and tables it has gained are put in a group
@@ -45,20 +61,6 @@ is where a breaking change may appear.
   nothing else — so for anyone working in another repository, and for an agent
   especially, this is the manual. An unrecognised flag or command now points at
   it too.
-- **`unparsed`** names each such clause by table, column, clause and the source
-  text as written. A `DEFAULT` the postgres parser cannot render used to come
-  back `null` — which is exactly what a column with *no* default looks like,
-  and no count of the output could tell the two apart. A one-line warning is
-  printed with or without `--json`.
-- **`schema.json` records what it was built from.** `meta` carries every source
-  file with its sha256 (over the source bytes, so `sha256sum` agrees), the
-  crowfoot version and the build time. `curl .../schema.json | jq .meta`
-  answers it, and so does the help menu — a screenshot of the diagram now
-  carries its own provenance. Optional, so a file written before this still
-  loads.
-
-### Fixed
-
 - **An array column was read as its element type** — `text[]` as `text`.
   Postgres carries the dimensions in `TypeName.arrayBounds` and nowhere else,
   and the parser read only the names. Nothing downstream could catch it: the
