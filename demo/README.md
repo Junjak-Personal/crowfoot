@@ -46,12 +46,34 @@ group membership, so adding a table to a group is a one-line change and re-run.
 
 ## Deploying
 
-The site is an nginx container with two bind mounts from the host: the directory it
-serves, and nginx's own `default.conf`. Both used to live inside the container and
-nowhere else — one `docker rm` from taking the site and its server config with it.
+Build it, refuse it if it is wrong, then copy it:
 
-A deploy is now `dist/` replacing the contents of the mounted directory. Take a copy
-of what is there first; the rest of this section is the two ways that goes wrong.
+```bash
+npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres \
+  --output-dir dist --json --strict
+cp demo/{layout,groups,memos}.json dist/
+npx crowfoot erd arrange --input dist/schema.json --check --output-dir dist
+rsync -a --delete dist/ <the directory nginx serves>/
+```
+
+`--strict` fails on a clause the parser read and could not represent, and `--check`
+fails on two group boxes crossing. Both are worth having in front of a copy: the
+demo is the one diagram everybody sees, and neither failure looks like a failure —
+the diagram still renders, it just renders wrong.
+
+Wrapping those four lines in a script is the obvious next step, and that script does
+not belong here. It has to know the hostname, the path and the account, which are the
+things this file deliberately does not say — `_workspace/` is gitignored and is where
+it lives. Nothing is wired to the release workflow either: that workflow's defining
+property is that it holds no credentials, npm being reached over OIDC, and a deploy
+needs a way into a host.
+
+Take a copy of what is there first. The site is an nginx container with two bind
+mounts from the host: the directory it serves, and nginx's own `default.conf`. Both
+used to live inside the container and nowhere else — one `docker rm` from taking the
+site and its server config with it.
+
+The rest of this section is the two ways the copy goes wrong.
 
 **Replace the contents, never the directory.** A bind mount resolves to the inode, so
 `mv site site.old && mv site.new site` leaves the container serving the directory you

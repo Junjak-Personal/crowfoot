@@ -26,3 +26,6 @@ _test/
 
 # Hosts, paths and anything else this public repo must not carry
 _credential/
+
+# Local byproducts and anything that knows how to reach a host (see demo/README.md).
+_workspace/
