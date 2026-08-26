@@ -16,6 +16,7 @@ import {
 import type { Ref } from 'react'
 import styles from './HelpButton.module.css'
 import { ReleaseVersion } from './ReleaseVersion'
+import { SchemaSource } from './SchemaSource'
 
 type Props = {
   ref?: Ref<HTMLButtonElement>
@@ -48,6 +49,7 @@ export const HelpButton = ({ ref }: Props) => {
           className={styles.menuContent}
         >
           <ReleaseVersion />
+          <SchemaSource />
           {/* Upstream's docs — the parser and schema formats are unchanged in
               this fork, so they still apply. Labelled so it does not read as
               this product's own documentation. */}

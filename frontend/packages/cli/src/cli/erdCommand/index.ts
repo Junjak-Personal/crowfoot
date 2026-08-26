@@ -1,6 +1,7 @@
 import { supportedFormatSchema } from '@crowfoot/schema/parser'
 import { Command } from 'commander'
 import { actionRunner } from '../actionRunner.js'
+import { crowfootVersion } from '../version.js'
 import { arrangeCommand } from './arrangeCommand/index.js'
 import { buildCommand } from './buildCommand/index.js'
 import { fromLinkCommand } from './fromLinkCommand/index.js'
@@ -31,6 +32,7 @@ erdCommand
     actionRunner((options) =>
       buildCommand(options.input, options.outputDir, options.format, {
         json: options.json,
+        crowfootVersion,
       }),
     ),
   )

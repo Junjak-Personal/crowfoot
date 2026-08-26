@@ -27,6 +27,7 @@ export async function runPreprocess(
   inputPath: string,
   outputDir: string,
   format: SupportedFormat | undefined,
+  crowfootVersion: string,
 ): Promise<Output> {
   const inputContentResult = await getInputContent(inputPath)
   if (inputContentResult.isErr()) {
@@ -36,7 +37,7 @@ export async function runPreprocess(
       errors: [new ArgumentError(inputContentResult.error.message)],
     }
   }
-  const input = inputContentResult.value
+  const { content, sources } = inputContentResult.value
   let detectedFormat: SupportedFormat | undefined
 
   if (format === undefined) {
@@ -71,7 +72,7 @@ export async function runPreprocess(
     }
   }
 
-  const { value: json, errors } = await parse(input, detectedFormat)
+  const { value: json, errors } = await parse(content, detectedFormat)
   if (errors.length > 0) {
     return {
       outputFilePath: null,
@@ -91,10 +92,17 @@ export async function runPreprocess(
     fs.mkdirSync(outputDir, { recursive: true })
   }
 
+  // Stamped on the way out rather than by the parser: `meta` describes this
+  // build of this file, and the parser has no idea it is being written to disk.
+  const schema: Schema = {
+    ...json,
+    meta: { sources, crowfootVersion, builtAt: new Date().toISOString() },
+  }
+
   try {
-    const jsonContent = JSON.stringify(json, null, 2)
+    const jsonContent = JSON.stringify(schema, null, 2)
     fs.writeFileSync(filePath, jsonContent, 'utf8')
-    return { outputFilePath: filePath, schema: json, errors: [] }
+    return { outputFilePath: filePath, schema, errors: [] }
   } catch (error) {
     return {
       outputFilePath: null,

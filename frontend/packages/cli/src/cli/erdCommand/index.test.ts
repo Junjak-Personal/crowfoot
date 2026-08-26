@@ -29,7 +29,7 @@ describe('program', () => {
           inputFile,
           expect.stringContaining('dist'),
           format,
-          { json: undefined },
+          { json: undefined, crowfootVersion: expect.any(String) },
         )
       },
     )
@@ -59,7 +59,7 @@ describe('program', () => {
         inputFile,
         customOutputDir,
         format,
-        { json: undefined },
+        { json: undefined, crowfootVersion: expect.any(String) },
       )
     })
 
@@ -73,7 +73,7 @@ describe('program', () => {
         './fixtures/input.schema.rb',
         expect.stringContaining('dist'),
         undefined,
-        { json: true },
+        { json: true, crowfootVersion: expect.any(String) },
       )
     })
   })

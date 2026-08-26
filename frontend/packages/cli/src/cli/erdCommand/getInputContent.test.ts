@@ -29,7 +29,7 @@ describe('getInputContent', () => {
 
     expect(result.isOk()).toBe(true)
     if (result.isOk()) {
-      expect(result.value).toBe(mockFileContent)
+      expect(result.value.content).toBe(mockFileContent)
     }
   })
 
@@ -70,7 +70,7 @@ describe('getInputContent', () => {
 
     expect(result.isOk()).toBe(true)
     if (result.isOk()) {
-      expect(result.value).toBe(mockGitHubContent)
+      expect(result.value.content).toBe(mockGitHubContent)
     }
     expect(mockFetch).toHaveBeenCalledWith(mockRawUrl)
   })
@@ -89,7 +89,7 @@ describe('getInputContent', () => {
 
     expect(result.isOk()).toBe(true)
     if (result.isOk()) {
-      expect(result.value).toBe(mockUrlContent)
+      expect(result.value.content).toBe(mockUrlContent)
     }
     expect(mockFetch).toHaveBeenCalledWith(mockUrl)
   })
@@ -128,7 +128,7 @@ describe('getInputContent', () => {
 
     expect(result.isOk()).toBe(true)
     if (result.isOk()) {
-      expect(result.value).toBe(mockContents.join('\n'))
+      expect(result.value.content).toBe(mockContents.join('\n'))
     }
     expect(glob).toHaveBeenCalledWith('/path/to/*.sql')
   })
@@ -206,7 +206,7 @@ describe('getInputContent', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toBe(mockFileContent)
+        expect(result.value.content).toBe(mockFileContent)
       }
       expect(glob).toHaveBeenCalledWith(normalizedPath)
     })
@@ -232,7 +232,7 @@ describe('getInputContent', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toBe(mockContents.join('\n'))
+        expect(result.value.content).toBe(mockContents.join('\n'))
       }
       expect(glob).toHaveBeenCalledWith(normalizedGlob)
     })
@@ -255,7 +255,7 @@ describe('getInputContent', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toBe(mockFileContent)
+        expect(result.value.content).toBe(mockFileContent)
       }
       expect(glob).toHaveBeenCalledWith(normalizedPath)
     })
@@ -298,7 +298,7 @@ describe('getInputContent', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toBe(mockFileContent)
+        expect(result.value.content).toBe(mockFileContent)
       }
       // Should be called with the original path, not converted
       expect(glob).toHaveBeenCalledWith(linuxPathWithBackslash)
@@ -321,7 +321,7 @@ describe('getInputContent', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toBe(mockFileContent)
+        expect(result.value.content).toBe(mockFileContent)
       }
       expect(glob).toHaveBeenCalledWith(linuxPath)
     })

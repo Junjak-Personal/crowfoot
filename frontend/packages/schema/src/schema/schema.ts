@@ -154,11 +154,37 @@ export type Extension = v.InferOutput<typeof extensionSchema>
 const extensionsSchema = v.record(extensionNameSchema, extensionSchema)
 export type Extensions = v.InferOutput<typeof extensionsSchema>
 
+/**
+ * Where a `schema.json` came from.
+ *
+ * Written by `erd build` and read by nobody else: a diagram is only worth
+ * trusting next to the input it was drawn from, and a file with no such record
+ * can be a correct drawing of the wrong schema without anything looking wrong.
+ * `sha256` is over the source bytes, so `sha256sum` on the input answers the
+ * question directly.
+ *
+ * Optional, and read back with a plain `v.object`, so a `schema.json` written
+ * before this existed still loads.
+ */
+export const schemaMetaSchema = v.object({
+  /** Every file the build read, in the order it read them. */
+  sources: v.array(
+    v.object({
+      path: v.string(),
+      sha256: v.string(),
+    }),
+  ),
+  crowfootVersion: v.string(),
+  builtAt: v.string(),
+})
+export type SchemaMeta = v.InferOutput<typeof schemaMetaSchema>
+
 // Schema definition for the entire database structure
 export const schemaSchema = v.object({
   tables: tablesSchema,
   enums: enumsSchema,
   extensions: extensionsSchema,
+  meta: v.optional(schemaMetaSchema),
 })
 
 export type Schema = v.InferOutput<typeof schemaSchema>

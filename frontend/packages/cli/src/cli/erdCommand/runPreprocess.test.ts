@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -37,6 +38,7 @@ describe('runPreprocess', () => {
         inputPath,
         tmpDir,
         format,
+        '0.0.0-test',
       )
       if (!outputFilePath) {
         // Build clear error message by mapping errors to their .message
@@ -51,6 +53,19 @@ describe('runPreprocess', () => {
       // Validate output file content
       const outputContent = JSON.parse(fs.readFileSync(outputFilePath, 'utf8'))
       expect(outputContent.tables).toBeDefined()
+
+      // The stamp names the exact bytes this was drawn from — a diagram is only
+      // worth trusting next to the input it came from.
+      expect(outputContent.meta).toMatchObject({
+        sources: [
+          {
+            path: inputPath,
+            sha256: createHash('sha256').update(content).digest('hex'),
+          },
+        ],
+        crowfootVersion: '0.0.0-test',
+      })
+      expect(Date.parse(outputContent.meta.builtAt)).not.toBeNaN()
     },
   )
 
@@ -67,6 +82,7 @@ describe('runPreprocess', () => {
       inputPath,
       tmpDir,
       'invalid' as SupportedFormat,
+      '0.0.0-test',
     )
     expect(outputFilePath).toBeNull()
     expect(errors).toEqual([
@@ -86,6 +102,7 @@ Invalid type: Expected ("schemarb" | "postgres" | "prisma" | "drizzle" | "tbls" 
       inputPath,
       tmpDir,
       'postgres',
+      '0.0.0-test',
     )
     expect(outputFilePath).toBeNull()
     expect(errors).toEqual([

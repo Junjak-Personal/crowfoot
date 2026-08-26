@@ -26,6 +26,7 @@ export type {
   Indexes,
   PrimaryKeyConstraint,
   Schema,
+  SchemaMeta,
   Table,
   Tables,
   UniqueConstraint,
@@ -39,6 +40,7 @@ export {
   extensionSchema,
   foreignKeyConstraintSchema,
   indexSchema,
+  schemaMetaSchema,
   schemaSchema,
   tableSchema,
 } from './schema.js'

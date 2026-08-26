@@ -9,6 +9,8 @@ import { copySite } from './copySite.js'
 import { buildReport } from './report.js'
 
 type Options = {
+  /** Stamped into `schema.json`'s `meta`, so a built file names the tool that wrote it. */
+  crowfootVersion: string
   /**
    * Print what was read as JSON on stdout instead of the usage note.
    *
@@ -22,8 +24,8 @@ type Options = {
 export const buildCommand = async (
   inputPath: string,
   outDir: string,
-  format?: SupportedFormat,
-  { json = false }: Options = {},
+  format: SupportedFormat | undefined,
+  { json = false, crowfootVersion }: Options,
 ): Promise<CliError[]> => {
   const resolvedOutDir = resolve(outDir)
   const note = json ? console.error : console.info
@@ -33,6 +35,7 @@ export const buildCommand = async (
     inputPath,
     resolvedOutDir,
     format,
+    crowfootVersion,
   )
   if (preprocessErrors.length > 0) {
     // In the future, we want to allow dist to be generated and the process to complete successfully with a warning message, even if there are minor errors.

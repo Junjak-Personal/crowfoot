@@ -1,7 +1,21 @@
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import { URL } from 'node:url'
+import type { SchemaMeta } from '@crowfoot/schema/schema'
 import { glob } from 'glob'
 import { err, ok, type Result, ResultAsync } from 'neverthrow'
+
+type Source = SchemaMeta['sources'][number]
+
+type Input = {
+  content: string
+  /** What was read, in the order it was read, for `schema.json`'s `meta`. */
+  sources: Source[]
+}
+
+/** Over the source bytes, so `sha256sum` on the input gives the same answer. */
+const digest = (bytes: Buffer): string =>
+  createHash('sha256').update(bytes).digest('hex')
 
 function isValidUrl(url: string): boolean {
   try {
@@ -31,9 +45,13 @@ function normalizePathForGlob(inputPath: string): string {
   // Once we add Windows CI environment, we should revisit this implementation.
 }
 
-async function readLocalFiles(pattern: string): Promise<Result<string, Error>> {
+async function readLocalFiles(pattern: string): Promise<Result<Input, Error>> {
   const normalizedPattern = normalizePathForGlob(pattern)
-  const files = await glob(normalizedPattern)
+  // Sorted: `glob` returns whatever order the filesystem hands it, and the
+  // files are concatenated before parsing — so an unsorted read makes the same
+  // input capable of producing two different schemas, and `meta.sources`
+  // capable of listing them two different ways.
+  const files = (await glob(normalizedPattern)).sort()
   if (files.length === 0) {
     return err(
       new Error(
@@ -48,20 +66,38 @@ async function readLocalFiles(pattern: string): Promise<Result<string, Error>> {
     return err(new Error(`File not found: ${missing}`))
   }
 
-  const contents = files.map((filePath) => fs.readFileSync(filePath, 'utf8'))
-  return ok(contents.join('\n'))
+  const read = files.map((filePath) => {
+    const bytes = fs.readFileSync(filePath)
+    return {
+      path: filePath,
+      sha256: digest(bytes),
+      text: bytes.toString('utf8'),
+    }
+  })
+
+  return ok({
+    content: read.map(({ text }) => text).join('\n'),
+    sources: read.map(({ path, sha256 }) => ({ path, sha256 })),
+  })
 }
 
 function downloadGitHubRawContent(
   githubUrl: string,
-): ResultAsync<string, Error> {
+): ResultAsync<Input, Error> {
   const rawFileUrl = githubUrl
     .replace('github.com', 'raw.githubusercontent.com')
     .replace('/blob', '')
-  return downloadFile(rawFileUrl)
+  // The URL that was asked for, not the raw one it was rewritten to: that is
+  // the one someone reading `meta` would go back to.
+  return downloadFile(rawFileUrl).map(({ content }) => ({
+    content,
+    sources: [
+      { path: githubUrl, sha256: digest(Buffer.from(content, 'utf8')) },
+    ],
+  }))
 }
 
-function downloadFile(url: string): ResultAsync<string, Error> {
+function downloadFile(url: string): ResultAsync<Input, Error> {
   return ResultAsync.fromPromise(
     fetch(url).then(async (response) => {
       if (!response.ok) {
@@ -69,7 +105,11 @@ function downloadFile(url: string): ResultAsync<string, Error> {
           new Error(`Failed to download file: ${response.statusText}`),
         )
       }
-      return await response.text()
+      const text = await response.text()
+      return {
+        content: text,
+        sources: [{ path: url, sha256: digest(Buffer.from(text, 'utf8')) }],
+      }
     }),
     (error) => (error instanceof Error ? error : new Error(String(error))),
   )
@@ -77,7 +117,7 @@ function downloadFile(url: string): ResultAsync<string, Error> {
 
 export async function getInputContent(
   inputPath: string,
-): Promise<Result<string, Error>> {
+): Promise<Result<Input, Error>> {
   if (!isValidUrl(inputPath)) {
     return await readLocalFiles(inputPath)
   }
