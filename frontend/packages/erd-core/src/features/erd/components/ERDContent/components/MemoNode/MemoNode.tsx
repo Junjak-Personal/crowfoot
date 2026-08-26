@@ -4,7 +4,7 @@ import { type NodeProps, NodeResizer } from '@xyflow/react'
 import clsx from 'clsx'
 import type { FC } from 'react'
 import { type EditWrite, useUserEditingOrThrow } from '../../../../../../stores'
-import { useMemoNodes } from '../../../../hooks'
+import { useMemoNodes, useTextDraft } from '../../../../hooks'
 import type { MemoNodeType } from '../../../../types'
 import {
   DEFAULT_MEMO_FONT_SIZE,
@@ -26,6 +26,7 @@ type Props = NodeProps<MemoNodeType>
 export const MemoNode: FC<Props> = ({ id, data, selected }) => {
   const { editMode } = useUserEditingOrThrow()
   const { commitMemos } = useMemoNodes()
+  const draft = useTextDraft(data.text)
 
   /**
    * Every keystroke writes the link, so these are transient: one history entry
@@ -79,12 +80,16 @@ export const MemoNode: FC<Props> = ({ id, data, selected }) => {
                 the node out from under the caret. */}
             <textarea
               className={clsx(styles.input, 'nodrag')}
-              value={data.text}
+              value={draft.value}
               placeholder="Write a memo"
-              onChange={(event) =>
+              onChange={(event) => {
+                draft.edit(event.target.value)
                 setText(event.target.value, { transient: true })
-              }
-              onBlur={(event) => setText(event.target.value)}
+              }}
+              onBlur={(event) => {
+                draft.release()
+                setText(event.target.value)
+              }}
             />
           </>
         ) : (

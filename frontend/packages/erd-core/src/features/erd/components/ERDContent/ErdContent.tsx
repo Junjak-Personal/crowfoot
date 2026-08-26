@@ -54,6 +54,7 @@ import {
   useMemoNodes,
   useSchemaEditing,
   useTableSelection,
+  useTextDraft,
 } from '../../hooks'
 import type { DisplayArea, MemoNodeType } from '../../types'
 import {
@@ -385,27 +386,40 @@ const GroupHeaderMenu: FC<GroupHeaderMenuProps> = ({
   onSelectColor,
   onRename,
   onUngroup,
-}) => (
-  <ViewColorMenu x={x} y={y} selected={selectedColor} onSelect={onSelectColor}>
-    <div className={styles.contextMenuRow}>
-      <span>Name</span>
-      <input
-        type="text"
-        className={styles.contextMenuText}
-        aria-label="Group name"
-        value={name}
-        onChange={(event) => onRename(event.target.value)}
-      />
-    </div>
-    <button
-      type="button"
-      className={styles.contextMenuItem}
-      onClick={onUngroup}
+}) => {
+  const draft = useTextDraft(name)
+
+  return (
+    <ViewColorMenu
+      x={x}
+      y={y}
+      selected={selectedColor}
+      onSelect={onSelectColor}
     >
-      Ungroup
-    </button>
-  </ViewColorMenu>
-)
+      <div className={styles.contextMenuRow}>
+        <span>Name</span>
+        <input
+          type="text"
+          className={styles.contextMenuText}
+          aria-label="Group name"
+          value={draft.value}
+          onChange={(event) => {
+            draft.edit(event.target.value)
+            onRename(event.target.value)
+          }}
+          onBlur={draft.release}
+        />
+      </div>
+      <button
+        type="button"
+        className={styles.contextMenuItem}
+        onClick={onUngroup}
+      >
+        Ungroup
+      </button>
+    </ViewColorMenu>
+  )
+}
 
 export const ERDContentInner: FC<Props> = ({
   nodes: _nodes,

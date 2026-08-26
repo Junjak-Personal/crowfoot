@@ -9,6 +9,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { type Node, ReactFlowProvider } from '@xyflow/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'
@@ -23,6 +24,7 @@ import {
   type Group,
   getEffectiveGroups,
   setBaseGroups,
+  setBaseMemos,
 } from '../../utils'
 import { ERDContent } from './ErdContent'
 
@@ -146,6 +148,7 @@ const renderErdContent = () =>
 beforeEach(() => {
   committed = new URLSearchParams()
   setBaseGroups([])
+  setBaseMemos([])
 })
 
 afterEach(() => {
@@ -320,5 +323,52 @@ describe('ErdContent context-menu group actions', () => {
     const groups = await settledGroups()
     expect(groups.find((g: Group) => g.id === 'alpha')?.color).toBe('gold')
     expect(groups.find((g: Group) => g.id === 'beta')?.color).toBeUndefined()
+  })
+})
+
+/**
+ * A group name commits through `useReactFlow().setNodes`, which flushes a
+ * render later, so the field used to be re-rendered with the previous text
+ * between one keystroke and the next. Rewriting a text box puts the caret at
+ * its end — and takes an in-flight IME composition apart into jamo, which is
+ * the same defect seen from Korean input.
+ */
+describe('ErdContent group rename field', () => {
+  it('types where the caret is, not at the end', async () => {
+    const user = userEvent.setup()
+    setBaseGroups([{ id: 'alpha', name: '', tableNames: ['orders'] }])
+
+    renderErdContent()
+
+    rightClickCtrl('rf__node-tableGroup:alpha')
+    const input = await screen.findByLabelText<HTMLInputElement>('Group name')
+
+    input.focus()
+    await user.keyboard('abc')
+    input.setSelectionRange(1, 1)
+    await user.keyboard('XY')
+
+    expect(input).toHaveValue('aXYbc')
+    expect((await settledGroups())[0]?.name).toBe('aXYbc')
+  })
+
+  /** The same rewrite, at the site it was reported from. */
+  it('a memo takes text where the caret is', async () => {
+    const user = userEvent.setup()
+    setBaseMemos([
+      { id: 'memo-1', text: '', x: 0, y: 0, width: 220, height: 120 },
+    ])
+
+    renderErdContent()
+
+    const memo =
+      await screen.findByPlaceholderText<HTMLTextAreaElement>('Write a memo')
+
+    memo.focus()
+    await user.keyboard('abc')
+    memo.setSelectionRange(1, 1)
+    await user.keyboard('XY')
+
+    expect(memo).toHaveValue('aXYbc')
   })
 })
