@@ -29,6 +29,7 @@ describe('program', () => {
           inputFile,
           expect.stringContaining('dist'),
           format,
+          { json: undefined },
         )
       },
     )
@@ -58,6 +59,21 @@ describe('program', () => {
         inputFile,
         customOutputDir,
         format,
+        { json: undefined },
+      )
+    })
+
+    it('passes --json through', () => {
+      program.parse(
+        ['erd', 'build', '--input', './fixtures/input.schema.rb', '--json'],
+        { from: 'user' },
+      )
+
+      expect(buildCommand).toHaveBeenCalledWith(
+        './fixtures/input.schema.rb',
+        expect.stringContaining('dist'),
+        undefined,
+        { json: true },
       )
     })
   })

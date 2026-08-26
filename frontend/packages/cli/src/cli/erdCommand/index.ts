@@ -26,9 +26,12 @@ erdCommand
     'Output directory for generated files',
     defaultDistDir,
   )
+  .option('--json', 'Print what was read as JSON on stdout')
   .action(
     actionRunner((options) =>
-      buildCommand(options.input, options.outputDir, options.format),
+      buildCommand(options.input, options.outputDir, options.format, {
+        json: options.json,
+      }),
     ),
   )
 

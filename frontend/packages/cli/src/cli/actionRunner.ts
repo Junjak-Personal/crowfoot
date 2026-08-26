@@ -14,8 +14,12 @@ function actionErrorHandler(error: Error) {
   }
 }
 
+/**
+ * stderr, like the messages above it: `--json` puts a machine-readable report
+ * on stdout, and a failure must not append prose to it.
+ */
 function printTroubleshootingUrl() {
-  console.info(`For more information, see ${TroubleshootingUrl}`)
+  console.error(`For more information, see ${TroubleshootingUrl}`)
 }
 
 /**

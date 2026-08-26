@@ -6,6 +6,7 @@ import {
   type SupportedFormat,
   supportedFormatSchema,
 } from '@crowfoot/schema/parser'
+import type { Schema } from '@crowfoot/schema/schema'
 import * as v from 'valibot'
 import {
   ArgumentError,
@@ -17,6 +18,8 @@ import { getInputContent } from './getInputContent.js'
 
 type Output = {
   outputFilePath: string | null
+  /** What was written, so the caller can report on it without reading it back. */
+  schema: Schema | null
   errors: CliError[]
 }
 
@@ -29,6 +32,7 @@ export async function runPreprocess(
   if (inputContentResult.isErr()) {
     return {
       outputFilePath: null,
+      schema: null,
       errors: [new ArgumentError(inputContentResult.error.message)],
     }
   }
@@ -44,6 +48,7 @@ export async function runPreprocess(
   if (detectedFormat === undefined) {
     return {
       outputFilePath: null,
+      schema: null,
       errors: [
         new ArgumentError(
           '--format is missing, invalid, or specifies an unsupported format. Please provide a valid format.',
@@ -57,6 +62,7 @@ export async function runPreprocess(
     const errorMessage = result.issues.map((issue) => issue.message).join('\n')
     return {
       outputFilePath: null,
+      schema: null,
       errors: [
         new ArgumentError(
           `--format is missing, invalid, or specifies an unsupported format. Please provide a valid format.\n${errorMessage}`,
@@ -69,6 +75,7 @@ export async function runPreprocess(
   if (errors.length > 0) {
     return {
       outputFilePath: null,
+      schema: null,
       errors: errors.map(
         (err) =>
           new WarningProcessingError(
@@ -87,10 +94,11 @@ export async function runPreprocess(
   try {
     const jsonContent = JSON.stringify(json, null, 2)
     fs.writeFileSync(filePath, jsonContent, 'utf8')
-    return { outputFilePath: filePath, errors: [] }
+    return { outputFilePath: filePath, schema: json, errors: [] }
   } catch (error) {
     return {
       outputFilePath: null,
+      schema: null,
       errors: [
         new FileSystemError(
           `Error during preprocessing: ${error instanceof Error ? error.message : 'Unknown error'}`,
