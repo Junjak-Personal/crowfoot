@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.7.0
+
 ### Added
 
 - **Zoomed out far enough, a group is only its label.** The box, the tables
