@@ -188,6 +188,33 @@ describe('getInputContent', () => {
       })
     })
 
+    /**
+     * `C:\\db\\schema.sql` parses as a URL whose protocol is `c:`, so it used to
+     * be handed to `fetch` and fail with `fetch failed` — an absolute path was
+     * unusable on Windows. A POSIX absolute path was never affected:
+     * `new URL('/db/x.sql')` throws for want of a base.
+     */
+    it('reads a drive-letter path off disk instead of fetching it', async () => {
+      const drivePath = 'C:\\db\\schema.sql'
+      const normalizedPath = 'C:/db/schema.sql'
+      const mockFileContent = 'Drive letter content'
+
+      vi.mocked(glob).mockImplementation(async (pattern) =>
+        pattern === normalizedPath ? [normalizedPath] : [],
+      )
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+      vi.spyOn(fs, 'readFileSync').mockReturnValue(mockFileContent)
+
+      const result = await getInputContent(drivePath)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.content).toBe(mockFileContent)
+      }
+      // Went down the local branch, not the download one.
+      expect(glob).toHaveBeenCalledWith(normalizedPath)
+    })
+
     it('should convert Windows backslashes to forward slashes', async () => {
       const windowsPath = 'src\\schema\\file.prisma'
       const normalizedPath = 'src/schema/file.prisma'

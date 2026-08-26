@@ -73,9 +73,6 @@ carries the compiled viewer and therefore the license travels with it.
 | `--format <format>` | Overrides format auto-detection. |
 | `--output-dir <path>` | Output directory. Defaults to `dist`. |
 
-⚠️ `--input` with an **absolute** path is parsed as a URL and fails with
-`fetch failed`. Use a relative path.
-
 A remote schema works the same way:
 
 ```bash

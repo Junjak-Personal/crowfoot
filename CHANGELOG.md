@@ -51,6 +51,11 @@ is where a breaking change may appear.
 - **Files matched by a glob were read in whatever order the filesystem gave
   them,** then concatenated before parsing — so the same input could produce
   two different schemas. Sorted.
+- **A Windows path with a drive letter was fetched instead of read.**
+  `C:\db\schema.sql` parses as a URL whose protocol is `c:`, so it went to
+  `fetch` and failed with `fetch failed` — an absolute path was unusable on
+  Windows. A POSIX absolute path was never affected, despite what the README
+  said; that line is gone with the defect it described.
 - **`erd build` with no `--input` threw a raw stack trace** from inside `glob`,
   at whoever left off the one flag the command cannot work without. It says
   `--input is required`, which is what `from-link`, `plan` and `arrange` have

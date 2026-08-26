@@ -17,7 +17,19 @@ type Input = {
 const digest = (bytes: Buffer): string =>
   createHash('sha256').update(bytes).digest('hex')
 
+/**
+ * `C:\db\schema.sql` parses as a URL whose protocol is `c:`, so a Windows path
+ * with a drive letter used to be handed to `fetch` and fail with
+ * `fetch failed`. No real scheme is one character long, so a one-letter one is
+ * a drive. A POSIX absolute path was never affected — `new URL('/db/x.sql')`
+ * throws for want of a base.
+ */
+const isWindowsDrivePath = (input: string): boolean =>
+  /^[a-zA-Z]:[\\/]/.test(input)
+
 function isValidUrl(url: string): boolean {
+  if (isWindowsDrivePath(url)) return false
+
   try {
     new URL(url)
     return true
