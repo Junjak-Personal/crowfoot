@@ -114,7 +114,16 @@
   padding: 0.33em 0.67em;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: calc(12px * var(--label-scale, 1));
+  /*
+   * A ramp, not a multiple of the scale: `12px * scale` left the group reading
+   * smaller than the tables inside it at every zoom, because a table's name
+   * starts at 14px. A group is the larger thing, so as the canvas pulls back it
+   * has to become the label that survives — the tables are what gives way.
+   *
+   * The `- 1` keeps this exactly 12px at reading zoom, so nothing about the
+   * chip changes until the canvas is zoomed out far enough to need it.
+   */
+  font-size: calc(12px + (var(--label-scale, 1) - 1) * 36px);
   line-height: 1.4;
   color: var(--color-gray-100);
   white-space: nowrap;

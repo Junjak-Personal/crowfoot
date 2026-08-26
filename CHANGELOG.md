@@ -13,6 +13,16 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Fixed
+
+- **A group read smaller than the tables inside it, at every zoom.** Its label
+  was scaled by the same counter-scale as a table name but starts at 12px
+  against a table's 14px, so pulling back never made the group the thing you
+  could still read — the tables kept the diagram and the grouping disappeared
+  into it. The label now ramps instead: unchanged at reading zoom, and by the
+  point a table name is 42px the group above it is 84px. Zooming out gives way
+  to the larger thing, which is what the mode is for.
+
 ## 0.6.0
 
 ### Added
