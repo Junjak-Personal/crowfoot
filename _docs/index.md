@@ -17,6 +17,7 @@
 
 | 상태 | 토픽 | 문서 | 요약 |
 |---|---|---|---|
+| planning | `cli-observability` | [2026-08-26-cli-observability-plan](./active/planning/2026-08-26/2026-08-26-cli-observability-plan.md) | 도구가 «못 읽은 것»을 이름으로 말하게 — `text[]` 배열 파싱 버그 → `erd build --json/--strict` → `schema.json.meta` 출처 스탬프 → postgres `unparsed`. 사용자가 매 빌드마다 손으로 짜던 검산을 없애는 게 목적. **계획만, 미구현** |
 | planning | `erd-viewer` | [2026-08-10-erd-viewer-agent-arrange-design](./active/planning/2026-08-10/2026-08-10-erd-viewer-agent-arrange-design.md) | `erd plan` / `erd arrange` — 다른 AI 에이전트가 좌표를 한 번도 안 쓰고 그룹·메모만 정하면 CLI가 기하를 책임진다. npm 패키지에 문서가 안 실린다는 것과, 배치 함정 4개가 근거. **설계만, 미구현** |
 | planning | `erd-viewer` | [2026-08-09-erd-viewer-focus-mode-design](./active/planning/2026-08-09/2026-08-09-erd-viewer-focus-mode-design.md) | 큰 스키마에서 한 테이블 기준 N홉만 보기. `?focus=table:depth` 규칙, 재배치 없음. 읽기 어려움과 100+ 테이블 성능을 같은 수단으로 잡는다 — 숨긴 노드는 React Flow가 `return null` 한다. **설계만, 미구현** |
 | planning | `erd-viewer` | [2026-08-08-erd-viewer-live-canvas-design](./active/planning/2026-08-08/2026-08-08-erd-viewer-live-canvas-design.md) | 스키마 편집 시 캔버스 재마운트 제거 + 겹침 해소. **구현·브라우저 검증 완료** |

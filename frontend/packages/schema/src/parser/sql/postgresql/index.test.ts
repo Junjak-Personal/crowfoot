@@ -199,6 +199,51 @@ describe(processor, () => {
       })
     })
 
+    /**
+     * An array used to come back as its element type: `text[]` read as `text`.
+     * Nothing downstream could catch it — the column count was right, and the
+     * deparser has always been able to write the suffix back out — so the only
+     * signal was reading the DDL by hand. Postgres carries the dimensions in
+     * `arrayBounds` and nowhere else.
+     */
+    describe('array types', () => {
+      const typesOf = async (columns: string) => {
+        const { value } = await processor(/* sql */ `
+          CREATE TABLE users (
+            id BIGSERIAL PRIMARY KEY,
+            ${columns}
+          );
+        `)
+
+        return Object.fromEntries(
+          Object.values(value.tables['users']?.columns ?? {}).map((column) => [
+            column.name,
+            column.type,
+          ]),
+        )
+      }
+
+      it('keeps the array suffix, one pair per dimension', async () => {
+        expect(
+          await typesOf(`
+            available_locales TEXT[],
+            grid INTEGER[][],
+            plain TEXT
+          `),
+        ).toMatchObject({
+          available_locales: 'text[]',
+          grid: 'int4[][]',
+          plain: 'text',
+        })
+      })
+
+      it('keeps the suffix on a schema-qualified type', async () => {
+        expect(await typesOf('roles public.user_status[]')).toMatchObject({
+          roles: 'user_status[]',
+        })
+      })
+    })
+
     it('unique', async () => {
       const { value } = await processor(/* sql */ `
         CREATE TABLE users (

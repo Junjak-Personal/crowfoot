@@ -11,6 +11,7 @@ import type {
   Node,
   Constraint as PgConstraint,
   String as PgString,
+  TypeName as PgTypeName,
   RawStmt,
 } from '@pgsql/types'
 import { err, ok, type Result } from 'neverthrow'
@@ -428,8 +429,15 @@ export const convertToSchema = (
    * Extract column type from type name
    * For schema-qualified types like "public.user_status",
    * returns the full qualified name "public.user_status"
+   *
+   * `arrayBounds` is what makes `text[]` come back as `text[]` rather than
+   * `text`. Postgres puts the dimensions there and nowhere else, so a parser
+   * reading only `names` loses the array with the column count still correct —
+   * which is exactly the kind of loss no count can catch. The deparser has
+   * always expected the suffix (`escapeTypeIdentifier` strips and re-appends
+   * it); only this end never produced one.
    */
-  function extractColumnType(typeName: { names?: Node[] } | undefined): string {
+  function extractColumnType(typeName: PgTypeName | undefined): string {
     const names = typeName?.names
       ?.filter(isStringNode)
       .map((n) => n.String.sval)
@@ -441,7 +449,10 @@ export const convertToSchema = (
 
     // Join with dots first, then strip schema prefix
     const fullTypeName = names.join('.')
-    return stripSchemaPrefix(fullTypeName)
+    // One `[]` per dimension: `int[][]` carries two bounds. Postgres does not
+    // enforce the count, so this only ever restores what was written.
+    const dimensions = typeName?.arrayBounds?.length ?? 0
+    return stripSchemaPrefix(fullTypeName) + '[]'.repeat(dimensions)
   }
 
   /**
@@ -502,7 +513,7 @@ export const convertToSchema = (
    */
   type ColumnDef = {
     colname?: string
-    typeName?: { names?: Node[] }
+    typeName?: PgTypeName
     constraints?: Node[]
   }
 
