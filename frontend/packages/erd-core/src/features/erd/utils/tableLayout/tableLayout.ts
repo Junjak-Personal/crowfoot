@@ -168,13 +168,23 @@ export const resolveTableColor = (
   urlColors: Record<string, ViewColorKey>,
 ): ViewColorKey | undefined => urlColors[tableName] ?? layout[tableName]?.color
 
-/** Tables absent from the layout keep the position they already have. */
+/**
+ * Tables absent from the layout keep the position they already have.
+ *
+ * A table that *is* in the layout also leaves whatever parent it had. The only
+ * parent a table ever gets is the container that gathers the ones with no
+ * foreign key, and React Flow reads a child's position in its parent's frame —
+ * so a canvas coordinate applied to one landed the table a whole container's
+ * offset away. The container is for tables nobody has placed; this is the
+ * moment one stops being that.
+ */
 export const applyTableLayout = (nodes: Node[], layout: TableLayout): Node[] =>
   nodes.map((node) => {
     const entry = layout[node.id]
     if (!entry) return node
 
-    return { ...node, position: { x: entry.x, y: entry.y } }
+    const { parentId: _placed, ...free } = node
+    return { ...free, position: { x: entry.x, y: entry.y } }
   })
 
 /**
@@ -187,10 +197,37 @@ export const applyTableLayout = (nodes: Node[], layout: TableLayout): Node[] =>
 const tableNodesOnly = (nodes: Node[]): Node[] =>
   nodes.filter((node) => node.type === 'table')
 
+/**
+ * A layout is in canvas coordinates, and React Flow's `position` is not — for
+ * a node with a parent it is relative to that parent.
+ *
+ * A table with no foreign key is parented to the built-in container that
+ * gathers them, so recording its `position` as it stands wrote the offset from
+ * that container into `layout.json` as though it were a canvas coordinate. The
+ * table then loaded back somewhere else entirely, by exactly the container's
+ * own position. `dictionary_entries` in the demo is one of these.
+ */
+const inCanvasSpace = (tables: Node[], all: Node[]): Node[] => {
+  const parents = new Map(all.map((node) => [node.id, node.position]))
+
+  return tables.map((node) => {
+    const origin = node.parentId ? parents.get(node.parentId) : undefined
+    if (origin === undefined) return node
+
+    return {
+      ...node,
+      position: {
+        x: node.position.x + origin.x,
+        y: node.position.y + origin.y,
+      },
+    }
+  })
+}
+
 export const setResolvedTableLayout = (nodes: Node[]): void => {
   resolvedLayout = mergeNodePositions(
     getEffectiveTableLayout(),
-    tableNodesOnly(nodes),
+    inCanvasSpace(tableNodesOnly(nodes), nodes),
   )
 }
 
@@ -200,9 +237,15 @@ export const setResolvedTableLayout = (nodes: Node[]): void => {
  *
  * Only the tables that moved: the link accumulates the rest by merging, and
  * `pruneToBaseLayout` drops whatever ends up back where layout.json put it.
+ *
+ * `all` is the whole node list, which is where a dragged table's parent — and
+ * so the offset its `position` is measured from — has to be looked up.
  */
-export const rememberTablePositions = (nodes: Node[]): TableLayout => {
-  const tables = tableNodesOnly(nodes)
+export const rememberTablePositions = (
+  moved: Node[],
+  all: Node[],
+): TableLayout => {
+  const tables = inCanvasSpace(tableNodesOnly(moved), all)
   resolvedLayout = mergeNodePositions(resolvedLayout, tables)
 
   return mergeNodePositions({}, tables)

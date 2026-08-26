@@ -84,7 +84,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['a', 'b', 'c'] }],
       ungrouped: [],
       heightOf,
-      originX: 0,
     })
 
     expect(layout).toEqual({
@@ -99,7 +98,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['a', 'b', 'c', 'd'] }],
       ungrouped: [],
       heightOf,
-      originX: 0,
     })
 
     expect(layout['b']?.x).toBe(TABLE_WIDTH + 40)
@@ -113,7 +111,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: twenty }],
       ungrouped: [],
       heightOf,
-      originX: 0,
     })
 
     const columns = new Set(twenty.map((t) => layout[t]?.x))
@@ -129,7 +126,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['a', 'b', 'c'] }],
       ungrouped: [],
       heightOf,
-      originX: 0,
     })
 
     expect(new Set(['a', 'b', 'c'].map((t) => layout[t]?.x)).size).toBe(1)
@@ -141,7 +137,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['big', 'a', 'b', 'c'] }],
       ungrouped: [],
       heightOf: tall,
-      originX: 0,
     })
 
     // `big` takes one column; the three short ones stack in the other.
@@ -154,7 +149,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['a'] }, { tables: ['b'] }],
       ungrouped: [],
       heightOf,
-      originX: 0,
     })
 
     const gap = (layout['b']?.x ?? 0) - ((layout['a']?.x ?? 0) + TABLE_WIDTH)
@@ -166,7 +160,6 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['a'] }],
       ungrouped: ['loose'],
       heightOf,
-      originX: 0,
     })
 
     expect(layout['loose']).toBeDefined()
@@ -183,7 +176,6 @@ describe('arrangeTables', () => {
       ],
       ungrouped: ['i', 'j'],
       heightOf,
-      originX: 1000,
     })
 
     expect(overlaps(layout)).toEqual([])
@@ -195,10 +187,9 @@ describe('arrangeTables', () => {
       groups: [{ tables: ['a'] }],
       ungrouped: [],
       heightOf,
-      originX: 500,
     })
 
-    expect(span).toEqual({ left: 500, right: 500 + TABLE_WIDTH })
+    expect(span).toEqual({ left: 0, right: TABLE_WIDTH })
   })
 
   it('has an empty span when there is nothing to place', () => {
@@ -206,7 +197,6 @@ describe('arrangeTables', () => {
       groups: [],
       ungrouped: [],
       heightOf,
-      originX: 0,
     })
 
     expect(layout).toEqual({})

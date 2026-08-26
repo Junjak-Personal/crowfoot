@@ -60,14 +60,7 @@ one — megabytes a deploy, forever. Everything else in the directory has a stab
 and is simply overwritten, and `schema.json` and the three sidecar files are not the
 build's to remove. (`erd build` does this itself; a copy-based deploy has to.)
 
-## Three things that will bite
-
-**A table with no foreign key ignores `layout.json`.** The viewer collects
-relationship-less tables into a built-in group of its own and places it where it
-likes. `dictionary_entries` is the one here, and it is deliberately left out of every
-group — put it in one and its box stretches across the whole canvas. This is also why
-the grouped columns start at a large `x`: they have to clear wherever that built-in
-group lands.
+## Two things that will bite
 
 **Group boxes are derived from member bounds, plus the app's own padding.** Space
 groups further apart than that padding or neighbouring boxes visibly overlap. The gap

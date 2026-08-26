@@ -1,6 +1,6 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import type { Node } from '@xyflow/react'
+import { type Node, useReactFlow } from '@xyflow/react'
 import { useCallback } from 'react'
 import { useVersionOrThrow } from '../../../../providers'
 import { useUserEditingOrThrow } from '../../../../stores'
@@ -28,6 +28,9 @@ import {
 export const useCommitTablePositions = () => {
   const { tablePositions, setTablePositions } = useUserEditingOrThrow()
   const { version } = useVersionOrThrow()
+  // A dragged table's position is measured from its parent, and the parent is
+  // only findable in the whole list.
+  const { getNodes } = useReactFlow()
 
   return useCallback(
     (moved: Node[]) => {
@@ -38,7 +41,7 @@ export const useCommitTablePositions = () => {
         serializeTableLayout(
           pruneToBaseLayout({
             ...deserializeTableLayout(tablePositions),
-            ...rememberTablePositions(tables),
+            ...rememberTablePositions(tables, getNodes()),
           }),
         ),
       )
@@ -55,6 +58,6 @@ export const useCommitTablePositions = () => {
         })
       }
     },
-    [tablePositions, setTablePositions, version],
+    [tablePositions, setTablePositions, version, getNodes],
   )
 }

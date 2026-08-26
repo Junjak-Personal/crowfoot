@@ -48,24 +48,23 @@ const plan = {
 }
 
 describe('arrange', () => {
-  it('places every table that has a relationship', () => {
-    const result = arrange(schema, plan)
-
-    expect(Object.keys(result.layout).sort()).toEqual(['posts', 'users'])
-  })
-
-  it('leaves tables with no relationship out of the layout, and names them', () => {
-    const result = arrange(schema, plan)
-
-    expect(result.layout['loose']).toBeUndefined()
-    expect(result.unplaceable).toEqual(['loose'])
-  })
-
   /**
-   * Having no foreign key says nothing about which context a table belongs to.
-   * Only the coordinate is withheld — the membership is the plan's to state.
+   * Including the ones with no relationship. They used to be left out — the
+   * viewer parented them to a container of its own and read their position in
+   * its frame, so a coordinate written here landed somewhere else. The viewer
+   * takes a table out of that container the moment something places it.
    */
-  it('keeps an unplaceable table in the group the plan put it in', () => {
+  it('places every table in the schema', () => {
+    const result = arrange(schema, plan)
+
+    expect(Object.keys(result.layout).sort()).toEqual([
+      'loose',
+      'posts',
+      'users',
+    ])
+  })
+
+  it('places a relationship-less table in the group the plan put it in', () => {
     const result = arrange(schema, {
       groups: [
         { id: 'core', name: 'Core', tables: ['users', 'posts', 'loose'] },
@@ -73,15 +72,14 @@ describe('arrange', () => {
     })
 
     expect(result.groups[0]?.tableNames).toEqual(['users', 'posts', 'loose'])
-    expect(result.layout['loose']).toBeUndefined()
+    expect(result.layout['loose']).toBeDefined()
   })
 
-  it('does not leave a hole where an unplaceable group member would have gone', () => {
-    const result = arrange(schema, {
-      groups: [{ id: 'core', name: 'Core', tables: ['loose', 'users'] }],
-    })
+  /** Nothing is held back any more, so the first table starts at the origin. */
+  it('starts at the origin rather than clearing a reserved band', () => {
+    const result = arrange(schema, plan)
 
-    expect(result.layout['users']?.y).toBe(0)
+    expect(result.layout['users']).toEqual({ x: 0, y: 0 })
   })
 
   it('sizes tables from their column count', () => {
@@ -144,22 +142,6 @@ describe('arrange', () => {
         ],
       }),
     ).toThrow(/belongs to one group/)
-  })
-
-  it('clears the space the viewer parks its own group in, but only when it has to', () => {
-    const withUnrelated = arrange(schema, plan)
-    const allRelated = arrange(
-      aSchema({
-        tables: {
-          users: withColumns('users', 3),
-          posts: withColumns('posts', 5, fk('fk_posts', 'users')),
-        },
-      }),
-      plan,
-    )
-
-    expect(withUnrelated.layout['users']?.x).toBeGreaterThan(0)
-    expect(allRelated.layout['users']?.x).toBe(0)
   })
 
   it('places a table the plan forgot rather than dropping it', () => {

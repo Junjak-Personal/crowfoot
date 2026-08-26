@@ -1,7 +1,7 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
 import type { CliError } from '../../errors.js'
-import { skeletonPlan, unrelatedTables, updatePlan } from '../arrange/plan.js'
+import { skeletonPlan, updatePlan } from '../arrange/plan.js'
 import { readPlan } from '../arrange/readPlan.js'
 import { readSchema } from '../arrange/readSchema.js'
 
@@ -41,20 +41,7 @@ const reportUpdate = (
 }
 
 /** What a fresh plan says about itself. */
-const reportSkeleton = (
-  inputPath: string,
-  schema: Parameters<typeof unrelatedTables>[0],
-  groupCount: number,
-): void => {
-  const unrelated = unrelatedTables(schema)
-  if (unrelated.length > 0) {
-    console.error(
-      `\nLeft out of the plan (${unrelated.length}): ${unrelated.join(', ')}\n` +
-        'These have no foreign key, so the viewer collects them into a group of its\n' +
-        'own and places them itself. Nothing here can position them.',
-    )
-  }
-
+const reportSkeleton = (inputPath: string, groupCount: number): void => {
   console.error(
     `\n${groupCount} group(s) suggested from shared name prefixes.\n` +
       'Rename them, move tables between them, add memos, then:\n' +
@@ -87,7 +74,7 @@ export const planCommand = async (
   if (updatePath === undefined) {
     const plan = skeletonPlan(schema)
     process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`)
-    reportSkeleton(inputPath, schema, plan.groups.length)
+    reportSkeleton(inputPath, plan.groups.length)
     return []
   }
 

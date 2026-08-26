@@ -59,20 +59,6 @@ export const planSchema = v.object({
 
 export type Plan = v.InferOutput<typeof planSchema>
 
-/** Table names on both ends of every foreign key. */
-const relationshipPairs = (schema: Schema): [string, string][] => {
-  const pairs: [string, string][] = []
-
-  for (const [name, table] of Object.entries(schema.tables)) {
-    for (const constraint of Object.values(table.constraints)) {
-      if (constraint.type !== 'FOREIGN KEY') continue
-      pairs.push([name, constraint.targetTableName])
-    }
-  }
-
-  return pairs
-}
-
 /**
  * Tables whose names start with the same word, biggest cluster first.
  *
@@ -102,14 +88,6 @@ const prefixClusters = (tables: string[]): string[][] => {
         right.length - left.length || leftPrefix.localeCompare(rightPrefix),
     )
     .map(([, names]) => [...names].sort())
-}
-
-/** Tables with no foreign key on either end. */
-export const unrelatedTables = (schema: Schema): string[] => {
-  const related = new Set(relationshipPairs(schema).flat())
-  return Object.keys(schema.tables)
-    .filter((name) => !related.has(name))
-    .sort()
 }
 
 /**

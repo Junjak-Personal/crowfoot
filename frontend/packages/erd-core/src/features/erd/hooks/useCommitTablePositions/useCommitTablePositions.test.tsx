@@ -2,6 +2,7 @@
 // See the NOTICE file at the repository root.
 import { renderHook } from '@testing-library/react'
 import type { Node } from '@xyflow/react'
+import { ReactFlowProvider } from '@xyflow/react'
 import { NuqsTestingAdapter, type UrlUpdateEvent } from 'nuqs/adapters/testing'
 import { act, type FC, type PropsWithChildren } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -49,7 +50,11 @@ const wrapperFor =
       onUrlUpdate={onUrlUpdate}
     >
       <VersionProvider version={version}>
-        <UserEditingProvider>{children}</UserEditingProvider>
+        {/* The hook reads the node list to find a dragged table's parent, and
+            a table with no foreign key has one. */}
+        <ReactFlowProvider>
+          <UserEditingProvider>{children}</UserEditingProvider>
+        </ReactFlowProvider>
       </VersionProvider>
     </NuqsTestingAdapter>
   )

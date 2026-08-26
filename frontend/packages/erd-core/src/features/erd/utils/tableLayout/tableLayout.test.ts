@@ -73,9 +73,38 @@ describe('layout precedence', () => {
   })
 
   it('hands back only the tables the gesture moved', () => {
-    expect(rememberTablePositions([node('users', 10, 10)])).toEqual({
+    expect(rememberTablePositions([node('users', 10, 10)], [])).toEqual({
       users: { x: 10, y: 10 },
     })
+  })
+
+  /**
+   * A table with no foreign key is parented to the container that gathers
+   * them, and React Flow measures a parented node's position from its parent.
+   * Recording it as it stands wrote the offset into the layout as though it
+   * were a canvas coordinate, and the table loaded back a whole container away.
+   */
+  it('records a parented table where it actually sits on the canvas', () => {
+    const container = {
+      id: 'non-related-table-group',
+      type: 'nonRelatedTableGroup',
+      position: { x: 1000, y: 500 },
+      data: {},
+    }
+    const child = {
+      ...node('dictionary_entries', 30, 40),
+      parentId: container.id,
+    }
+
+    expect(rememberTablePositions([child], [container, child])).toEqual({
+      dictionary_entries: { x: 1030, y: 540 },
+    })
+  })
+
+  it('leaves a table with no parent exactly where it says it is', () => {
+    expect(
+      rememberTablePositions([node('users', 30, 40)], [node('users', 30, 40)]),
+    ).toEqual({ users: { x: 30, y: 40 } })
   })
 })
 
@@ -181,7 +210,7 @@ describe(dumpTableLayout, () => {
 
   it('reflects tables dragged after the initial layout', () => {
     setResolvedTableLayout([node('users', 1, 2), node('posts', 3, 4)])
-    rememberTablePositions([node('posts', 30, 40)])
+    rememberTablePositions([node('posts', 30, 40)], [])
 
     expect(dumpTableLayout()).toEqual({
       users: { x: 1, y: 2 },
@@ -213,7 +242,7 @@ describe('table color', () => {
     setResolvedTableLayout([node('users', 1, 2)])
     setTableColor('users', 'gold')
 
-    rememberTablePositions([node('users', 50, 60)])
+    rememberTablePositions([node('users', 50, 60)], [])
 
     expect(getTableColor('users')).toBe('gold')
     expect(dumpTableLayout()['users']).toEqual({ x: 50, y: 60, color: 'gold' })

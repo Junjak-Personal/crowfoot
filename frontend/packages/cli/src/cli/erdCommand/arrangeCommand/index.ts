@@ -108,22 +108,5 @@ export const arrangeCommand = async (
       `and memos.json (${result.memos.length} memos) to \`${outDir}/\`.`,
   )
 
-  if (result.unplaceable.length > 0) {
-    const grouped = result.unplaceable.filter((table) =>
-      plan.groups.some((group) => group.tables.includes(table)),
-    )
-
-    console.info(
-      `\n${result.unplaceable.length} table(s) have no foreign key and are not in layout.json:\n` +
-        `  ${result.unplaceable.join(', ')}\n` +
-        'The viewer gathers those into a group of its own and places them itself.' +
-        (grouped.length > 0
-          ? `\n${grouped.length} of them are in a group you planned: ${grouped.join(', ')}. ` +
-            'The membership is kept, but the box stretches to wherever the viewer ' +
-            'put them until you drag them into place.'
-          : ''),
-    )
-  }
-
   return []
 }

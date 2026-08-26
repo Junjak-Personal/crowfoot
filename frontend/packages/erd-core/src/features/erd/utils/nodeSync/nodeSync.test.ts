@@ -158,6 +158,56 @@ describe(reconcileTableNodes, () => {
     expect(result[1]?.position).toEqual({ x: 999, y: 999 })
   })
 
+  /**
+   * The container gathers tables nobody has placed. React Flow measures a
+   * parented node's position from its parent, so a pinned canvas coordinate
+   * applied to one landed the table a whole container's offset away — which is
+   * how `layout.json` came to be ignored for every table with no foreign key.
+   */
+  it('takes a pinned table out of the container that gathers them', () => {
+    const current: Node[] = []
+    const incoming = [
+      groupNode({ x: 1000, y: 500 }),
+      tableNode(
+        'dictionary_entries',
+        { table: { name: 'dictionary_entries' } },
+        {
+          parentId: NON_RELATED_TABLE_GROUP_NODE_ID,
+        },
+      ),
+    ]
+
+    const added = reconcileTableNodes({ current, incoming, place }).nodes.find(
+      (node) => node.id === 'dictionary_entries',
+    )
+
+    expect(added?.parentId).toBeUndefined()
+    expect(added?.position).toEqual({ x: 999, y: 999 })
+  })
+
+  /** Nothing placed it, so the container is still the one with something to say. */
+  it('leaves an unpinned table in the container', () => {
+    const current: Node[] = []
+    const incoming = [
+      groupNode({ x: 1000, y: 500 }),
+      tableNode(
+        'dictionary_entries',
+        { table: { name: 'dictionary_entries' } },
+        {
+          parentId: NON_RELATED_TABLE_GROUP_NODE_ID,
+        },
+      ),
+    ]
+
+    const added = reconcileTableNodes({
+      current,
+      incoming,
+      place: placeNowhere,
+    }).nodes.find((node) => node.id === 'dictionary_entries')
+
+    expect(added?.parentId).toBe(NON_RELATED_TABLE_GROUP_NODE_ID)
+  })
+
   it('reports a table nothing pins so the caller can lay it out', () => {
     const current = [tableNode('users', { table: { name: 'users' } })]
     const incoming = [

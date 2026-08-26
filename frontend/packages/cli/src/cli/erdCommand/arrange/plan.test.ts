@@ -2,12 +2,7 @@ import { aSchema, aTable } from '@crowfoot/schema/schema'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 import type { Plan } from './plan.js'
-import {
-  planSchema,
-  skeletonPlan,
-  unrelatedTables,
-  updatePlan,
-} from './plan.js'
+import { planSchema, skeletonPlan, updatePlan } from './plan.js'
 
 const fk = (name: string, column: string, target: string) => ({
   [name]: {
@@ -48,12 +43,6 @@ const schema = aSchema({
     audit_log: aTable({ name: 'audit_log' }),
     audit_trail: aTable({ name: 'audit_trail' }),
   },
-})
-
-describe('unrelatedTables', () => {
-  it('names the tables no foreign key touches', () => {
-    expect(unrelatedTables(schema)).toEqual(['audit_log', 'audit_trail'])
-  })
 })
 
 describe('skeletonPlan', () => {

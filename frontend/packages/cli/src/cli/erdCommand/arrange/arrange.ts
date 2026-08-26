@@ -8,18 +8,7 @@ import {
   memoHeight,
   tableHeight,
 } from './geometry.js'
-import { type Plan, unrelatedTables } from './plan.js'
-
-/**
- * Where the grouped columns start when the schema has tables with no
- * relationships.
- *
- * Those tables are parented to a group the viewer creates and places itself, and
- * nothing here can know where that lands. This clears it. The number was
- * arrived at by rendering the demo and looking — it is the least derived thing
- * in this file, and the open question in the design doc.
- */
-const UNRELATED_CLEARANCE = 3100
+import type { Plan } from './plan.js'
 
 /** Memo column width, and the gap between columns. */
 const MEMO_WIDTH = 1560
@@ -42,7 +31,6 @@ type ArrangeResult = {
     fontSize: number
   }[]
   /** Tables the viewer will place itself, so the caller can say so. */
-  unplaceable: string[]
 }
 
 const checkTablesExist = (schema: Schema, plan: Plan) => {
@@ -158,37 +146,30 @@ const arrangeMemos = (
 /**
  * Turns a plan into the three sidecar files, working out every coordinate.
  *
- * Tables with no relationship at all are deliberately absent from the layout:
- * the viewer parents them to a group of its own, and React Flow reads a child's
- * position in the parent's frame, so a coordinate written for one here would be
- * applied somewhere else entirely.
+ * Every table gets a coordinate, including the ones with no relationship at
+ * all. Those used to be left out: the viewer parents them to a container of
+ * its own and React Flow reads a child's position in the parent's frame, so a
+ * coordinate written here landed a container's offset away. The viewer takes a
+ * table out of that container the moment something places it, so writing one
+ * is now the way to say where it goes.
  */
 export const arrange = (schema: Schema, plan: Plan): ArrangeResult => {
   checkTablesExist(schema, plan)
   checkNoDuplicateGroupIds(plan)
   checkNoSharedTables(plan)
 
-  const unplaceable = unrelatedTables(schema)
-  const skip = new Set(unplaceable)
-
   const grouped = new Set(plan.groups.flatMap((group) => group.tables))
   const ungrouped = Object.keys(schema.tables).filter(
-    (table) => !grouped.has(table) && !skip.has(table),
+    (table) => !grouped.has(table),
   )
 
   const heightOf = (table: string) =>
     tableHeight(Object.keys(schema.tables[table]?.columns ?? {}).length)
 
   const { layout, span } = arrangeTables({
-    // Only the coordinate is withheld from a table with no foreign key. Which
-    // group it belongs to is the plan's statement about the schema, and
-    // dropping it from `groups.json` threw that away without saying so.
-    groups: plan.groups.map((group) => ({
-      tables: group.tables.filter((table) => !skip.has(table)),
-    })),
+    groups: plan.groups.map((group) => ({ tables: group.tables })),
     ungrouped,
     heightOf,
-    originX: unplaceable.length > 0 ? UNRELATED_CLEARANCE : 0,
   })
 
   const { memos } = arrangeMemos(plan, span)
@@ -202,6 +183,5 @@ export const arrange = (schema: Schema, plan: Plan): ArrangeResult => {
       tableNames: group.tables,
     })),
     memos,
-    unplaceable,
   }
 }

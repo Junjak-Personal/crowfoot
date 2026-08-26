@@ -192,7 +192,17 @@ export const reconcileTableNodes = ({
     touched.push(node.id)
 
     const position = place(node.id)
-    if (position !== null) return { ...node, position }
+    if (position !== null) {
+      // Out of the container that gathers relationship-less tables, because
+      // the position is a canvas coordinate and a parented node's is not:
+      // React Flow reads it relative to the parent, so an absolute one landed
+      // the table a whole container's offset away from where it was pinned.
+      //
+      // The container is for tables nobody has placed. Once one has been, it
+      // has nothing left to say about it.
+      const { parentId: _placed, ...free } = node
+      return { ...free, position }
+    }
 
     unplaced.push(node.id)
     return node

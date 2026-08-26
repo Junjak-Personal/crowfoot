@@ -102,23 +102,22 @@ type ArrangedTables = {
  * Lays groups out left to right, each packed into its own column or pair of
  * columns, and appends anything the plan did not group as one more block.
  *
- * `originX` exists because a schema with relationship-less tables gets a group
- * box the viewer places itself, and grouped columns have to start clear of it —
- * see `ORPHAN_CLEARANCE` at the call site.
+ * Starts at the origin. It used to start clear of a reserved band, because a
+ * schema with relationship-less tables got a container the viewer placed
+ * itself and the grouped columns had to miss it. Every table is placed here
+ * now, so that container is always empty and there is nothing to clear.
  */
 export const arrangeTables = ({
   groups,
   ungrouped,
   heightOf,
-  originX,
 }: {
   groups: { tables: string[] }[]
   ungrouped: string[]
   heightOf: (table: string) => number
-  originX: number
 }): ArrangedTables => {
   const layout: Layout = {}
-  let x = originX
+  let x = 0
 
   const blocks =
     ungrouped.length > 0 ? [...groups, { tables: ungrouped }] : groups
@@ -134,7 +133,7 @@ export const arrangeTables = ({
   return {
     layout,
     // The last group added a trailing gap that nothing occupies.
-    span: { left: originX, right: Math.max(originX, x - GROUP_GAP) },
+    span: { left: 0, right: Math.max(0, x - GROUP_GAP) },
   }
 }
 
