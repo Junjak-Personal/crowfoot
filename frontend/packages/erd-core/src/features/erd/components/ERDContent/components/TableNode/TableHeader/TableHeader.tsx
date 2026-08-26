@@ -12,7 +12,9 @@ import {
 import { DiffIcon } from '../../../../../../diff/components/DiffIcon'
 import diffStyles from '../../../../../../diff/styles/Diff.module.css'
 import { useCustomReactflow } from '../../../../../../reactflow/hooks'
+import { useShowMode } from '../../../../../hooks'
 import type { TableNodeData } from '../../../../../types'
+import { columnHandleId } from '../../../../../utils'
 import { getChangeStatus } from './getChangeStatus'
 import styles from './TableHeader.module.css'
 
@@ -22,13 +24,13 @@ type Props = {
 
 export const TableHeader: FC<Props> = ({ data }) => {
   const name = data.table.name
-  const { showMode: _showMode, showDiff } = useUserEditingOrThrow()
+  const { showDiff } = useUserEditingOrThrow()
 
   const { operations } = useSchemaOrThrow()
-  const showMode = data.showMode ?? _showMode
+  const showMode = useShowMode(data.showMode)
 
-  const isTarget = data.targetColumnCardinalities !== undefined
-  const isSource = data.sourceColumnName !== undefined
+  /** The columns something points at — one handle each, as in the column list. */
+  const targetColumnNames = Object.keys(data.targetColumnCardinalities ?? {})
 
   // Only calculate diff-related values when showDiff is true
   const changeStatus = useMemo(() => {
@@ -105,19 +107,28 @@ export const TableHeader: FC<Props> = ({ data }) => {
           {name}
         </span>
 
+        {/*
+          The column rows are gone in this mode, and their handles with them —
+          so the header carries the same handle *ids* instead, collapsed onto
+          its own edges. Naming them after the columns rather than the table is
+          what lets the zoom drop a canvas into this mode without rebuilding a
+          single edge: an edge drawn to `orders.user_id` still finds its end.
+          Nothing reads a table-named handle, so there is no second set.
+        */}
         {showMode === 'TABLE_NAME' && (
           <>
-            {isTarget && (
+            {targetColumnNames.map((columnName) => (
               <Handle
-                id={name}
+                key={columnName}
+                id={columnHandleId(name, columnName)}
                 type="target"
                 position={Position.Left}
                 className={styles.handle}
               />
-            )}
-            {isSource && (
+            ))}
+            {data.sourceColumnName !== undefined && (
               <Handle
-                id={name}
+                id={columnHandleId(name, data.sourceColumnName)}
                 type="source"
                 position={Position.Right}
                 className={styles.handle}

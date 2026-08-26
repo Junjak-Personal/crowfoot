@@ -10,7 +10,7 @@ import {
 import type { NodeProps } from '@xyflow/react'
 import clsx from 'clsx'
 import type { FC } from 'react'
-import { useUserEditingOrThrow } from '../../../../../../stores'
+import { useShowMode } from '../../../../hooks'
 import type { TableNodeType } from '../../../../types'
 import { TableColumnList } from './TableColumnList'
 import { TableHeader } from './TableHeader'
@@ -19,8 +19,7 @@ import styles from './TableNode.module.css'
 type Props = NodeProps<TableNodeType>
 
 export const TableNode: FC<Props> = ({ data }) => {
-  const { showMode: _showMode } = useUserEditingOrThrow()
-  const showMode = data.showMode ?? _showMode
+  const showMode = useShowMode(data.showMode)
   const name = data?.table?.name
 
   return (

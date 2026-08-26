@@ -107,11 +107,14 @@
  */
 .chip {
   display: inline-block;
-  max-width: 220px;
-  padding: var(--spacing-1) var(--spacing-2);
+  /* A group only ever shows its name, so --label-scale (useLabelScale) always
+     applies — it is 1 at reading zoom. Sized in `em` from there so the pill and
+     the room it gives the name grow with it rather than cutting it short. */
+  max-width: 18.3em;
+  padding: 0.33em 0.67em;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: calc(12px * var(--label-scale, 1));
   line-height: 1.4;
   color: var(--color-gray-100);
   white-space: nowrap;

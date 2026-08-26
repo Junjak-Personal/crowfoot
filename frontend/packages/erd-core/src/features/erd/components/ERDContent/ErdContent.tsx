@@ -51,6 +51,7 @@ import { MAX_ZOOM, MIN_ZOOM } from '../../../reactflow/constants'
 import {
   useCommitTablePositions,
   useGroupNodes,
+  useLabelScale,
   useMemoNodes,
   useSchemaEditing,
   useTableSelection,
@@ -489,6 +490,10 @@ export const ERDContentInner: FC<Props> = ({
     commit: commitSchema,
     reset: resetSchemaEdits,
   } = useSchemaEditing()
+
+  /** Carries `--label-scale` down to every name drawn on this canvas. */
+  const canvas = useRef<HTMLDivElement>(null)
+  useLabelScale(canvas)
 
   const { handleNodesChange, isSettling, stopSettleAnimation } =
     useSchemaNodeSync({
@@ -1321,6 +1326,7 @@ export const ERDContentInner: FC<Props> = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: this only suppresses
     // the native menu and opens the editing menu; nothing here is a control.
     <div
+      ref={canvas}
       className={clsx(styles.wrapper, {
         [styles.settling]: isSettling,
         [styles.connecting]: connecting !== null,

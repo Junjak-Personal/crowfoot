@@ -1,8 +1,9 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { aSchema, aTable } from '@crowfoot/schema'
+import { aColumn, aSchema, aTable } from '@crowfoot/schema'
 import { ToastProvider } from '@crowfoot/ui'
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -10,7 +11,7 @@ import {
   waitFor,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { type Node, ReactFlowProvider } from '@xyflow/react'
+import { type Node, ReactFlowProvider, useStoreApi } from '@xyflow/react'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { FC, PropsWithChildren } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -18,6 +19,7 @@ import { VersionProvider } from '../../../../providers'
 import type { Version } from '../../../../schemas/version'
 import { SchemaProvider, UserEditingProvider } from '../../../../stores'
 import { decompressFromEncodedUriComponent } from '../../../../utils/decompressFromEncodedUriComponent'
+import { MAX_LABEL_SCALE, MIN_ZOOM } from '../../../reactflow/constants'
 import type { TableNodeData, TableNodeType } from '../../types'
 import {
   deserializeGroups,
@@ -75,7 +77,10 @@ const aTableNode = (name: string): TableNodeType => ({
   type: 'table',
   position: { x: 0, y: 0 },
   data: {
-    table: aTable({ name }),
+    table: aTable({
+      name,
+      columns: { [`${name}_id`]: aColumn({ name: `${name}_id` }) },
+    }),
     isActiveHighlighted: false,
     isHighlighted: false,
     isTooltipVisible: false,
@@ -91,6 +96,20 @@ const schema = aSchema({
   },
 })
 
+/** Reaches React Flow's own store so a test can set the zoom. */
+let flowStore: ReturnType<typeof useStoreApi> | null = null
+
+const CaptureStore: FC = () => {
+  flowStore = useStoreApi()
+  return null
+}
+
+const setZoom = (zoom: number) => {
+  act(() => {
+    flowStore?.setState({ transform: [0, 0, zoom] })
+  })
+}
+
 const wrapper: FC<PropsWithChildren> = ({ children }) => (
   <NuqsTestingAdapter
     searchParams="?edit=1"
@@ -100,6 +119,7 @@ const wrapper: FC<PropsWithChildren> = ({ children }) => (
   >
     <ToastProvider>
       <ReactFlowProvider>
+        <CaptureStore />
         <VersionProvider version={version}>
           <UserEditingProvider>
             <SchemaProvider current={schema}>{children}</SchemaProvider>
@@ -370,5 +390,48 @@ describe('ErdContent group rename field', () => {
     await user.keyboard('XY')
 
     expect(memo).toHaveValue('aXYbc')
+  })
+})
+
+/**
+ * Zoomed out far enough, a diagram with many tables is a wall of unreadable
+ * rows. The canvas drops to names only and counter-scales them so they hold
+ * their on-screen size — rendering only: `?show=` keeps whatever the viewer
+ * chose, and zooming in puts the columns back.
+ */
+describe('ErdContent zoom detail', () => {
+  it('drops to names only below the threshold, and puts the columns back', () => {
+    const { container } = renderErdContent()
+
+    expect(screen.queryByText('orders_id')).not.toBeNull()
+
+    setZoom(0.3)
+
+    expect(screen.queryByText('orders_id')).toBeNull()
+    expect(screen.getAllByText('orders').length).toBeGreaterThan(0)
+
+    setZoom(1)
+
+    expect(screen.queryByText('orders_id')).not.toBeNull()
+    expect(container.firstElementChild).toHaveStyle({ '--label-scale': '1' })
+  })
+
+  it('counter-scales the name by how far the canvas is zoomed out', () => {
+    const { container } = renderErdContent()
+
+    setZoom(0.6)
+
+    expect(container.firstElementChild).toHaveStyle({ '--label-scale': '1.5' })
+  })
+
+  /** Capped, so the names start shrinking again rather than swallowing the canvas. */
+  it('stops counter-scaling at the cap', () => {
+    const { container } = renderErdContent()
+
+    setZoom(MIN_ZOOM)
+
+    expect(container.firstElementChild).toHaveStyle({
+      '--label-scale': String(MAX_LABEL_SCALE),
+    })
   })
 })

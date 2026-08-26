@@ -70,6 +70,33 @@
 
 .containerTableNameMode {
   border-radius: var(--border-radius-md);
+  /*
+   * With nothing but the name on the node, --label-scale (useLabelScale) holds
+   * it at a readable on-screen size as the canvas is zoomed out. Scoped to this
+   * mode so a header never grows out of step with the column rows under it.
+   *
+   * Font size rather than a transform: the node is `width: auto`, so it grows
+   * to fit and React Flow re-measures it — which is what keeps the edges
+   * attached. Everything around the name is sized in `em` so it follows along.
+   */
+  gap: 0.29em;
+  padding: 0.57em;
+  font-size: calc(var(--font-size-5) * var(--label-scale, 1));
+}
+
+.containerTableNameMode .tableIcon {
+  width: 1.15em;
+  min-width: 1.15em;
+}
+
+/*
+ * Nothing else is competing for the room here, so a long name widens its node
+ * instead of being cut short — being able to read the name is the whole point
+ * of the mode.
+ */
+.containerTableNameMode .name {
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .containerDiffView {

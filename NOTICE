@@ -109,3 +109,12 @@ Summary of the changes made to the original work
     consumer reads, so the DDL export reflects them; nothing is written back to
     schema.json. Upstream's viewer is read-only.
 
+14. The canvas simplifies itself as it is zoomed out.
+    Past a zoom threshold every table drops to its name alone and the name is
+    counter-scaled, so a diagram of a hundred tables stays readable as an
+    overview instead of becoming a wall of rows too small to read. Nothing is
+    stored: ?show= and the show-mode picker keep whatever was chosen, and
+    zooming back in restores the columns. Upstream offers the same three show
+    modes but only as a manual choice, and its automatic layout pins each
+    table to the size it had when the layout ran, which is what prevented a
+    name from being given more room.
