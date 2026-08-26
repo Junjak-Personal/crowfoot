@@ -31,12 +31,22 @@ type ErdContentContextState = {
    * bounds every render, so nothing else has to know this exists.
    */
   groupPreview: Record<string, string[]> | null
+  /**
+   * Every table some group claims.
+   *
+   * Zoomed out far enough a group draws for its members and they are hidden,
+   * and a table cannot work that out for itself: a group is a sibling node, not
+   * an ancestor, so neither the DOM nor the CSS puts one inside the other. This
+   * is the one thing that has to be handed down.
+   */
+  groupedTables: ReadonlySet<string>
 }
 
 type ErdContentContextActions = {
   setLoading: (loading: boolean) => void
   setSelectedGroupId: (groupId: string | null) => void
   setGroupPreview: (preview: Record<string, string[]> | null) => void
+  setGroupedTables: (tables: ReadonlySet<string>) => void
 }
 
 type ErdContentConextValue = {
@@ -49,11 +59,13 @@ const ErdContentContext = createContext<ErdContentConextValue>({
     loading: true,
     selectedGroupId: null,
     groupPreview: null,
+    groupedTables: new Set<string>(),
   },
   actions: {
     setLoading: () => {},
     setSelectedGroupId: () => {},
     setGroupPreview: () => {},
+    setGroupedTables: () => {},
   },
 })
 
@@ -66,12 +78,20 @@ export const ErdContentProvider: FC<PropsWithChildren> = ({ children }) => {
     string,
     string[]
   > | null>(null)
+  const [groupedTables, setGroupedTables] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  )
 
   return (
     <ErdContentContext.Provider
       value={{
-        state: { loading, selectedGroupId, groupPreview },
-        actions: { setLoading, setSelectedGroupId, setGroupPreview },
+        state: { loading, selectedGroupId, groupPreview, groupedTables },
+        actions: {
+          setLoading,
+          setSelectedGroupId,
+          setGroupPreview,
+          setGroupedTables,
+        },
       }}
     >
       {children}

@@ -52,6 +52,7 @@ import {
   useCommitTablePositions,
   useGroupNodes,
   useLabelScale,
+  useLodTier,
   useMemoNodes,
   useSchemaEditing,
   useTableSelection,
@@ -469,7 +470,7 @@ export const ERDContentInner: FC<Props> = ({
 
   const {
     state: { loading, selectedGroupId },
-    actions: { setSelectedGroupId, setGroupPreview },
+    actions: { setSelectedGroupId, setGroupPreview, setGroupedTables },
   } = useErdContentContext()
   const { screenToFlowPosition, getNodes } = useReactFlow()
   const toast = useToast()
@@ -494,6 +495,7 @@ export const ERDContentInner: FC<Props> = ({
   /** Carries `--label-scale` down to every name drawn on this canvas. */
   const canvas = useRef<HTMLDivElement>(null)
   useLabelScale(canvas)
+  const lodTier = useLodTier()
 
   const { handleNodesChange, isSettling, stopSettleAnimation } =
     useSchemaNodeSync({
@@ -1297,6 +1299,24 @@ export const ERDContentInner: FC<Props> = ({
 
   const groups = groupsFromNodes(nodes)
 
+  /**
+   * Handed down so a table can tell whether some group speaks for it — which it
+   * has to know to hide itself once the canvas is drawing groups only. Derived
+   * here because this is where the node list lives; a group node is a sibling
+   * of the tables it contains, not their parent.
+   */
+  const groupedTableNames = groups
+    .flatMap((group) => group.tableNames)
+    .join(',')
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the joined names
+  // are the dependency; the array they came from is rebuilt every render.
+  useEffect(() => {
+    setGroupedTables(
+      new Set(groupedTableNames === '' ? [] : groupedTableNames.split(',')),
+    )
+  }, [groupedTableNames, setGroupedTables])
+
   const menuGroup =
     menu?.kind === 'tableGroup'
       ? groups.find((group) => group.id === menu.groupId)
@@ -1332,6 +1352,7 @@ export const ERDContentInner: FC<Props> = ({
         [styles.connecting]: connecting !== null,
       })}
       data-loading={loading}
+      data-lod={lodTier}
       onContextMenu={handleCanvasContextMenu}
       onPointerMove={handlePointerMove}
     >

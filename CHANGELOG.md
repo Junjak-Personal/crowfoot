@@ -13,6 +13,21 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Added
+
+- **Zoomed out far enough, a group is only its label.** The box, the tables
+  inside it and the edges between them all go; a table in no group stays,
+  because nothing else speaks for it. Three rungs now, one per thing that stops
+  being legible: a table draws its columns, then its name, then its group draws
+  for it.
+  - A member is hidden rather than unmounted. The group's box is its members'
+    bounding box, so a member that stopped taking up space would drag the label
+    that replaced it across the canvas.
+  - Every edge goes at that zoom, not only the ones ending somewhere hidden.
+    React Flow puts neither endpoint on the element, so telling them apart
+    means driving `edge.hidden` from state and holding it there through every
+    reconcile — and at this zoom an edge is a hairline.
+
 ### Fixed
 
 - **A group read smaller than the tables inside it, at every zoom.** Its label

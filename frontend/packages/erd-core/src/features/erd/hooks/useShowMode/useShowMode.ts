@@ -1,9 +1,8 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { useStore } from '@xyflow/react'
 import type { ShowMode } from '../../../../schemas'
 import { useUserEditingOrThrow } from '../../../../stores'
-import { NAME_ONLY_ZOOM } from '../../../reactflow/constants'
+import { useLodTier } from '../useLodTier/useLodTier.js'
 
 /**
  * What a table should draw, once the zoom level has had its say.
@@ -19,11 +18,11 @@ import { NAME_ONLY_ZOOM } from '../../../reactflow/constants'
  */
 export const useShowMode = (override: ShowMode | undefined): ShowMode => {
   const { showMode } = useUserEditingOrThrow()
-  // A boolean rather than the zoom itself: a table re-renders when the
-  // threshold is crossed, not on every frame of the gesture.
-  const nameOnly = useStore((store) => store.transform[2] < NAME_ONLY_ZOOM)
+  const tier = useLodTier()
 
   if (override !== undefined) return override
 
-  return nameOnly ? 'TABLE_NAME' : showMode
+  // A table draws its name in both zoomed-out tiers. In `group` it is hidden
+  // outright when a group speaks for it, which is TableNode's call, not this.
+  return tier === 'none' ? showMode : 'TABLE_NAME'
 }

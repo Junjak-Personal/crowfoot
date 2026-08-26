@@ -131,3 +131,28 @@
   border: 1px solid var(--view-tint, var(--color-gray-500));
   border-radius: var(--border-radius-full);
 }
+
+/*
+ * Drawing groups only: the label is the whole of it.
+ *
+ * The box keeps its size and position — it is what places the label, and it is
+ * still the thing being pointed at — but stops painting. The label moves off
+ * the top edge into the middle, because a name pinned above nothing reads as a
+ * caption for whatever happens to sit under it.
+ */
+.labelOnly {
+  background: none;
+  border: none;
+}
+
+.labelOnly .header {
+  position: absolute;
+  inset: 0;
+  bottom: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}

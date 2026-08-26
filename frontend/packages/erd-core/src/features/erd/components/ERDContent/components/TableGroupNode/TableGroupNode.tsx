@@ -12,7 +12,7 @@ import {
   useState,
 } from 'react'
 import { useUserEditingOrThrow } from '../../../../../../stores'
-import { useCommitTablePositions } from '../../../../hooks'
+import { useCommitTablePositions, useLodTier } from '../../../../hooks'
 import type { TableGroupNodeType } from '../../../../types'
 import { padGroupRect, resolveGroupMemberIds } from '../../../../utils'
 import { useErdContentContext } from '../../ErdContentContext'
@@ -63,6 +63,7 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
     actions: { setSelectedGroupId },
   } = useErdContentContext()
   const nodes = useNodes()
+  const tier = useLodTier()
   const { getNodesBounds, setNodes, getNodes, screenToFlowPosition } =
     useReactFlow()
   const commitTablePositions = useCommitTablePositions()
@@ -238,9 +239,17 @@ export const TableGroupNode: FC<Props> = ({ data }) => {
   // "toggled off": nothing to draw yet).
   if (!showGroups || rect === null) return null
 
+  // Zoomed out this far the group *is* its label: the box and everything in it
+  // are texture at this size, and the members hide themselves (TableNode).
+  const labelOnly = tier === 'group'
+
   return (
     <div
-      className={clsx(styles.box, data.color && styles.tinted)}
+      className={clsx(
+        styles.box,
+        labelOnly && styles.labelOnly,
+        data.color && styles.tinted,
+      )}
       data-view-color={data.color}
       data-selected={selected}
       data-preview={preview !== null}

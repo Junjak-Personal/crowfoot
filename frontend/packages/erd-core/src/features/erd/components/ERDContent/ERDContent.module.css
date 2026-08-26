@@ -152,3 +152,17 @@
 .contextMenuChip:hover {
   background: var(--color-gray-500);
 }
+
+/*
+ * Drawing groups only. The tables a group speaks for are hidden, and an edge
+ * to a hidden table is a line between two things nobody can see.
+ *
+ * ponytail: every edge goes, not only the ones that end somewhere hidden — an
+ * edge between two ungrouped tables goes with them. React Flow puts neither
+ * endpoint on the element, so telling them apart means driving `edge.hidden`
+ * from state and keeping it there through every reconcile. At this zoom an
+ * edge is a hairline; the upgrade path is that flag if it ever stops being one.
+ */
+[data-lod='group'] :global(.react-flow__edges) {
+  visibility: hidden;
+}

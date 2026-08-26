@@ -9,6 +9,16 @@ export const MAX_ZOOM = 2
 export const NAME_ONLY_ZOOM = 0.5
 
 /**
+ * Below this only the group labels are left: the boxes, their member tables and
+ * the edges between them all go, because at this size they are texture rather
+ * than information. A table in no group stays — nothing else would speak for it.
+ *
+ * The third rung of the ladder. Above `NAME_ONLY_ZOOM` a table draws its
+ * columns; between the two it draws its name; below this its group draws for it.
+ */
+export const GROUP_ONLY_ZOOM = 0.25
+
+/**
  * The zoom whose on-screen name size is the one worth holding on to. Stated as
  * a zoom rather than a pixel size so nothing here has to know what font the
  * name is set in — `LABEL_HOLD_ZOOM / zoom` is exactly the counter-scale that
