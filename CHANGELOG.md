@@ -13,6 +13,24 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.7.1
+
+### Fixed
+
+- **`layout.json` was ignored for every table with no foreign key.** The viewer
+  gathers those into a container of its own, and React Flow measures a child's
+  position from its parent — so a canvas coordinate applied to one landed the
+  table a whole container's offset away, and dragging one wrote that offset
+  back as though it were a coordinate. Neither half said anything; the diagram
+  drew, it just drew somewhere else. A table leaves the container the moment
+  something places it, and a position is recorded in canvas space whatever the
+  table is parented to.
+- **`erd arrange` places every table now**, relationship-less ones included, and
+  `erd plan` no longer warns that it cannot. The band `arrange` used to leave
+  clear for that container goes with them, so a diagram starts at the origin
+  rather than `x: 3100` — an existing plan re-arranged will come out with
+  different coordinates, and the same diagram.
+
 ## 0.7.0
 
 ### Added
