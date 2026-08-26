@@ -13,6 +13,37 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.5.0
+
+### Added
+
+- **The canvas simplifies itself as it is zoomed out.** Past 50% zoom every
+  table drops to its name alone, and the name is counter-scaled so it keeps a
+  readable size on screen instead of shrinking with the diagram — a hundred
+  tables zoomed out to fit were a wall of rows too small to read, which is the
+  point at which an overview stops being one.
+  - Rendering only. `?show=` and the show-mode picker keep whatever was chosen,
+    nothing is written to the URL or the back button, and zooming in restores
+    the columns. No table moves: the layout is left exactly as it was arranged.
+  - Counter-scaling stops at 3x, so past roughly 30% zoom the names shrink
+    again rather than growing their tables into each other. Group labels follow
+    the same rule.
+
+### Fixed
+
+- **Typing in a memo or a group name lost the caret and broke Korean input.**
+  Both fields commit through React Flow, which queues the change and applies it
+  a render later — so the render in between put the *previous* text back in the
+  box. Rewriting a text box sends the caret to its end, so a character typed
+  mid-word landed at the end of the line instead; and it throws away an
+  in-flight IME composition, which is how a Korean syllable came apart into
+  jamo. The field now shows what was typed into it until it is left.
+- **A table could not be resized by anything it drew.** The automatic layout
+  wrote the size each table had when it ran onto the table itself, and React
+  Flow honours an explicit size instead of measuring — so a table kept that
+  size for as long as it stayed on the canvas, unable to shrink when its
+  columns were hidden or widen for a longer name. Sizes are measured again.
+
 ## 0.4.2
 
 ### Breaking
