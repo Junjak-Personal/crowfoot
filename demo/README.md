@@ -73,7 +73,7 @@ mounts from the host: the directory it serves, and nginx's own `default.conf`. B
 used to live inside the container and nowhere else — one `docker rm` from taking the
 site and its server config with it.
 
-The rest of this section is the two ways the copy goes wrong.
+The rest of this section is the three ways the copy goes wrong.
 
 **Replace the contents, never the directory.** A bind mount resolves to the inode, so
 `mv site site.old && mv site.new site` leaves the container serving the directory you
@@ -83,6 +83,13 @@ directory that is already mounted.
 `rsync -a --delete` is the obvious way to do it. If the host has no rsync, upload a
 tarball, unpack it somewhere else, and copy it in — but then nothing deletes, which
 is the second one:
+
+**Make the staged copy world-readable before sending it.** `rsync -a` carries the
+local modes across, and a build staged in a `mktemp -d` is `0700`. That mode lands on
+the served directory, where nginx — a different uid inside the container — can no
+longer traverse it, and the site answers `403` with every file present, correct and
+newly dated. `chmod -R a+rX` on the staging directory first. (`--chmod=D755,F644`
+says the same thing at the copy, and macOS ships an rsync that does not have it.)
 
 **Empty `assets/` before copying, and only `assets/`.** Its filenames are
 content-hashed, so a copy leaves the previous build's bundle sitting beside the new
