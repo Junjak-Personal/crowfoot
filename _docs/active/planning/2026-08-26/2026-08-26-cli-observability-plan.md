@@ -1,6 +1,6 @@
 # 도구가 무엇을 못 읽었는지 말하게 하기 — `--json` · `meta` · `unparsed`
 
-- 상태: planning (1~4단계 완료, 비범위 항목 남음)
+- 상태: planning (1~4단계 + C·E 완료, D만 남음)
 - 토픽: `cli-observability`
 - 작성: 2026-08-26
 - 작업 표면: `frontend/packages/schema` (파서·메타), `frontend/packages/cli` (명령), `frontend/packages/erd-core` (헤더 표시)
@@ -114,12 +114,29 @@ type UnparsedItem = { table: string; column?: string; clause: string; raw: strin
 - 3단계: 빌드 산출물의 `jq .meta`, glob 입력(다중 소스)에서 `sources`가 실제 파일 수와 일치.
 - 4단계: `DEFAULT ARRAY[...]`가 든 픽스처에서 `unparsed`가 그 컬럼을 이름으로 집는지.
 
-## 비범위
+## 비범위였다가 이어서 한 것
 
-- `erd plan --update` (C) — 다음.
-- `arrange --check` (E) — 다음. `geometry.ts`에 산수가 이미 헤드리스로 있어 싸다.
+| 항목 | 커밋 | 계획 대비 |
+|---|---|---|
+| C `erd plan --update` | `6423fe6` | 계획대로. `readPlan`을 `arrangeCommand`에서 `arrange/`로 빼 두 커맨드가 공유 |
+| E `erd arrange --check` | `f57c5c8` | **입력이 계획과 다르다** — 아래 |
+
+### E 의 입력이 바뀐 이유
+
+처음엔 `--plan` 을 받아 `arrange` 를 다시 돌리고 그 출력을 검사하게 만들었다. **vacuous 했다**:
+`arrange` 는 그룹을 `GROUP_GAP`(340) 간격으로 놓고 박스는 사방 24 만 번지므로 자기 출력에선
+박스가 절대 안 겹친다. 항상 통과하는 검사다.
+
+겹침은 **편집 모드에서 끌어다 놓은 뒤** 생기고, 그 결과가 들어 있는 것은 배포되는
+`layout.json` / `groups.json` 이다. 그래서 `--check` 는 `--output-dir` 의 사이드카를 읽고
+`--plan` 을 아예 요구하지 않는다. 검증도 그 방식으로 했다 — `users` 를 옆 그룹 블록 안으로
+옮긴 `layout.json` 에서 `order and people cross by 388x148`, exit 1.
+
+## 비범위 (남은 것)
+
 - FK 없는 표 배치 (D) — **CLI 플래그로 안 된다.** 뷰어가 그 표들을
   `NON_RELATED_TABLE_GROUP_NODE_ID`에 parent로 붙이고 직접 배치하므로 erd-core를 고쳐야 한다.
+  `--check` 가 이 표들을 "위치 없는 멤버"로 이름 붙여 보고하므로, 지금은 최소한 조용하지는 않다.
 
 ## 실행 기록 (2026-08-26)
 
@@ -140,3 +157,7 @@ type UnparsedItem = { table: string; column?: string; clause: string; raw: strin
   references뿐이라 `tsc --noEmit`이 `-b` 없이는 no-op다. 실제로 이 작업 중 타입 에러 하나가 그대로
   통과했다(수동 `tsc -p tsconfig.app.json`으로 발견). **미수정 — 별도 과제.**
   같이 드러난 기존 오류: `App.tsx`의 `emptySchema`가 `enums`/`extensions` 누락.
+  **`7db358f` 에서 수정** — 두 프로젝트를 명시적으로 검사하게 바꾸고, 숨어 있던 오류 3건도 같이.
+- **README 의 절대경로 경고가 틀렸다** — POSIX 절대경로는 `new URL()` 이 base 없이 던져서
+  로컬 분기로 간다. URL 로 잡히는 것은 **Windows 드라이브 문자 경로**뿐이었고, 그건 문서가
+  아니라 버그였다. `d557009` 에서 고치고 경고문을 지웠다.
