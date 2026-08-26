@@ -2,7 +2,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000001",
     "text": "crowfoot — a demo\n\nThis is the database behind nivoca, a Japanese vocabulary app.\nThe version drawn here is its legacy build: Next.js + Supabase, shipped as a PWA.\nThe app has since been rebuilt on Flutter with a Kotlin/Spring backend, and this\nearlier codebase was opened as github.com/Junjak-Personal/nivoca-legacy.\n\n23 tables · 27 foreign keys, parsed straight from 37 Supabase migration files:\n    npx crowfoot erd build --input 'migrations/*.sql' --format postgres",
-    "x": 4780,
+    "x": 1680,
     "y": -1320,
     "width": 3240,
     "height": 620,
@@ -12,7 +12,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000002",
     "text": "Edit mode\n\nPress Edit in the header — or add ?edit=1 to the URL. Without it the diagram is\nread-only, so a link you share cannot be rearranged by whoever opens it.\n\nDrag tables to move them. Drag across empty canvas to select several, and add to\nthat selection with Shift-click — Cmd-click on a Mac, Ctrl-click on Windows.\nWhatever is selected moves, takes a colour and is deleted together.",
-    "x": 3100,
+    "x": 0,
     "y": -620,
     "width": 1560,
     "height": 520,
@@ -22,7 +22,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000003",
     "text": "Grouping\n\nSelect the tables you want and press Cmd/Ctrl + G. A named, tinted box is drawn\nbehind the members — it is derived from where they sit, so it follows them. Drag\nthe group label to move the whole set. Cmd/Ctrl + Shift + G ungroups, and asks\nbefore it does.\n\nA table may belong to more than one group. The toolbar switches between group\nview and a plain alphabetical list without touching the data.",
-    "x": 4780,
+    "x": 1680,
     "y": -620,
     "width": 1560,
     "height": 520,
@@ -32,7 +32,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000004",
     "text": "Memos and colour\n\nCtrl/Cmd + right-click empty canvas to drop a memo like this one. Memos resize,\nrecolour, change font size, and copy-paste — including into another browser tab.\n\nTables, memos and groups all take a tint from the same 12-colour palette, so the\ndiagram stays consistent with the app it documents.",
-    "x": 6460,
+    "x": 3360,
     "y": -620,
     "width": 1560,
     "height": 520,
@@ -42,7 +42,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000005",
     "text": "Changing the schema\n\nIn edit mode the panel on the right becomes a form: a table's name, comment,\ncolumns, keys, indexes and checks. Tables can be added and removed too.\n\nCtrl/Cmd + right-click a table, pick many : 1, 1 : 1, 1 : many or many : many,\nthen click the table to connect it to — many : many builds the join table.\n\nNothing here rearranges the diagram, and the DDL export reflects every edit.",
-    "x": 8140,
+    "x": 5040,
     "y": -620,
     "width": 1560,
     "height": 520,
@@ -52,7 +52,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000006",
     "text": "Making an arrangement permanent\n\nYour layout lives in the URL, which makes it shareable but not durable. Copy the\nedit-mode URL and turn it into files the viewer loads on every visit:\n\n    npx crowfoot erd from-link --input '<the URL>' --output-dir dist\n\nThat writes layout.json, memos.json and groups.json next to schema.json. Commit\nthem, and this arrangement is what everyone sees — this demo included.\n\nSchema edits stay in the link on purpose. A diagram is a view of a real schema:\nregenerate schema.json from the source rather than pinning an edited copy.",
-    "x": 3100,
+    "x": 0,
     "y": 1180,
     "width": 3240,
     "height": 660,
@@ -62,7 +62,7 @@
   {
     "id": "d0000000-0000-4000-8000-000000000007",
     "text": "Where this runs\n\nA static site: no server, no database connection. crowfoot parses the schema once\nand emits HTML, CSS and JSON you can host anywhere — S3, nginx, GitHub Pages.\nThis page is nginx on a mini PC behind a Cloudflare tunnel.\n\nThe sidecar files and the script that generates them are in the repository under\ndemo/, so this arrangement survives the server it happens to be served from.\n\ngithub.com/Junjak-Personal/crowfoot   ·   npm i -g crowfoot",
-    "x": 6460,
+    "x": 3360,
     "y": 1180,
     "width": 3240,
     "height": 560,

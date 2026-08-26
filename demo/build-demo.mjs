@@ -37,9 +37,11 @@ const groups = [
   { id: 'ops', name: 'Notifications & Ops', color: 'steel', tables: ['push_tokens', 'push_subscriptions', 'api_rate_limits', 'feedback_survey'] },
 ]
 
-// dictionary_entries is deliberately ungrouped: it has no foreign key at all, so the
-// viewer corrals it into its own built-in "non-related tables" group and ignores any
-// position given here. Grouping it anyway stretches its box across the whole canvas.
+// dictionary_entries is left ungrouped because it belongs with nothing here, not
+// because it cannot be placed. It has no foreign key, and up to 0.7.1 the viewer
+// corralled such tables into a built-in group and read their positions in that
+// group's frame — so a coordinate written here landed somewhere else. It no longer
+// does: a table leaves that group the moment something places it.
 const grouped = new Set(groups.flatMap((g) => g.tables))
 const missing = groups.flatMap((g) => g.tables).filter((t) => !schema.tables[t])
 if (missing.length) {
@@ -48,10 +50,10 @@ if (missing.length) {
 }
 const ungrouped = Object.keys(schema.tables).filter((t) => !grouped.has(t))
 
-// The viewer parks that non-related group at a low x of its own choosing, so the
-// grouped columns start clear of it. Without the offset the orphan lands inside
-// whichever group happens to own that x.
-const X0 = 3100
+// The origin. This used to be 3100, to clear the band the viewer parked its
+// built-in group of relationship-less tables in — that group is empty now that
+// every table here is placed, so there is nothing to clear.
+const X0 = 0
 // A gap narrower than twice the app's own group-box padding makes neighbouring
 // boxes visibly overlap. 340 was arrived at by looking at the rendered result.
 const GROUP_GAP = 340
@@ -80,6 +82,14 @@ for (const g of groups) {
   }
   x += (right.length ? W * 2 + GX : W) + GROUP_GAP
 }
+
+// Ungrouped tables get a column of their own, past the last group. They used to
+// get no coordinate at all — the viewer would not have honoured one — so the
+// only thing that placed them was the viewer's own built-in group.
+for (const [i, t] of ungrouped.entries()) {
+  layout[t] = { x, y: i * (height(t) + GY) }
+}
+if (ungrouped.length) x += W + GROUP_GAP
 
 const CARD_W = 1560
 const CARD_GAP = 120
@@ -170,4 +180,4 @@ write('groups.json', groups.map(({ id, name, color, tables }) => ({ id, name, co
 write('memos.json', memos)
 
 console.info(`${Object.keys(layout).length} tables positioned across ${groups.length} groups`)
-if (ungrouped.length) console.info(`ungrouped (drawn by the viewer's own group): ${ungrouped.join(', ')}`)
+if (ungrouped.length) console.info(`in no group, placed in a column of their own: ${ungrouped.join(', ')}`)

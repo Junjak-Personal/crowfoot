@@ -1,90 +1,94 @@
 {
   "words": {
-    "x": 3100,
+    "x": 0,
     "y": 0
   },
   "wordbooks": {
-    "x": 3100,
+    "x": 0,
     "y": 466
   },
   "wordbook_subscriptions": {
-    "x": 3100,
+    "x": 0,
     "y": 762
   },
   "word_examples": {
-    "x": 3480,
+    "x": 380,
     "y": 0
   },
   "wordbook_items": {
-    "x": 3480,
+    "x": 380,
     "y": 330
   },
   "user_word_state": {
-    "x": 3480,
+    "x": 380,
     "y": 558
   },
   "kanjis": {
-    "x": 4160,
+    "x": 1060,
     "y": 0
   },
   "kanji_readings": {
-    "x": 4160,
+    "x": 1060,
     "y": 330
   },
   "ai_sessions": {
-    "x": 4840,
+    "x": 1740,
     "y": 0
   },
   "ai_tool_executions": {
-    "x": 4840,
+    "x": 1740,
     "y": 500
   },
   "ai_messages": {
-    "x": 5220,
+    "x": 2120,
     "y": 0
   },
   "ai_telemetry": {
-    "x": 5220,
+    "x": 2120,
     "y": 602
   },
   "quiz_settings": {
-    "x": 5900,
+    "x": 2800,
     "y": 0
   },
   "daily_stats": {
-    "x": 5900,
+    "x": 2800,
     "y": 398
   },
   "study_progress": {
-    "x": 6280,
+    "x": 3180,
     "y": 0
   },
   "achievements": {
-    "x": 6280,
+    "x": 3180,
     "y": 364
   },
   "user_settings": {
-    "x": 6960,
+    "x": 3860,
     "y": 0
   },
   "user_subscription": {
-    "x": 6960,
+    "x": 3860,
     "y": 296
   },
   "push_tokens": {
-    "x": 7640,
+    "x": 4540,
     "y": 0
   },
   "api_rate_limits": {
-    "x": 7640,
+    "x": 4540,
     "y": 296
   },
   "push_subscriptions": {
-    "x": 8020,
+    "x": 4920,
     "y": 0
   },
   "feedback_survey": {
-    "x": 8020,
+    "x": 4920,
     "y": 364
+  },
+  "dictionary_entries": {
+    "x": 5600,
+    "y": 0
   }
 }

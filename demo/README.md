@@ -14,15 +14,23 @@ shipped as a PWA, since rebuilt on Flutter with a Kotlin/Spring backend. That ea
 codebase is public at
 [Junjak-Personal/nivoca-legacy](https://github.com/Junjak-Personal/nivoca-legacy).
 
-It is not vendored here. The demo is built from its Supabase migrations, which
-crowfoot parses directly:
+Its Supabase migrations are vendored in `migrations/`, which crowfoot parses
+directly. They were an external path until 0.7.1; a demo that cannot be rebuilt
+from this repository alone is one nobody can check.
 
 ```bash
-npx crowfoot erd build --input 'supabase/migrations/*.sql' --format postgres --output-dir dist
+npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres --output-dir dist
 ```
 
-23 tables, 27 foreign keys — the table count matches `CREATE TABLE` in the migrations
-exactly, which is worth asserting after any parser change.
+23 tables, 27 foreign keys, 37 migration files — the table count matches
+`CREATE TABLE` in the migrations exactly, which is worth asserting after any parser
+change. `--json` reports all of it, and `--strict` fails the build on anything the
+parser read and could not represent.
+
+The migrations carry no credentials: what looks like one is a column name
+(`encrypted_api_key`), a comment describing how to create a vault secret, or a
+lookup by name. They do name the deprecated project's Supabase URL, which is
+public in the legacy repository too.
 
 ## Rebuilding
 
