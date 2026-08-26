@@ -141,6 +141,10 @@ erdCommand
   .option('--input <path>', 'Path to the schema.json that `erd build` wrote')
   .option('--plan <path>', 'Path to the plan (see `erd plan`)')
   .option(
+    '--check',
+    'Report the deployed diagram and write nothing; exit 1 if group boxes overlap',
+  )
+  .option(
     '--output-dir <path>',
     'Output directory for generated files',
     defaultDistDir,
@@ -154,11 +158,28 @@ Example:
 Works out every position from the plan and writes the sidecar files next to
 schema.json, where the viewer looks for them. See \`crowfoot erd plan --help\`
 for where a plan comes from.
+
+--check needs no plan and writes nothing:
+  $ crowfoot erd arrange --input dist/schema.json --check --output-dir dist
+
+It reads the layout.json and groups.json in --output-dir — the files a deploy
+serves — prints the size and position of every group box the viewer will draw,
+and exits 1 if any two cross. That is the failure that reads as a broken
+diagram, and until now the only way to see it was to open a browser and measure
+the DOM. It checks what is deployed rather than what a fresh arrange would
+produce: arrange lays groups out hundreds of units apart and its own boxes can
+never cross, so checking those would always pass. They cross after someone has
+dragged tables in edit mode.
 `,
   )
   .action(
     actionRunner((options) =>
-      arrangeCommand(options.input, options.plan, options.outputDir),
+      arrangeCommand(
+        options.input,
+        options.plan,
+        options.outputDir,
+        options.check,
+      ),
     ),
   )
 

@@ -29,6 +29,15 @@ is where a breaking change may appear.
   made survives. A plan naming a table that is gone stops `arrange` outright, so
   the choice past a hundred tables used to be hand-editing the JSON or starting
   the grouping over.
+- **`erd arrange --check`** reports the diagram a deploy actually serves and
+  writes nothing: the size and position of every group box the viewer will
+  draw, which members have no position of their own, and exit 1 if any two
+  boxes cross. Two crossing boxes is what reads as a broken diagram, and until
+  now the only way to see it was to open a browser and measure the DOM. It
+  reads the `layout.json` and `groups.json` in `--output-dir` rather than
+  re-running the layout — `arrange` places groups hundreds of units apart and
+  its own boxes can never cross, so checking those would always pass. They
+  cross after someone has dragged tables in edit mode.
 - **`--help` carries the usage, not just the flag list.** Every command shows
   worked examples, and the top level shows the quick start, the supported
   formats and what to do about the ones with no parser. The package ships no
