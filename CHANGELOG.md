@@ -13,6 +13,38 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Added
+
+- **`erd build --json`** prints what the build read — tables, columns,
+  constraints by kind, indexes, enums, extensions, and anything it could not
+  represent. Counted off the `schema.json` that was just written, so the
+  numbers describe the file every consumer downstream reads. stdout carries
+  only the report; everything for a person moves to stderr, so
+  `erd build --json > report.json` is a file and not a transcript.
+- **`--strict`** exits 1 when anything was read but not represented.
+- **`unparsed`** names each such clause by table, column, clause and the source
+  text as written. A `DEFAULT` the postgres parser cannot render used to come
+  back `null` — which is exactly what a column with *no* default looks like,
+  and no count of the output could tell the two apart. A one-line warning is
+  printed with or without `--json`.
+- **`schema.json` records what it was built from.** `meta` carries every source
+  file with its sha256 (over the source bytes, so `sha256sum` agrees), the
+  crowfoot version and the build time. `curl .../schema.json | jq .meta`
+  answers it, and so does the help menu — a screenshot of the diagram now
+  carries its own provenance. Optional, so a file written before this still
+  loads.
+
+### Fixed
+
+- **An array column was read as its element type** — `text[]` as `text`.
+  Postgres carries the dimensions in `TypeName.arrayBounds` and nowhere else,
+  and the parser read only the names. Nothing downstream could catch it: the
+  column count was right, which is what makes it the kind of loss counting
+  cannot find. The deparser has always been able to write the suffix back out.
+- **Files matched by a glob were read in whatever order the filesystem gave
+  them,** then concatenated before parsing — so the same input could produce
+  two different schemas. Sorted.
+
 ## 0.5.0
 
 ### Added

@@ -1,6 +1,6 @@
 # 도구가 무엇을 못 읽었는지 말하게 하기 — `--json` · `meta` · `unparsed`
 
-- 상태: planning
+- 상태: planning (1~4단계 완료, 비범위 항목 남음)
 - 토픽: `cli-observability`
 - 작성: 2026-08-26
 - 작업 표면: `frontend/packages/schema` (파서·메타), `frontend/packages/cli` (명령), `frontend/packages/erd-core` (헤더 표시)
@@ -120,3 +120,23 @@ type UnparsedItem = { table: string; column?: string; clause: string; raw: strin
 - `arrange --check` (E) — 다음. `geometry.ts`에 산수가 이미 헤드리스로 있어 싸다.
 - FK 없는 표 배치 (D) — **CLI 플래그로 안 된다.** 뷰어가 그 표들을
   `NON_RELATED_TABLE_GROUP_NODE_ID`에 parent로 붙이고 직접 배치하므로 erd-core를 고쳐야 한다.
+
+## 실행 기록 (2026-08-26)
+
+| 단계 | 커밋 | 계획과 달라진 점 |
+|---|---|---|
+| 1 | `6f608a4` | 없음. 기존 픽스처에 배열 컬럼이 하나도 없어 569 테스트가 전부 통과한 채였다 |
+| 2 | `cfcc129` | `--strict`를 4단계로 미뤘다 — `unparsed`가 없는 동안은 아무 일도 안 하는 플래그가 된다. `enums`/`extensions`를 지표에 추가 |
+| 3 | `a8bc3d5` | 계획대로 `sources` 배열. glob 정렬과 버전 읽기 경로 수정이 딸려 나왔다 (아래) |
+| 4 | `3543742` | 원문 위치를 식 노드가 아니라 `DEFAULT` 키워드에서 읽는다 — postgres는 연산자 식의 location을 **연산자**에 둬서 `('a' \|\| ',')`가 `\|\| ','`로 잘렸다 |
+
+### 작업 중 드러난 것
+
+- **glob 순서 비결정성** — `glob`이 파일시스템 순서를 그대로 주고 그걸 이어붙여 파싱한다.
+  같은 입력이 두 개의 다른 스키마를 만들 수 있었다. 출처 스탬프의 전제를 무너뜨리므로 3단계에서 정렬.
+- **번들 평탄화** — rollup이 전 소스를 `dist-cli/bin/cli.js` 하나로 합쳐서, 더 깊은 디렉터리에서
+  쓴 상대 경로(`../../../package.json`)가 빌드에선 아무것도 가리키지 않았다. `cli/version.ts` 한 곳에서 읽는다.
+- **`crowfoot` 패키지의 `lint:tsc`가 아무것도 검사하지 않는다.** 루트 tsconfig가 `"files": []` +
+  references뿐이라 `tsc --noEmit`이 `-b` 없이는 no-op다. 실제로 이 작업 중 타입 에러 하나가 그대로
+  통과했다(수동 `tsc -p tsconfig.app.json`으로 발견). **미수정 — 별도 과제.**
+  같이 드러난 기존 오류: `App.tsx`의 `emptySchema`가 `enums`/`extensions` 누락.
