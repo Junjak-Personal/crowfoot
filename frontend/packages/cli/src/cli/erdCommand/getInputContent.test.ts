@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { glob } from 'glob'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getInputContent } from './getInputContent.js'
 
 vi.mock('node:fs')

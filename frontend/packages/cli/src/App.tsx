@@ -48,6 +48,8 @@ declare global {
 
 const emptySchema: Schema = {
   tables: {},
+  enums: {},
+  extensions: {},
 }
 
 function loadSchemaContent() {

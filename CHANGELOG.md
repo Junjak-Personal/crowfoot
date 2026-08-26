@@ -51,6 +51,11 @@ is where a breaking change may appear.
 - **Files matched by a glob were read in whatever order the filesystem gave
   them,** then concatenated before parsing — so the same input could produce
   two different schemas. Sorted.
+- **`pnpm lint` was not type-checking the `crowfoot` package at all.** Its
+  `lint:tsc` ran `tsc --noEmit` against a root config that is `"files": []` plus
+  project references, and without `-b` that walks nothing and exits 0. Three
+  real errors were sitting behind it, including an `emptySchema` that did not
+  satisfy `Schema`. Both projects are checked now.
 - **A Windows path with a drive letter was fetched instead of read.**
   `C:\db\schema.sql` parses as a URL whose protocol is `c:`, so it went to
   `fetch` and failed with `fetch failed` — an absolute path was unusable on
