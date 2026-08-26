@@ -173,10 +173,12 @@ const parseDrizzleSchemaString = (
     return Promise.resolve({
       value: { tables, enums: convertedEnums, extensions: {} },
       errors,
+      unparsed: [],
     })
   } catch (error) {
     return Promise.resolve({
       value: { tables: {}, enums: {}, extensions: {} },
+      unparsed: [],
       errors: [
         new Error(
           `Error parsing Drizzle MySQL schema: ${error instanceof Error ? error.message : String(error)}`,

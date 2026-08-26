@@ -834,6 +834,7 @@ async function parseRubySchema(schemaString: string): Promise<ProcessResult> {
   return {
     value: schemaFinder.getSchema(),
     errors: schemaFinder.getErrors(),
+    unparsed: [],
   }
 }
 

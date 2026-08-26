@@ -13,9 +13,9 @@ import { buildReport } from './report.js'
  */
 describe('buildReport', () => {
   const reportOf = async (sql: string) => {
-    const { value, errors } = await parse(sql, 'postgres')
+    const { value, errors, unparsed } = await parse(sql, 'postgres')
     expect(errors).toEqual([])
-    return buildReport(value)
+    return buildReport(value, unparsed)
   }
 
   it('counts what the schema holds', async () => {
@@ -45,6 +45,7 @@ describe('buildReport', () => {
       indexes: 1,
       enums: 1,
       extensions: 1,
+      unparsed: [],
     })
   })
 
@@ -63,6 +64,7 @@ describe('buildReport', () => {
       indexes: 0,
       enums: 0,
       extensions: 0,
+      unparsed: [],
     })
   })
 })

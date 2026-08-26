@@ -8,6 +8,7 @@ export {
   type SupportedFormat,
   supportedFormatSchema,
 } from './supportedFormat/index.js'
+export type { Unparsed } from './types.js'
 
 export const parse = async (
   str: string,

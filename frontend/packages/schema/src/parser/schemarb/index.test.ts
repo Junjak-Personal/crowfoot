@@ -498,7 +498,7 @@ describe(processor, () => {
         ),
       ]
 
-      expect(result).toEqual({ value, errors })
+      expect(result).toEqual({ value, errors, unparsed: [] })
     })
   })
 })

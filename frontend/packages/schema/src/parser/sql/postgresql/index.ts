@@ -4,7 +4,7 @@ import { type InferIssue, safeParse } from 'valibot'
 import type { Schema } from '../../../schema/index.js'
 import { schemaSchema } from '../../../schema/index.js'
 import { type ProcessError, UnexpectedTokenWarningError } from '../../errors.js'
-import type { Processor } from '../../types.js'
+import type { Processor, Unparsed } from '../../types.js'
 import { convertToSchema } from './converter.js'
 import { mergeSchemas } from './mergeSchemas.js'
 import { parse } from './parser.js'
@@ -61,6 +61,8 @@ function processChunk(
   chunk: string,
   schema: Schema,
   parseErrors: ProcessError[],
+  /** Accumulated across chunks, the same way `parseErrors` is. */
+  unparsed: Unparsed[],
   rawSql: string,
   chunkOffset = 0,
 ): ResultAsync<SQLCallbackResult, Error> {
@@ -97,20 +99,24 @@ function processChunk(
       ] satisfies SQLCallbackResult)
     }
 
-    const { value: convertedSchema, errors: conversionErrors } =
-      convertToSchema(
-        isLastStatementComplete
-          ? parse_tree.stmts
-          : parse_tree.stmts.slice(0, -1),
-        rawSql,
-        schema,
-        chunkOffset,
-        chunk,
-      )
+    const {
+      value: convertedSchema,
+      errors: conversionErrors,
+      unparsed: chunkUnparsed,
+    } = convertToSchema(
+      isLastStatementComplete
+        ? parse_tree.stmts
+        : parse_tree.stmts.slice(0, -1),
+      rawSql,
+      schema,
+      chunkOffset,
+      chunk,
+    )
 
     if (conversionErrors !== null) {
       parseErrors.push(...conversionErrors)
     }
+    unparsed.push(...chunkUnparsed)
 
     mergeSchemas(schema, convertedSchema)
 
@@ -139,6 +145,7 @@ export const processor: Processor = async (
   const schema: Schema = { tables: {}, enums: {}, extensions: {} }
 
   const parseErrors: ProcessError[] = []
+  const unparsed: Unparsed[] = []
 
   const errors = await processSQLInChunks(
     sql,
@@ -148,6 +155,7 @@ export const processor: Processor = async (
         chunk,
         schema,
         parseErrors,
+        unparsed,
         sql,
         chunkOffset,
       )
@@ -180,8 +188,13 @@ export const processor: Processor = async (
     return {
       value: schema,
       errors: parseErrors.concat(errors, validationErrors),
+      unparsed,
     }
   }
 
-  return { value: validation.output, errors: parseErrors.concat(errors) }
+  return {
+    value: validation.output,
+    errors: parseErrors.concat(errors),
+    unparsed,
+  }
 }

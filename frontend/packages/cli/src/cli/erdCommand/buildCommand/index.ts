@@ -6,11 +6,19 @@ import { blueBright } from 'yoctocolors'
 import { type CliError, FileSystemError } from '../../errors.js'
 import { runPreprocess } from '../runPreprocess.js'
 import { copySite } from './copySite.js'
-import { buildReport } from './report.js'
+import { reportOutcome } from './report.js'
 
 type Options = {
   /** Stamped into `schema.json`'s `meta`, so a built file names the tool that wrote it. */
   crowfootVersion: string
+  /**
+   * Fail the build when anything was read but not representable.
+   *
+   * Off by default: a dropped DEFAULT is worth knowing about and is not worth
+   * refusing to draw a diagram over. On, it is the difference between a
+   * pipeline that reports the loss and one that carries on past it.
+   */
+  strict?: boolean | undefined
   /**
    * Print what was read as JSON on stdout instead of the usage note.
    *
@@ -25,18 +33,17 @@ export const buildCommand = async (
   inputPath: string,
   outDir: string,
   format: SupportedFormat | undefined,
-  { json = false, crowfootVersion }: Options,
+  { json = false, strict = false, crowfootVersion }: Options,
 ): Promise<CliError[]> => {
   const resolvedOutDir = resolve(outDir)
   const note = json ? console.error : console.info
 
   // generate schema.json
-  const { schema, errors: preprocessErrors } = await runPreprocess(
-    inputPath,
-    resolvedOutDir,
-    format,
-    crowfootVersion,
-  )
+  const {
+    schema,
+    unparsed,
+    errors: preprocessErrors,
+  } = await runPreprocess(inputPath, resolvedOutDir, format, crowfootVersion)
   if (preprocessErrors.length > 0) {
     // In the future, we want to allow dist to be generated and the process to complete successfully with a warning message, even if there are minor errors.
     // see also: actionRunner.ts
@@ -64,10 +71,11 @@ export const buildCommand = async (
   }
 
   if (errors.length === 0) {
-    // The report describes the schema.json that was just written, so it is
-    // printed only once everything that writes into the directory has run.
-    if (json && schema !== null) {
-      process.stdout.write(`${JSON.stringify(buildReport(schema), null, 2)}\n`)
+    // Reported only once everything that writes into the directory has run:
+    // the numbers describe the `schema.json` that is now on disk.
+    if (schema !== null) {
+      const refused = reportOutcome({ schema, unparsed, json, strict })
+      if (refused.length > 0) return refused
     }
 
     // For absolute paths, display the absolute path

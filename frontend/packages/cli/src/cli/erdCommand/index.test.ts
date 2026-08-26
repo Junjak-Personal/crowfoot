@@ -63,6 +63,20 @@ describe('program', () => {
       )
     })
 
+    it('passes --strict through', () => {
+      program.parse(
+        ['erd', 'build', '--input', './fixtures/input.schema.rb', '--strict'],
+        { from: 'user' },
+      )
+
+      expect(buildCommand).toHaveBeenCalledWith(
+        './fixtures/input.schema.rb',
+        expect.stringContaining('dist'),
+        undefined,
+        expect.objectContaining({ strict: true }),
+      )
+    })
+
     it('passes --json through', () => {
       program.parse(
         ['erd', 'build', '--input', './fixtures/input.schema.rb', '--json'],

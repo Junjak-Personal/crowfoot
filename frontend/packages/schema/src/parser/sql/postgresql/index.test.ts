@@ -200,6 +200,67 @@ describe(processor, () => {
     })
 
     /**
+     * A DEFAULT the parser cannot represent comes back `null`, which is what a
+     * column with *no* default looks like — a wrong statement about the schema
+     * rather than a missing one, and nothing counting the output can tell the
+     * two apart. `unparsed` is where it says so.
+     */
+    describe('unparsed defaults', () => {
+      const unparsedOf = async (columns: string) => {
+        const { unparsed, errors } = await processor(/* sql */ `
+          CREATE TABLE users (
+            id BIGSERIAL PRIMARY KEY,
+            ${columns}
+          );
+        `)
+        expect(errors).toEqual([])
+        return unparsed
+      }
+
+      it('names the column and quotes the clause it could not read', async () => {
+        expect(
+          await unparsedOf(
+            "available_locales TEXT[] DEFAULT ARRAY['ko','en','zh']",
+          ),
+        ).toEqual([
+          {
+            table: 'users',
+            column: 'available_locales',
+            clause: 'DEFAULT',
+            raw: "ARRAY['ko','en','zh']",
+          },
+        ])
+      })
+
+      /** A comma inside the literal does not end the expression. */
+      it('reads to the end of the expression, not the first comma', async () => {
+        expect(
+          await unparsedOf(`
+            label TEXT DEFAULT ('a' || ','),
+            note TEXT
+          `),
+        ).toEqual([
+          {
+            table: 'users',
+            column: 'label',
+            clause: 'DEFAULT',
+            raw: "('a' || ',')",
+          },
+        ])
+      })
+
+      it('says nothing when every default was read', async () => {
+        expect(
+          await unparsedOf(`
+            active BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT now(),
+            plain TEXT
+          `),
+        ).toEqual([])
+      })
+    })
+
+    /**
      * An array used to come back as its element type: `text[]` read as `text`.
      * Nothing downstream could catch it — the column count was right, and the
      * deparser has always been able to write the suffix back out — so the only
@@ -716,7 +777,7 @@ describe(processor, () => {
         new UnexpectedTokenWarningError('syntax error at or near "CREATEe"'),
       ]
 
-      expect(result).toEqual({ value, errors })
+      expect(result).toEqual({ value, errors, unparsed: [] })
     })
 
     it('should ignore \\restrict and \\unrestrict lines from PostgreSQL 16.10+', async () => {

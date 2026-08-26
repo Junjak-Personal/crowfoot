@@ -28,10 +28,12 @@ erdCommand
     defaultDistDir,
   )
   .option('--json', 'Print what was read as JSON on stdout')
+  .option('--strict', 'Exit 1 if anything was read but not represented')
   .action(
     actionRunner((options) =>
       buildCommand(options.input, options.outputDir, options.format, {
         json: options.json,
+        strict: options.strict,
         crowfootVersion,
       }),
     ),

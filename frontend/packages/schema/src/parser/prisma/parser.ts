@@ -542,6 +542,7 @@ async function parsePrismaSchema(schemaString: string): Promise<ProcessResult> {
       extensions: {},
     },
     errors: errors,
+    unparsed: [],
   }
 }
 

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { Unparsed } from '@crowfoot/schema/parser'
 import {
   detectFormat,
   parse,
@@ -20,6 +21,8 @@ type Output = {
   outputFilePath: string | null
   /** What was written, so the caller can report on it without reading it back. */
   schema: Schema | null
+  /** What the parser read and could not represent. */
+  unparsed: Unparsed[]
   errors: CliError[]
 }
 
@@ -34,6 +37,7 @@ export async function runPreprocess(
     return {
       outputFilePath: null,
       schema: null,
+      unparsed: [],
       errors: [new ArgumentError(inputContentResult.error.message)],
     }
   }
@@ -50,6 +54,7 @@ export async function runPreprocess(
     return {
       outputFilePath: null,
       schema: null,
+      unparsed: [],
       errors: [
         new ArgumentError(
           '--format is missing, invalid, or specifies an unsupported format. Please provide a valid format.',
@@ -64,6 +69,7 @@ export async function runPreprocess(
     return {
       outputFilePath: null,
       schema: null,
+      unparsed: [],
       errors: [
         new ArgumentError(
           `--format is missing, invalid, or specifies an unsupported format. Please provide a valid format.\n${errorMessage}`,
@@ -72,11 +78,12 @@ export async function runPreprocess(
     }
   }
 
-  const { value: json, errors } = await parse(content, detectedFormat)
+  const { value: json, errors, unparsed } = await parse(content, detectedFormat)
   if (errors.length > 0) {
     return {
       outputFilePath: null,
       schema: null,
+      unparsed: [],
       errors: errors.map(
         (err) =>
           new WarningProcessingError(
@@ -102,11 +109,12 @@ export async function runPreprocess(
   try {
     const jsonContent = JSON.stringify(schema, null, 2)
     fs.writeFileSync(filePath, jsonContent, 'utf8')
-    return { outputFilePath: filePath, schema, errors: [] }
+    return { outputFilePath: filePath, schema, unparsed, errors: [] }
   } catch (error) {
     return {
       outputFilePath: null,
       schema: null,
+      unparsed: [],
       errors: [
         new FileSystemError(
           `Error during preprocessing: ${error instanceof Error ? error.message : 'Unknown error'}`,

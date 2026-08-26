@@ -5,6 +5,7 @@ export {
   type SupportedFormat,
   setPrismWasmUrl,
   supportedFormatSchema,
+  type Unparsed,
 } from './parser/index.js'
 
 // Export PostgreSQL-specific parser

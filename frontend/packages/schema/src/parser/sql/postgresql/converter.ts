@@ -28,7 +28,7 @@ import type {
   Table,
 } from '../../../schema/index.js'
 import { type ProcessError, UnexpectedTokenWarningError } from '../../errors.js'
-import type { ProcessResult } from '../../types.js'
+import type { ProcessResult, Unparsed } from '../../types.js'
 import { defaultRelationshipName } from '../../utils/index.js'
 
 const getUtf8ByteLength = (codePoint: number): number => {
@@ -207,9 +207,65 @@ function defaultValueOf(node: Node, chunkSql: string): DefaultValue {
   return null
 }
 
+/**
+ * The source text of an expression starting at `location`.
+ *
+ * Postgres records where a node begins and not where it ends, so the end is
+ * found by reading forward to the comma or closing paren that ends the column
+ * definition, skipping anything inside quotes or brackets.
+ *
+ * ponytail: no dollar-quoting (`$$…$$`). It does not appear in a DEFAULT in
+ * any schema this has been pointed at, and the cost of being wrong is one
+ * report reading further than it should — not a wrong schema.
+ */
+/** The index just past the single-quoted string that starts at `i`. */
+const endOfQuoted = (sql: string, i: number): number => {
+  for (let j = i + 1; j < sql.length; j++) {
+    if (sql[j] !== "'") continue
+    // '' is an escaped quote, not the end of the string.
+    if (sql[j + 1] === "'") j++
+    else return j + 1
+  }
+
+  return sql.length
+}
+
+const sourceTextAt = (chunkSql: string, location: number): string | null => {
+  const start = utf8ByteOffsetToCharIndex(chunkSql, location)
+  if (start === null) return null
+
+  let depth = 0
+
+  for (let i = start; i < chunkSql.length; i++) {
+    const char = chunkSql[i]
+
+    if (char === "'") {
+      i = endOfQuoted(chunkSql, i) - 1
+      continue
+    }
+
+    if (char === '(' || char === '[') {
+      depth++
+      continue
+    }
+
+    // A close with nothing open is the one ending the column list.
+    if (char === ')' || char === ']') {
+      if (depth === 0) return chunkSql.slice(start, i).trim()
+      depth--
+      continue
+    }
+
+    if (char === ',' && depth === 0) return chunkSql.slice(start, i).trim()
+  }
+
+  return chunkSql.slice(start).trim()
+}
+
 function extractDefaultValueFromConstraints(
   constraints: Node[] | undefined,
   chunkSql: string,
+  onUnparsed: (raw: string) => void,
 ): DefaultValue {
   if (!constraints) return null
 
@@ -219,7 +275,26 @@ function extractDefaultValueFromConstraints(
       continue
     }
 
-    return defaultValueOf(constraint.raw_expr, chunkSql)
+    const value = defaultValueOf(constraint.raw_expr, chunkSql)
+    if (value !== null) return value
+
+    // There was a DEFAULT and nothing came back from it. `null` is what a
+    // column with no default looks like, so leaving it at that states
+    // something about the schema that is not true — this is the one place
+    // that can tell the two apart.
+    //
+    // Read from the constraint, which starts at the `DEFAULT` keyword, and
+    // drop the keyword — `clause` already says it. Not from the expression
+    // node: postgres puts an operator expression's location on the *operator*,
+    // so `('a' || ',')` would be reported as `|| ','`.
+    const location = constraint.location
+    const raw =
+      location === undefined
+        ? null
+        : sourceTextAt(chunkSql, location)?.replace(/^DEFAULT\s+/i, '')
+    if (raw) onUnparsed(raw)
+
+    return null
   }
 
   return null
@@ -394,6 +469,7 @@ export const convertToSchema = (
   const enums: Record<string, Enum> = {}
   const extensions: Record<string, Extension> = {}
   const errors: ProcessError[] = []
+  const unparsed: Unparsed[] = []
 
   function isCreateStmt(stmt: Node): stmt is { CreateStmt: CreateStmt } {
     return 'CreateStmt' in stmt
@@ -617,7 +693,17 @@ export const convertToSchema = (
     const column = {
       name: columnName,
       type: extractColumnType(colDef.typeName),
-      default: extractDefaultValueFromConstraints(colDef.constraints, chunkSql),
+      default: extractDefaultValueFromConstraints(
+        colDef.constraints,
+        chunkSql,
+        (raw) =>
+          unparsed.push({
+            table: tableName,
+            column: columnName,
+            clause: 'DEFAULT',
+            raw,
+          }),
+      ),
       check: null, // TODO
       notNull: isNotNull(colDef.constraints),
       comment: null, // TODO
@@ -1288,5 +1374,6 @@ export const convertToSchema = (
       extensions,
     },
     errors,
+    unparsed,
   }
 }

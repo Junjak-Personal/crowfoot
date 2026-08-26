@@ -27,11 +27,13 @@ export const processor = async (str: string): Promise<ProcessResult> => {
     return {
       value: result.value,
       errors: [],
+      unparsed: [],
     }
   }
 
   return {
     value: { tables: {}, enums: {}, extensions: {} },
     errors: [result.error],
+    unparsed: [],
   }
 }
