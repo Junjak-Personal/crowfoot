@@ -9,7 +9,11 @@ import { planCommand } from './planCommand/index.js'
 
 const defaultDistDir = 'dist'
 
-const erdCommand = new Command('erd').description('ERD commands')
+// Set here as well as on `program`: this command is built on its own and added
+// with `addCommand`, which does not carry the parent's settings down to it.
+const erdCommand = new Command('erd')
+  .description('ERD commands')
+  .showHelpAfterError('(run with --help for usage)')
 
 erdCommand
   .command('build')
@@ -29,6 +33,31 @@ erdCommand
   )
   .option('--json', 'Print what was read as JSON on stdout')
   .option('--strict', 'Exit 1 if anything was read but not represented')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  $ crowfoot erd build --input schema.sql --format postgres
+  $ crowfoot erd build --input 'db/migrations/*.sql' --format postgres
+  $ crowfoot erd build --input https://example.com/schema.sql --format postgres
+
+  Report what was read, and refuse to pass over anything it could not:
+  $ crowfoot erd build --input schema.sql --json > report.json
+  $ crowfoot erd build --input schema.sql --json --strict
+
+--format is worked out from the file name when it is left out.
+
+--json writes the report to stdout and everything else to stderr, so
+redirecting it gives a file rather than a transcript. It counts tables,
+columns, constraints, indexes, enums and extensions, and lists \`unparsed\`:
+clauses that were read and could not be represented, by table and column.
+--strict turns a non-empty \`unparsed\` into exit 1.
+
+The output is a static site — serve it over HTTP, \`file://\` will not work.
+\`schema.json\` records what it was built from: \`jq .meta\` on it names every
+source file with its sha256, the version that read them, and when.
+`,
+  )
   .action(
     actionRunner((options) =>
       buildCommand(options.input, options.outputDir, options.format, {
@@ -50,6 +79,18 @@ erdCommand
     'Output directory for generated files',
     defaultDistDir,
   )
+  .addHelpText(
+    'after',
+    `
+Example:
+  $ crowfoot erd from-link --input '<the ?edit=1 URL>' --output-dir dist
+
+An arrangement made in edit mode lives in the URL, which makes it shareable but
+not permanent. This writes it back out as the sidecar files the viewer loads on
+every visit. Quote the URL — it contains &. Only the files the link actually
+carries are written, so a link with no memos leaves an existing memos.json alone.
+`,
+  )
   .action(
     actionRunner((options) =>
       fromLinkCommand(options.input, options.outputDir),
@@ -62,6 +103,21 @@ erdCommand
     'Print a grouping plan with every table already in it, to edit and pass to `arrange`',
   )
   .option('--input <path>', 'Path to the schema.json that `erd build` wrote')
+  .addHelpText(
+    'after',
+    `
+Example:
+  $ crowfoot erd plan --input dist/schema.json > plan.json
+  $ crowfoot erd arrange --input dist/schema.json --plan plan.json
+
+The plan comes out with every table name already in it, so nothing has to be
+typed by hand and no table can be misspelled. Edit the group names and which
+tables belong to which, add memos, then hand it to \`arrange\`.
+
+There are no coordinates anywhere in a plan — that is the point. Notes go to
+stderr, so \`> plan.json\` gets only the plan.
+`,
+  )
   .action(actionRunner((options) => planCommand(options.input)))
 
 erdCommand
@@ -75,6 +131,17 @@ erdCommand
     '--output-dir <path>',
     'Output directory for generated files',
     defaultDistDir,
+  )
+  .addHelpText(
+    'after',
+    `
+Example:
+  $ crowfoot erd arrange --input dist/schema.json --plan plan.json --output-dir dist
+
+Works out every position from the plan and writes the sidecar files next to
+schema.json, where the viewer looks for them. See \`crowfoot erd plan --help\`
+for where a plan comes from.
+`,
   )
   .action(
     actionRunner((options) =>

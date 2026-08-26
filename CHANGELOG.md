@@ -22,6 +22,13 @@ is where a breaking change may appear.
   only the report; everything for a person moves to stderr, so
   `erd build --json > report.json` is a file and not a transcript.
 - **`--strict`** exits 1 when anything was read but not represented.
+- **`--help` carries the usage, not just the flag list.** Every command shows
+  worked examples, and the top level shows the quick start, the supported
+  formats and what to do about the ones with no parser. The package ships no
+  documentation of its own — `files` carries the build and the licences and
+  nothing else — so for anyone working in another repository, and for an agent
+  especially, this is the manual. An unrecognised flag or command now points at
+  it too.
 - **`unparsed`** names each such clause by table, column, clause and the source
   text as written. A `DEFAULT` the postgres parser cannot render used to come
   back `null` — which is exactly what a column with *no* default looks like,
@@ -44,6 +51,10 @@ is where a breaking change may appear.
 - **Files matched by a glob were read in whatever order the filesystem gave
   them,** then concatenated before parsing — so the same input could produce
   two different schemas. Sorted.
+- **`erd build` with no `--input` threw a raw stack trace** from inside `glob`,
+  at whoever left off the one flag the command cannot work without. It says
+  `--input is required`, which is what `from-link`, `plan` and `arrange` have
+  always said.
 
 ## 0.5.0
 

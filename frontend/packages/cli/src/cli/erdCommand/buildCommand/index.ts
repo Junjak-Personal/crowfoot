@@ -3,7 +3,7 @@ import path, { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { SupportedFormat } from '@crowfoot/schema/parser'
 import { blueBright } from 'yoctocolors'
-import { type CliError, FileSystemError } from '../../errors.js'
+import { ArgumentError, type CliError, FileSystemError } from '../../errors.js'
 import { runPreprocess } from '../runPreprocess.js'
 import { copySite } from './copySite.js'
 import { reportOutcome } from './report.js'
@@ -35,6 +35,11 @@ export const buildCommand = async (
   format: SupportedFormat | undefined,
   { json = false, strict = false, crowfootVersion }: Options,
 ): Promise<CliError[]> => {
+  // Said the way `from-link`, `plan` and `arrange` say it. Without this the
+  // path ran on into `glob`, which threw a raw V8 trace at whoever left the
+  // flag off — the most likely way to get this command wrong.
+  if (!inputPath) return [new ArgumentError('--input is required')]
+
   const resolvedOutDir = resolve(outDir)
   const note = json ? console.error : console.info
 
