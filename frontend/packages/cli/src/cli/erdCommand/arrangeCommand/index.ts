@@ -1,45 +1,11 @@
 // Added in crowfoot; not part of the original Liam ERD source.
 // See the NOTICE file at the repository root.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import * as v from 'valibot'
-import { ArgumentError, type CliError, FileSystemError } from '../../errors.js'
+import { type CliError, FileSystemError } from '../../errors.js'
 import { arrange } from '../arrange/arrange.js'
-import { planSchema } from '../arrange/plan.js'
+import { readPlan } from '../arrange/readPlan.js'
 import { readSchema } from '../arrange/readSchema.js'
-
-const readPlan = (path: string) => {
-  if (!path) throw new ArgumentError('--plan is required')
-
-  let raw: string
-  try {
-    raw = readFileSync(resolve(path), 'utf8')
-  } catch {
-    throw new ArgumentError(
-      `Could not read ${path}. Write one with \`crowfoot erd plan\`.`,
-    )
-  }
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    throw new ArgumentError(`${path} is not JSON.`)
-  }
-
-  const result = v.safeParse(planSchema, parsed)
-  if (!result.success) {
-    const issues = result.issues
-      .map(
-        (issue) =>
-          `  ${issue.path?.map((p) => p.key).join('.') ?? '(root)'}: ${issue.message}`,
-      )
-      .join('\n')
-    throw new ArgumentError(`${path} is not a valid plan:\n${issues}`)
-  }
-
-  return result.output
-}
 
 /**
  * Turns a plan into `layout.json`, `groups.json` and `memos.json`.
@@ -54,7 +20,7 @@ export const arrangeCommand = async (
   outDir: string,
 ): Promise<CliError[]> => {
   const schema = readSchema(inputPath)
-  const plan = readPlan(planPath)
+  const plan = readPlan(planPath, '--plan')
   const result = arrange(schema, plan)
 
   const resolvedOutDir = resolve(outDir)

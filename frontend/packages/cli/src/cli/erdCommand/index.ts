@@ -103,22 +103,35 @@ erdCommand
     'Print a grouping plan with every table already in it, to edit and pass to `arrange`',
   )
   .option('--input <path>', 'Path to the schema.json that `erd build` wrote')
+  .option(
+    '--update <path>',
+    'Bring an existing plan back in step with the schema instead of starting one',
+  )
   .addHelpText(
     'after',
     `
-Example:
+Examples:
   $ crowfoot erd plan --input dist/schema.json > plan.json
   $ crowfoot erd arrange --input dist/schema.json --plan plan.json
+
+  After the schema changes, bring the plan back in step:
+  $ crowfoot erd plan --input dist/schema.json --update plan.json > next.json
 
 The plan comes out with every table name already in it, so nothing has to be
 typed by hand and no table can be misspelled. Edit the group names and which
 tables belong to which, add memos, then hand it to \`arrange\`.
 
+--update keeps every grouping decision already made. Tables the schema no
+longer has are dropped, groups they empty go with them, and tables it has
+gained are put in a group named "unassigned" for the next edit to place. A plan
+naming a table that is gone stops \`arrange\` outright, which is what this is
+for once hand-editing the JSON stops being realistic.
+
 There are no coordinates anywhere in a plan — that is the point. Notes go to
 stderr, so \`> plan.json\` gets only the plan.
 `,
   )
-  .action(actionRunner((options) => planCommand(options.input)))
+  .action(actionRunner((options) => planCommand(options.input, options.update)))
 
 erdCommand
   .command('arrange')

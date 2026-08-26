@@ -1,7 +1,13 @@
 import { aSchema, aTable } from '@crowfoot/schema/schema'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
-import { planSchema, skeletonPlan, unrelatedTables } from './plan.js'
+import type { Plan } from './plan.js'
+import {
+  planSchema,
+  skeletonPlan,
+  unrelatedTables,
+  updatePlan,
+} from './plan.js'
 
 const fk = (name: string, column: string, target: string) => ({
   [name]: {
@@ -124,5 +130,123 @@ describe('planSchema', () => {
     expect(() =>
       v.parse(planSchema, { groups: [], memos: [{ text: '' }] }),
     ).toThrow()
+  })
+})
+
+/**
+ * A plan naming a table the schema no longer has stops `arrange` outright, so
+ * before this the choice past a hundred tables was hand-editing JSON or
+ * starting the grouping over. Every decision already made has to survive.
+ */
+describe('updatePlan', () => {
+  const schemaOf = (...names: string[]) =>
+    aSchema({
+      tables: Object.fromEntries(names.map((name) => [name, aTable({ name })])),
+    })
+
+  const planOf = (groups: Plan['groups']): Plan => ({ groups, memos: [] })
+
+  it('keeps the grouping and drops only what the schema lost', () => {
+    const { plan, removed, added } = updatePlan(
+      planOf([
+        {
+          id: 'billing',
+          name: 'Billing',
+          color: 'gold',
+          tables: ['orders', 'invoices'],
+        },
+        { id: 'people', name: 'People', tables: ['users'] },
+      ]),
+      schemaOf('orders', 'users'),
+    )
+
+    expect(plan.groups).toEqual([
+      { id: 'billing', name: 'Billing', color: 'gold', tables: ['orders'] },
+      { id: 'people', name: 'People', tables: ['users'] },
+    ])
+    expect(removed).toEqual(['invoices'])
+    expect(added).toEqual([])
+  })
+
+  /** An empty group is not a group — the viewer would draw a box around nothing. */
+  it('drops a group the schema emptied, and says which', () => {
+    const { plan, emptied } = updatePlan(
+      planOf([
+        { id: 'billing', name: 'Billing', tables: ['invoices'] },
+        { id: 'people', name: 'People', tables: ['users'] },
+      ]),
+      schemaOf('users'),
+    )
+
+    expect(plan.groups.map((group) => group.id)).toEqual(['people'])
+    expect(emptied).toEqual(['billing'])
+  })
+
+  it('puts a table the plan never named into "unassigned"', () => {
+    const { plan, added } = updatePlan(
+      planOf([{ id: 'people', name: 'People', tables: ['users'] }]),
+      schemaOf('users', 'sessions', 'audit_log'),
+    )
+
+    expect(plan.groups).toEqual([
+      { id: 'people', name: 'People', tables: ['users'] },
+      {
+        id: 'unassigned',
+        name: 'Unassigned',
+        tables: ['audit_log', 'sessions'],
+      },
+    ])
+    expect(added).toEqual(['audit_log', 'sessions'])
+  })
+
+  /** Two groups with one id is a plan `arrange` refuses. */
+  it('appends to the unassigned group already there', () => {
+    const { plan } = updatePlan(
+      planOf([{ id: 'unassigned', name: 'Unassigned', tables: ['sessions'] }]),
+      schemaOf('sessions', 'audit_log'),
+    )
+
+    expect(plan.groups).toEqual([
+      {
+        id: 'unassigned',
+        name: 'Unassigned',
+        tables: ['sessions', 'audit_log'],
+      },
+    ])
+  })
+
+  it('adds no group when nothing was gained', () => {
+    const { plan, added, removed } = updatePlan(
+      planOf([{ id: 'people', name: 'People', tables: ['users'] }]),
+      schemaOf('users'),
+    )
+
+    expect(plan.groups.map((group) => group.id)).toEqual(['people'])
+    expect(added).toEqual([])
+    expect(removed).toEqual([])
+  })
+
+  it('carries the memos through untouched', () => {
+    const memos = [{ text: 'Read this first', span: 2 }]
+
+    expect(
+      updatePlan(
+        {
+          groups: [{ id: 'people', name: 'People', tables: ['users'] }],
+          memos,
+        },
+        schemaOf('users', 'sessions'),
+      ).plan.memos,
+    ).toEqual(memos)
+  })
+
+  /** The output is a plan, so it has to be one `arrange` will read back. */
+  it('produces a plan that validates', () => {
+    const { plan } = updatePlan(
+      planOf([{ id: 'people', name: 'People', tables: ['users'] }]),
+      schemaOf('users', 'sessions'),
+    )
+
+    expect(v.safeParse(planSchema, plan).success).toBe(true)
   })
 })

@@ -137,3 +137,79 @@ export const skeletonPlan = (schema: Schema): Plan => {
 
   return { groups, memos: [] }
 }
+
+/**
+ * Where a table the plan has never seen goes.
+ *
+ * A group rather than a silent omission: a table missing from the plan is a
+ * table `arrange` will not place, and the diagram is quietly worse for it. Put
+ * somewhere named, it is a question the next edit has to answer.
+ */
+const UNASSIGNED_GROUP_ID = 'unassigned'
+
+type PlanUpdate = {
+  plan: Plan
+  /** Named by the plan, gone from the schema. */
+  removed: string[]
+  /** In the schema, never named by the plan. */
+  added: string[]
+  /** Groups whose every table was removed. */
+  emptied: string[]
+}
+
+/**
+ * Brings a plan back in step with a schema that moved underneath it.
+ *
+ * Editing one by hand stops being possible somewhere around a hundred tables,
+ * and a plan naming a table the schema no longer has stops `arrange` outright —
+ * so the choice was between hand-editing JSON and starting the grouping over.
+ *
+ * Every grouping decision already made is kept. A group is only dropped when
+ * the schema took its last table away; an empty group is not a group, and the
+ * viewer would draw a box around nothing.
+ */
+export const updatePlan = (plan: Plan, schema: Schema): PlanUpdate => {
+  const live = new Set(Object.keys(schema.tables))
+  const planned = new Set(plan.groups.flatMap((group) => group.tables))
+
+  const removed = [...planned].filter((name) => !live.has(name)).sort()
+  const added = [...live].filter((name) => !planned.has(name)).sort()
+
+  const kept = plan.groups.map((group) => ({
+    ...group,
+    tables: group.tables.filter((name) => live.has(name)),
+  }))
+
+  const emptied = kept
+    .filter((group) => group.tables.length === 0)
+    .map((group) => group.id)
+
+  const groups = kept.filter((group) => group.tables.length > 0)
+
+  if (added.length === 0) {
+    return { plan: { ...plan, groups }, removed, added, emptied }
+  }
+
+  // Appended to the one already there rather than adding a second: two groups
+  // with the same id is a plan `arrange` refuses.
+  const unassigned = groups.find((group) => group.id === UNASSIGNED_GROUP_ID)
+
+  return {
+    plan: {
+      ...plan,
+      groups: unassigned
+        ? groups.map((group) =>
+            group.id === UNASSIGNED_GROUP_ID
+              ? { ...group, tables: [...group.tables, ...added] }
+              : group,
+          )
+        : [
+            ...groups,
+            { id: UNASSIGNED_GROUP_ID, name: 'Unassigned', tables: added },
+          ],
+    },
+    removed,
+    added,
+    emptied,
+  }
+}

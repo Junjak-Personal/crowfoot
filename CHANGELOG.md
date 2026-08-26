@@ -22,6 +22,13 @@ is where a breaking change may appear.
   only the report; everything for a person moves to stderr, so
   `erd build --json > report.json` is a file and not a transcript.
 - **`--strict`** exits 1 when anything was read but not represented.
+- **`erd plan --update <plan>`** brings an existing plan back in step with a
+  schema that moved under it. Tables the schema no longer has are dropped,
+  groups they empty go with them, and tables it has gained are put in a group
+  named `unassigned` for the next edit to place. Every grouping decision already
+  made survives. A plan naming a table that is gone stops `arrange` outright, so
+  the choice past a hundred tables used to be hand-editing the JSON or starting
+  the grouping over.
 - **`--help` carries the usage, not just the flag list.** Every command shows
   worked examples, and the top level shows the quick start, the supported
   formats and what to do about the ones with no parser. The package ships no
