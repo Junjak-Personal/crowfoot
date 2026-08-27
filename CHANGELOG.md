@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.7.2
+
 ### Fixed
 
 - **A group's name lurched between sizes as the canvas was zoomed.** It was
