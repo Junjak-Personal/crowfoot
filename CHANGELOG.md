@@ -13,6 +13,20 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Fixed
+
+- **A group's name lurched between sizes as the canvas was zoomed.** It was
+  ramped rather than scaled — `12px + (scale - 1) * 36px`, to clear a 14px
+  table name from a 12px base — which reached 84px against the table's 42px and
+  moved 18px at every half step of the scale against the table's 7px. It is a
+  plain multiple now, from a base one step above the tables': the group still
+  outranks the tables inside it at every zoom, and changes by exactly as much as
+  they do.
+- **A long name is no longer cut short with an ellipsis.** A table node is
+  `width: auto` and a group's pill is drawn around whatever it holds, so both
+  simply grow — there was nothing for the ellipsis to rescue, and it hid the end
+  of a name inside a box that would happily have got wider.
+
 ## 0.7.1
 
 ### Fixed

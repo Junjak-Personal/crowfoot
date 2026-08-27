@@ -89,16 +89,6 @@
   min-width: 1.15em;
 }
 
-/*
- * Nothing else is competing for the room here, so a long name widens its node
- * instead of being cut short — being able to read the name is the whole point
- * of the mode.
- */
-.containerTableNameMode .name {
-  overflow: visible;
-  text-overflow: clip;
-}
-
 .containerDiffView {
   border-top-left-radius: var(--border-radius-none);
   border-bottom-left-radius: var(--border-radius-none);
@@ -109,9 +99,13 @@
   min-width: 1rem;
 }
 
+/*
+ * No ellipsis. The node is `width: auto`, so a long name widens the table it
+ * names rather than running out of room — there was nothing for the ellipsis to
+ * rescue, and it hid the end of a name inside a box that would happily have
+ * grown.
+ */
 .name {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
