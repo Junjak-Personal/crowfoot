@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.7.3
+
 ### Fixed
 
 - **An edge drew over a group's name.** A group's box and the label it carries
