@@ -50,11 +50,13 @@ type DragState = {
  *
  * Known limitation (UI/UX ruling 4): React Flow writes `zIndex` and
  * `transform` inline on the node wrapper, and each of those starts its own
- * stacking context. That pins this whole subtree — box AND header — at
- * z-index -1 with no CSS escape, so a non-member table sitting in the
- * header's strip paints over the label. The group's own members are safe
- * (the padding band keeps them clear of the header); this is accepted, not
- * fixed, per the plan §5.2.
+ * stacking context. That pins this whole subtree — box AND header — at one
+ * z-index with no CSS escape, so the backdrop and the label it carries cannot
+ * be separated. `zIndex.tableGroupBox` puts both above the edges (a hairline
+ * has no business crossing an opaque name) and below the tables, which leaves
+ * a non-member table sitting in the header's strip painting over the label.
+ * The group's own members are safe (the padding band keeps them clear of the
+ * header); that case is accepted, not fixed, per the plan §5.2.
  */
 export const TableGroupNode: FC<Props> = ({ data }) => {
   const { showGroups, editMode } = useUserEditingOrThrow()

@@ -451,8 +451,8 @@ export const ERDContentInner: FC<Props> = ({
           )
         : _nodes
 
-    // Group boxes join first — their negative z-index means DOM order should
-    // agree — then tables, then memos. Memos and groups join up front so
+    // Group boxes join first — they paint under the tables, so DOM order
+    // should agree — then tables, then memos. Memos and groups join up front so
     // React Flow owns their selection and position from the first render,
     // the same as it does for tables.
     return [

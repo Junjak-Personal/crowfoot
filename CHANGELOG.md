@@ -13,6 +13,18 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Fixed
+
+- **An edge drew over a group's name.** A group's box and the label it carries
+  are one node, and React Flow writes `zIndex` and `transform` inline on the
+  node wrapper — each starting its own stacking context — so the two cannot be
+  given different depths. The box sat below every edge, which put the name there
+  with it, and a hairline crossing an opaque label is the one place the backdrop
+  had to win. The box now sits between the edges and the tables: still a
+  backdrop for the tables it holds, no longer beneath the lines that pass over
+  it. A non-member table overlapping the label still covers it — separating
+  those two needs a second node, not a second z-index.
+
 ## 0.7.2
 
 ### Fixed

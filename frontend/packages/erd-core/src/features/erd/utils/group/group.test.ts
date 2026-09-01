@@ -669,14 +669,13 @@ describe('groupToNode / nodeToGroup', () => {
     expect(node.zIndex).toBe(zIndex.tableGroupBox)
   })
 
-  it('tableGroupBox zIndex is exactly -1, below every edge and every table (F2)', () => {
+  it('tableGroupBox zIndex sits above every edge and below every table', () => {
     // node.zIndex === zIndex.tableGroupBox above is tautological on its own —
-    // it would still pass if the constant regressed back to `nodeDefault - 1`
-    // (F2's original bug: 1, colliding with edgeHighlighted). Pin the literal
-    // value and its ordering against the rest of the zIndex scale directly.
-    expect(zIndex.tableGroupBox).toBe(-1)
-    expect(zIndex.tableGroupBox).toBeLessThan(zIndex.edgeDefault)
-    expect(zIndex.tableGroupBox).toBeLessThan(zIndex.edgeHighlighted)
+    // it would still pass if the constant collided with another rung. The box
+    // is a backdrop for the tables and a label against the edges, so it has to
+    // land between them; assert that ordering directly.
+    expect(zIndex.tableGroupBox).toBeGreaterThan(zIndex.edgeDefault)
+    expect(zIndex.tableGroupBox).toBeGreaterThan(zIndex.edgeHighlighted)
     expect(zIndex.tableGroupBox).toBeLessThan(zIndex.nodeDefault)
   })
 })
