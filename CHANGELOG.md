@@ -25,6 +25,14 @@ is where a breaking change may appear.
   it. A non-member table overlapping the label still covers it — separating
   those two needs a second node, not a second z-index.
 
+### Changed
+
+- **A table's name is smaller at the zoom where the name is all that is drawn.**
+  12px against the full node's 14, with less padding around it, which makes the
+  chip about 16% narrower and 19% shorter. Names collided at that zoom long
+  before they were hard to read, and the chip is what decides how much room a
+  table takes there.
+
 ## 0.7.2
 
 ### Fixed

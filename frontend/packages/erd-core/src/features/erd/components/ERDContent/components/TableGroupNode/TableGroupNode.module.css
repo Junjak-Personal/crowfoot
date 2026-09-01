@@ -112,9 +112,9 @@
      grows with the name it holds. */
   padding: 0.33em 0.67em;
   /*
-   * The same multiple of the scale the tables use, from a base one step above
-   * theirs: a group outranks the tables inside it at every zoom, and changes by
-   * exactly as much as they do.
+   * The same multiple of the scale the tables use, from a base above theirs: a
+   * group outranks the tables inside it at every zoom, and changes by exactly
+   * as much as they do.
    *
    * This was a ramp — `12px + (scale - 1) * 36px` — to clear a 14px table name
    * from a 12px base. It reached 84px against the table's 42px, and the scale

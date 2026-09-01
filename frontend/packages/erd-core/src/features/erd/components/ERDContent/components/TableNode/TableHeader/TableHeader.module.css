@@ -80,8 +80,14 @@
    * attached. Everything around the name is sized in `em` so it follows along.
    */
   gap: 0.29em;
-  padding: 0.57em;
-  font-size: calc(var(--font-size-5) * var(--label-scale, 1));
+  padding: 0.5em;
+  /*
+   * A step below the full node's --font-size-5: with only the name left there
+   * is nothing to line up against, and the chip is what decides how much room
+   * the table takes at this zoom — the names collided long before they were
+   * hard to read. Everything else here is in `em`, so it follows.
+   */
+  font-size: calc(var(--font-size-3) * var(--label-scale, 1));
 }
 
 .containerTableNameMode .tableIcon {
