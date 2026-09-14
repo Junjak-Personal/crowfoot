@@ -185,8 +185,173 @@ const funcCallText = (call: FuncCall, chunkSql: string): string | null => {
   return `${name}(${args.join(', ')})`
 }
 
+/**
+ * `ALTER TABLE` commands that leave the diagram exactly as it was.
+ *
+ * Listed the other way round from the rest of the parser on purpose. Every
+ * member of `AlterTableType` acts on a table, so a subtype missing from both
+ * this list and the `ADD CONSTRAINT` the parser applies is far more likely to
+ * be a column or constraint change nobody taught it about than a no-op — and
+ * postgres adds subtypes with every release. Unknown therefore means "say so",
+ * and this is the list of the ones it is safe to stay quiet about.
+ */
+const HARMLESS_ALTER_TABLE_CMDS: ReadonlySet<string> = new Set([
+  // Identity. pg_dump writes a serial column's sequence this way, and the
+  // diagram has no identity to lose — so this must not fire on a plain dump.
+  'AT_AddIdentity',
+  'AT_SetIdentity',
+  'AT_DropIdentity',
+  // Storage, statistics, ownership, tablespace: nothing about shape.
+  'AT_SetStatistics',
+  'AT_SetOptions',
+  'AT_ResetOptions',
+  'AT_SetStorage',
+  'AT_SetCompression',
+  'AT_ChangeOwner',
+  'AT_ClusterOn',
+  'AT_DropCluster',
+  'AT_SetLogged',
+  'AT_SetUnLogged',
+  'AT_DropOids',
+  'AT_SetAccessMethod',
+  'AT_SetTableSpace',
+  'AT_SetRelOptions',
+  'AT_ResetRelOptions',
+  'AT_ReplaceRelOptions',
+  'AT_GenericOptions',
+  'AT_AlterColumnGenericOptions',
+  // Triggers, rules and row-level security are not drawn.
+  'AT_EnableTrig',
+  'AT_EnableAlwaysTrig',
+  'AT_EnableReplicaTrig',
+  'AT_DisableTrig',
+  'AT_EnableTrigAll',
+  'AT_DisableTrigAll',
+  'AT_EnableTrigUser',
+  'AT_DisableTrigUser',
+  'AT_EnableRule',
+  'AT_EnableAlwaysRule',
+  'AT_EnableReplicaRule',
+  'AT_DisableRule',
+  'AT_EnableRowSecurity',
+  'AT_DisableRowSecurity',
+  'AT_ForceRowSecurity',
+  'AT_NoForceRowSecurity',
+  'AT_ReplicaIdentity',
+  // Partition membership; the partition's own columns are unchanged.
+  'AT_AttachPartition',
+  'AT_DetachPartition',
+  'AT_DetachPartitionFinalize',
+  // Checking or re-stating what is already there.
+  'AT_CheckNotNull',
+  'AT_ValidateConstraint',
+  'AT_ValidateConstraintRecurse',
+  // Rewriter-internal; these never come from written SQL.
+  'AT_ReAddIndex',
+  'AT_ReAddConstraint',
+  'AT_ReAddDomainConstraint',
+  'AT_ReAddComment',
+  'AT_ReAddStatistics',
+  'AT_AddColumnToView',
+])
+
+const isHarmlessAlterTableCmd = (subtype: string | undefined): boolean =>
+  subtype !== undefined && HARMLESS_ALTER_TABLE_CMDS.has(subtype)
+
+/**
+ * The objects a `DROP` or a `RENAME` can name that the diagram draws.
+ *
+ * The top level is the opposite case to `ALTER TABLE`: most of what a dump
+ * contains — functions, triggers, policies, grants, sequences, views — is
+ * nothing this parser ever claimed to show, so naming every one of them would
+ * be noise, and noise is how a check gets switched off. Only the object kinds
+ * that appear on the diagram are named.
+ */
+const DRAWN_OBJECTS: ReadonlySet<string> = new Set([
+  'OBJECT_TABLE',
+  'OBJECT_COLUMN',
+  'OBJECT_INDEX',
+  'OBJECT_TABCONSTRAINT',
+  'OBJECT_TYPE',
+  'OBJECT_EXTENSION',
+])
+
+/**
+ * Drops the comments a statement's start offset swept up on its way in.
+ *
+ * Not a general SQL comment stripper: it only walks the run of comments and
+ * blank lines before the first word, so a `--` inside the statement stays where
+ * it was written.
+ */
+const stripLeadingComments = (text: string): string => {
+  let rest = text.trimStart()
+
+  while (rest.startsWith('--') || rest.startsWith('/*')) {
+    const [open, close] = rest.startsWith('--') ? ['--', '\n'] : ['/*', '*/']
+    const end = rest.indexOf(close, open.length)
+
+    rest = end === -1 ? '' : rest.slice(end + close.length).trimStart()
+  }
+
+  return rest
+}
+
+/**
+ * The source text of a whole statement.
+ *
+ * `stmt_location` is the offset just past the previous statement's semicolon,
+ * so it carries everything written between the two — on the first statement of
+ * a migration, the file's whole header. `stmt_len` stops before this
+ * statement's own semicolon. Both are byte offsets into the chunk.
+ */
+const statementTextAt = (chunkSql: string, raw: RawStmt): string | null => {
+  const location = raw.stmt_location ?? 0
+  if (raw.stmt_len === undefined) return null
+
+  const start = utf8ByteOffsetToCharIndex(chunkSql, location)
+  const end = utf8ByteOffsetToCharIndex(chunkSql, location + raw.stmt_len)
+  if (start === null || end === null) return null
+
+  return stripLeadingComments(chunkSql.slice(start, end)).trim()
+}
+
+/**
+ * One element of a `{…}` array literal, quoted the way postgres quotes it:
+ * when leaving it bare would move where the literal ends, or would read back
+ * as the NULL keyword rather than the four letters.
+ */
+const arrayElementText = (value: string | number | boolean): string => {
+  const text = String(value)
+  const bare = /^[^{}",\\\s]+$/.test(text) && text.toUpperCase() !== 'NULL'
+
+  return bare ? text : `"${text.replace(/[\\"]/g, '\\$&')}"`
+}
+
+/**
+ * `ARRAY['a','b']` and `'{a,b}'` are one default written two ways — pg_dump
+ * writes the first, a migration usually writes the second — so both are
+ * recorded as the literal. A schema that said they were different defaults, or
+ * that the first was unreadable, would be wrong about the database twice over.
+ */
+const arrayExprText = (
+  elements: Node[] | undefined,
+  chunkSql: string,
+): DefaultValue => {
+  const parts: string[] = []
+
+  for (const element of elements ?? []) {
+    const value = defaultValueOf(element, chunkSql)
+    if (value === null) return null
+    parts.push(arrayElementText(value))
+  }
+
+  return `{${parts.join(',')}}`
+}
+
 /** The expression a `DEFAULT` clause carries, or null if it is not one of these. */
 function defaultValueOf(node: Node, chunkSql: string): DefaultValue {
+  if ('A_ArrayExpr' in node)
+    return arrayExprText(node.A_ArrayExpr.elements, chunkSql)
   if ('A_Const' in node) return constValue(node.A_Const, chunkSql)
   // `'x'::character varying`, `'{}'::jsonb` — the value is in the argument, and
   // the cast says nothing the column's own type does not.
@@ -1244,17 +1409,22 @@ export const convertToSchema = (
   /**
    * Process an ALTER TABLE command
    */
-  function processAlterTableCommand(cmd: Node, foreignTableName: string): void {
-    if (!('AlterTableCmd' in cmd)) return
+  function processAlterTableCommand(
+    cmd: Node,
+    foreignTableName: string,
+  ): boolean {
+    if (!('AlterTableCmd' in cmd)) return true
 
     const alterTableCmd = cmd.AlterTableCmd
 
-    if (alterTableCmd.subtype !== 'AT_AddConstraint')
-      // Only process ADD CONSTRAINT commands
-      return
+    if (alterTableCmd.subtype !== 'AT_AddConstraint') {
+      // Everything else on this surface either leaves the diagram alone or
+      // changes it behind the reader's back. The second kind says so.
+      return isHarmlessAlterTableCmd(alterTableCmd.subtype)
+    }
 
     const constraint = alterTableCmd.def
-    if (!constraint || !isConstraintNode(constraint)) return
+    if (!constraint || !isConstraintNode(constraint)) return true
 
     if (constraint.Constraint.contype === 'CONSTR_FOREIGN') {
       processForeignKeyConstraint(foreignTableName, constraint.Constraint)
@@ -1265,6 +1435,8 @@ export const convertToSchema = (
     } else if (constraint.Constraint.contype === 'CONSTR_UNIQUE') {
       processUniqueConstraint(foreignTableName, constraint.Constraint)
     }
+
+    return true
   }
 
   /**
@@ -1332,18 +1504,40 @@ export const convertToSchema = (
   /**
    * Handle ALTER TABLE statement
    */
-  function handleAlterTableStmt(alterTableStmt: AlterTableStmt): void {
+  /** Returns false when a command changed the table and was not applied. */
+  function handleAlterTableStmt(alterTableStmt: AlterTableStmt): boolean {
     // Validate required fields
     if (!alterTableStmt || !alterTableStmt.relation || !alterTableStmt.cmds)
-      return
+      return true
 
     const foreignTableName = alterTableStmt.relation.relname
-    if (!foreignTableName) return
+    if (!foreignTableName) return true
 
-    // Process each command
+    // Process each command. Every one runs — a statement carrying both an
+    // applied command and an unapplied one still has to apply the first.
+    let applied = true
     for (const cmd of alterTableStmt.cmds) {
-      processAlterTableCommand(cmd, foreignTableName)
+      if (!processAlterTableCommand(cmd, foreignTableName)) applied = false
     }
+
+    return applied
+  }
+
+  /**
+   * Whether a statement the parser has no handler for left the diagram alone.
+   *
+   * A `DROP` or a `RENAME` of something drawn did not: the schema still holds
+   * whatever the earlier `CREATE` said, under the old name, with the dropped
+   * thing still in it. An `ALTER TYPE … ADD VALUE` is the same for an enum.
+   */
+  const leavesSchemaAlone = (stmt: Node): boolean => {
+    if ('DropStmt' in stmt)
+      return !DRAWN_OBJECTS.has(stmt.DropStmt.removeType ?? '')
+    if ('RenameStmt' in stmt)
+      return !DRAWN_OBJECTS.has(stmt.RenameStmt.renameType ?? '')
+    if ('AlterEnumStmt' in stmt) return false
+
+    return true
   }
 
   // Process all statements
@@ -1351,6 +1545,7 @@ export const convertToSchema = (
     if (statement?.stmt === undefined) continue
 
     const stmt = statement.stmt
+    let applied = true
 
     if (isCreateStmt(stmt)) {
       handleCreateStmt(stmt.CreateStmt)
@@ -1359,12 +1554,21 @@ export const convertToSchema = (
     } else if (isCommentStmt(stmt)) {
       handleCommentStmt(stmt.CommentStmt)
     } else if (isAlterTableStmt(stmt)) {
-      handleAlterTableStmt(stmt.AlterTableStmt)
+      applied = handleAlterTableStmt(stmt.AlterTableStmt)
     } else if (isCreateEnumStmt(stmt)) {
       handleCreateEnumStmt(stmt.CreateEnumStmt)
     } else if (isCreateExtensionStmt(stmt)) {
       handleCreateExtensionStmt(stmt.CreateExtensionStmt)
+    } else {
+      applied = leavesSchemaAlone(stmt)
     }
+
+    if (applied) continue
+
+    // Named once per statement, not once per command: the text is the whole
+    // statement either way, and saying it twice does not say it better.
+    const raw = statementTextAt(chunkSql, statement)
+    if (raw) unparsed.push({ clause: 'STATEMENT', raw })
   }
 
   return {

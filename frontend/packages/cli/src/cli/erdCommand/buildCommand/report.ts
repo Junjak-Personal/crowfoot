@@ -64,6 +64,16 @@ export const buildReport = (
   }
 }
 
+/**
+ * One line naming what was lost. A `DEFAULT` needs its column said out loud —
+ * the raw text alone (`ARRAY[]::uuid[]`) does not say where to look. A
+ * statement already carries its own subject.
+ */
+const describeUnparsed = (entry: Unparsed): string =>
+  entry.clause === 'DEFAULT'
+    ? `${entry.table}.${entry.column} DEFAULT ${entry.raw}`
+    : entry.raw
+
 type OutcomeParams = {
   schema: Schema
   unparsed: Unparsed[]
@@ -95,7 +105,7 @@ export const reportOutcome = ({
   if (unparsed.length === 0) return []
 
   const first = unparsed[0]
-  const summary = `${unparsed.length} clause(s) read but not represented`
+  const summary = `${unparsed.length} thing(s) read but not represented`
 
   console.error(yellow(`WARN: ${summary}. Run with --json to see them.`))
 
@@ -103,8 +113,7 @@ export const reportOutcome = ({
 
   return [
     new CriticalError(
-      `${summary}, and --strict was given. ` +
-        `First: ${first.table}.${first.column} ${first.clause} ${first.raw}`,
+      `${summary}, and --strict was given. First: ${describeUnparsed(first)}`,
     ),
   ]
 }

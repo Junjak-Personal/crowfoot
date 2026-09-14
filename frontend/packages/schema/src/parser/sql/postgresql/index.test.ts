@@ -197,6 +197,28 @@ describe(processor, () => {
           await defaultsOf("label TEXT DEFAULT ('a' || 'b')"),
         ).toMatchObject({ label: null })
       })
+
+      /**
+       * `ARRAY[]::uuid[]` and `'{}'` are the same default written two ways, and
+       * pg_dump writes the first. Reading only the second made a plain dump of
+       * a schema with an array column fail `--strict` — the check meant to
+       * catch a real loss firing on a default that was never lost.
+       */
+      it('reads an ARRAY constructor as the array literal it stands for', async () => {
+        expect(
+          await defaultsOf(`
+            mentions UUID[] DEFAULT ARRAY[]::uuid[],
+            roles TEXT[] DEFAULT ARRAY['admin', 'user']
+          `),
+        ).toMatchObject({ mentions: '{}', roles: '{admin,user}' })
+      })
+
+      /** An element that would otherwise end the literal early. */
+      it('quotes an array element that carries a comma', async () => {
+        expect(
+          await defaultsOf("labels TEXT[] DEFAULT ARRAY['a,b', 'c']"),
+        ).toMatchObject({ labels: '{"a,b",c}' })
+      })
     })
 
     /**
@@ -218,18 +240,24 @@ describe(processor, () => {
       }
 
       it('names the column and quotes the clause it could not read', async () => {
-        expect(
-          await unparsedOf(
-            "available_locales TEXT[] DEFAULT ARRAY['ko','en','zh']",
-          ),
-        ).toEqual([
+        expect(await unparsedOf("label TEXT DEFAULT ('a' || 'b')")).toEqual([
           {
             table: 'users',
-            column: 'available_locales',
+            column: 'label',
             clause: 'DEFAULT',
-            raw: "ARRAY['ko','en','zh']",
+            raw: "('a' || 'b')",
           },
         ])
+      })
+
+      /**
+       * The check has to be quiet on what a plain pg_dump contains, or it gets
+       * switched off — and a check nobody runs catches nothing.
+       */
+      it('says nothing about an ARRAY default, which it can read', async () => {
+        expect(
+          await unparsedOf('mentions UUID[] DEFAULT ARRAY[]::uuid[]'),
+        ).toEqual([])
       })
 
       /** A comma inside the literal does not end the expression. */
@@ -255,6 +283,137 @@ describe(processor, () => {
             active BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT now(),
             plain TEXT
+          `),
+        ).toEqual([])
+      })
+    })
+
+    /**
+     * The parser reads a schema, it does not replay one: only `CREATE` and
+     * `ADD CONSTRAINT` reach the diagram. Fed a migration that *changes* an
+     * earlier statement, it drew the schema as it was before the change and
+     * said nothing — the table count was right, every column it listed was
+     * real, and the ones the migration had added, dropped or renamed were
+     * simply not there. Nothing counting the output could find it.
+     *
+     * These are named instead. What the parser cannot apply, it has to admit.
+     */
+    describe('unapplied changes', () => {
+      const unappliedOf = async (sql: string) => {
+        const { unparsed } = await processor(sql)
+        return unparsed.map((entry) => entry.raw)
+      }
+
+      const base = /* sql */ `
+        CREATE TABLE users (
+          id BIGSERIAL PRIMARY KEY,
+          email TEXT NOT NULL,
+          goner TEXT
+        );
+      `
+
+      it('names an ALTER TABLE command that changes a table it already read', async () => {
+        expect(
+          await unappliedOf(`
+            ${base}
+            ALTER TABLE users ADD COLUMN nickname TEXT;
+            ALTER TABLE users DROP COLUMN goner;
+            ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(320);
+            ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+            ALTER TABLE users DROP CONSTRAINT users_pkey;
+          `),
+        ).toEqual([
+          'ALTER TABLE users ADD COLUMN nickname TEXT',
+          'ALTER TABLE users DROP COLUMN goner',
+          'ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(320)',
+          'ALTER TABLE users ALTER COLUMN email DROP NOT NULL',
+          'ALTER TABLE users DROP CONSTRAINT users_pkey',
+        ])
+      })
+
+      /**
+       * `ALTER INDEX … RENAME TO` is its own statement, not an `ALTER TABLE`
+       * command — it reaches the parser by a different door and was missed by
+       * the same gap.
+       */
+      it('names a DROP or RENAME of something it draws', async () => {
+        expect(
+          await unappliedOf(`
+            ${base}
+            CREATE INDEX ix_users_email ON users (email);
+            ALTER TABLE users RENAME COLUMN email TO login;
+            ALTER TABLE users RENAME TO accounts;
+            ALTER INDEX ix_users_email RENAME TO ix_accounts_login;
+            DROP INDEX IF EXISTS ix_accounts_login;
+            DROP TABLE accounts;
+          `),
+        ).toEqual([
+          'ALTER TABLE users RENAME COLUMN email TO login',
+          'ALTER TABLE users RENAME TO accounts',
+          'ALTER INDEX ix_users_email RENAME TO ix_accounts_login',
+          'DROP INDEX IF EXISTS ix_accounts_login',
+          'DROP TABLE accounts',
+        ])
+      })
+
+      it('says nothing about ADD CONSTRAINT, which it does apply', async () => {
+        expect(
+          await unappliedOf(`
+            ${base}
+            CREATE TABLE posts (id BIGSERIAL PRIMARY KEY, author_id BIGINT);
+            ALTER TABLE posts
+              ADD CONSTRAINT posts_author_fkey
+              FOREIGN KEY (author_id) REFERENCES users (id);
+          `),
+        ).toEqual([])
+      })
+
+      /**
+       * A check that fires on a plain `pg_dump` gets switched off, and a check
+       * nobody runs catches nothing. None of this changes the diagram.
+       */
+      it('says nothing about what pg_dump wraps a schema in', async () => {
+        expect(
+          await unappliedOf(`
+            SET statement_timeout = 0;
+            SET client_encoding = 'UTF8';
+            SELECT pg_catalog.set_config('search_path', '', false);
+            CREATE SCHEMA app;
+            ${base}
+            ALTER TABLE users ALTER COLUMN id
+              ADD GENERATED BY DEFAULT AS IDENTITY (SEQUENCE NAME users_id_seq);
+            COMMENT ON TABLE users IS 'people';
+            COMMENT ON COLUMN users.email IS 'their address';
+          `),
+        ).toEqual([])
+      })
+
+      /**
+       * A statement begins, as postgres measures it, just past the previous
+       * semicolon — so everything written between the two comes with it. On the
+       * first statement of a migration that is the file's whole header.
+       */
+      it('quotes the statement without the comments in front of it', async () => {
+        expect(
+          await unappliedOf(`
+            -- 010_drop_mastered.sql
+            -- Moved to user_word_state.
+
+            /* one more, in the other shape */
+            DROP TABLE users;
+          `),
+        ).toEqual(['DROP TABLE users'])
+      })
+
+      it('says nothing about objects it never draws', async () => {
+        expect(
+          await unappliedOf(`
+            ${base}
+            CREATE SEQUENCE users_seq;
+            CREATE VIEW active_users AS SELECT id FROM users;
+            CREATE POLICY users_own ON users FOR SELECT USING (true);
+            GRANT SELECT ON users TO PUBLIC;
+            DROP VIEW active_users;
           `),
         ).toEqual([])
       })
