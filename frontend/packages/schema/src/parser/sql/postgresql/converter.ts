@@ -1,18 +1,22 @@
 import type {
   A_Const,
+  AlterEnumStmt,
   AlterTableStmt,
   CommentStmt,
   CreateEnumStmt,
   CreateExtensionStmt,
   CreateStmt,
+  DropStmt,
   FuncCall,
   IndexStmt,
   List,
   Node,
+  AlterTableCmd as PgAlterTableCmd,
   Constraint as PgConstraint,
   String as PgString,
   TypeName as PgTypeName,
   RawStmt,
+  RenameStmt,
 } from '@pgsql/types'
 import { err, ok, type Result } from 'neverthrow'
 import type {
@@ -20,7 +24,6 @@ import type {
   Columns,
   Constraint,
   Constraints,
-  Enum,
   Extension,
   ForeignKeyConstraint,
   ForeignKeyConstraintReferenceOption,
@@ -30,6 +33,19 @@ import type {
 import { type ProcessError, UnexpectedTokenWarningError } from '../../errors.js'
 import type { ProcessResult, Unparsed } from '../../types.js'
 import { defaultRelationshipName } from '../../utils/index.js'
+import {
+  addEnumValue,
+  dropColumn,
+  dropConstraint,
+  dropEnum,
+  dropExtension,
+  dropIndex,
+  dropTable,
+  renameColumn,
+  renameConstraint,
+  renameIndex,
+  renameTable,
+} from './schemaChanges.js'
 
 const getUtf8ByteLength = (codePoint: number): number => {
   // Validate Unicode code point range
@@ -259,22 +275,41 @@ const isHarmlessAlterTableCmd = (subtype: string | undefined): boolean =>
   subtype !== undefined && HARMLESS_ALTER_TABLE_CMDS.has(subtype)
 
 /**
- * The objects a `DROP` or a `RENAME` can name that the diagram draws.
+ * What a `DROP` or a `RENAME` does to each kind of object the diagram draws.
  *
  * The top level is the opposite case to `ALTER TABLE`: most of what a dump
  * contains — functions, triggers, policies, grants, sequences, views — is
- * nothing this parser ever claimed to show, so naming every one of them would
- * be noise, and noise is how a check gets switched off. Only the object kinds
- * that appear on the diagram are named.
+ * nothing this parser ever claimed to show, so acting on every one of them, or
+ * naming every one it could not, would be noise. Noise is how a check gets
+ * switched off. An object kind with no entry here is one the diagram does not
+ * have, and is passed over.
+ *
+ * Being the same table for both "can I do this" and "how" is the point: two
+ * lists would be free to disagree, and the one that decided whether to report
+ * was the one that used to be wrong.
  */
-const DRAWN_OBJECTS: ReadonlySet<string> = new Set([
-  'OBJECT_TABLE',
-  'OBJECT_COLUMN',
-  'OBJECT_INDEX',
-  'OBJECT_TABCONSTRAINT',
-  'OBJECT_TYPE',
-  'OBJECT_EXTENSION',
-])
+const DROP_BY_OBJECT: Readonly<
+  Record<string, (schema: Schema, name: string) => boolean>
+> = {
+  OBJECT_TABLE: dropTable,
+  OBJECT_INDEX: dropIndex,
+  OBJECT_TYPE: dropEnum,
+  OBJECT_EXTENSION: dropExtension,
+}
+
+const RENAME_BY_OBJECT: Readonly<
+  Record<
+    string,
+    (schema: Schema, owner: string, from: string, to: string) => boolean
+  >
+> = {
+  // A table and an index name themselves; `from` is the name and there is no
+  // separate owner to look them up under.
+  OBJECT_TABLE: (schema, _owner, from, to) => renameTable(schema, from, to),
+  OBJECT_INDEX: (schema, _owner, from, to) => renameIndex(schema, from, to),
+  OBJECT_COLUMN: renameColumn,
+  OBJECT_TABCONSTRAINT: renameConstraint,
+}
 
 /**
  * Drops the comments a statement's start offset swept up on its way in.
@@ -630,9 +665,14 @@ export const convertToSchema = (
   chunkOffset: number,
   chunkSql: string,
 ): ProcessResult => {
-  const tables: Record<string, Table> = {}
-  const enums: Record<string, Enum> = {}
-  const extensions: Record<string, Extension> = {}
+  // The schema being built, written straight into rather than assembled per
+  // chunk and merged after. A merge can only add, and a migration that drops or
+  // renames something has to be able to take it away again — and to take it
+  // away from a table an earlier chunk created. One live schema in statement
+  // order is the only arrangement where that comes out right.
+  const tables = mainSchema.tables
+  const enums = mainSchema.enums
+  const extensions = mainSchema.extensions
   const errors: ProcessError[] = []
   const unparsed: Unparsed[] = []
 
@@ -1278,7 +1318,7 @@ export const convertToSchema = (
    * Find table in current chunk or main schema
    */
   function findTable(tableName: string): Table | undefined {
-    return tables[tableName] ?? mainSchema.tables[tableName]
+    return tables[tableName]
   }
 
   /**
@@ -1407,6 +1447,113 @@ export const convertToSchema = (
   }
 
   /**
+   * The `ALTER TABLE` commands that change a table the parser already read.
+   *
+   * Returns false for one it could not apply, which is what puts the statement
+   * in `unparsed`. Applying most of them and staying quiet about the rest would
+   * be the original bug wearing a smaller hat.
+   */
+  function applyAlterTableCommand(
+    cmd: PgAlterTableCmd,
+    tableName: string,
+  ): boolean {
+    const columnName = cmd.name
+    const missingOk = cmd.missing_ok === true
+
+    switch (cmd.subtype) {
+      case 'AT_AddColumn':
+      case 'AT_AddColumnRecurse': {
+        const def = cmd.def
+        if (def === undefined || !('ColumnDef' in def)) return false
+        return addColumnFromDef(def.ColumnDef, tableName)
+      }
+
+      case 'AT_DropColumn':
+      case 'AT_DropColumnRecurse':
+        if (columnName === undefined) return false
+        return dropColumn(mainSchema, tableName, columnName) || missingOk
+
+      case 'AT_DropConstraint':
+      case 'AT_DropConstraintRecurse':
+        if (columnName === undefined) return false
+        return dropConstraint(mainSchema, tableName, columnName) || missingOk
+
+      case 'AT_AlterColumnType':
+      case 'AT_SetNotNull':
+      case 'AT_DropNotNull':
+      case 'AT_ColumnDefault':
+        return setColumnAttribute(cmd, tableName)
+
+      default:
+        return isHarmlessAlterTableCmd(cmd.subtype)
+    }
+  }
+
+  /**
+   * The commands that change one column in place. All of them have to find the
+   * column first, and a column that is not there means an earlier statement was
+   * missed — which is worth saying rather than quietly skipping.
+   */
+  function setColumnAttribute(
+    cmd: PgAlterTableCmd,
+    tableName: string,
+  ): boolean {
+    const column = columnOf(tableName, cmd.name)
+    if (column === undefined) return false
+
+    if (cmd.subtype === 'AT_ColumnDefault') {
+      // No expression is `DROP DEFAULT`; the column keeps no default at all.
+      column.default =
+        cmd.def === undefined ? null : defaultValueOf(cmd.def, chunkSql)
+      return true
+    }
+
+    if (cmd.subtype === 'AT_AlterColumnType') {
+      const def = cmd.def
+      if (def === undefined || !('ColumnDef' in def)) return false
+
+      column.type = extractColumnType(def.ColumnDef.typeName)
+      return true
+    }
+
+    column.notNull = cmd.subtype === 'AT_SetNotNull'
+    return true
+  }
+
+  /**
+   * `IF EXISTS` on something already gone is how a migration says it may have
+   * run before. Nothing to do, and nothing to report.
+   */
+  function columnOf(
+    tableName: string,
+    columnName: string | undefined,
+  ): Column | undefined {
+    if (columnName === undefined) return undefined
+    return findTable(tableName)?.columns[columnName]
+  }
+
+  /** The same path `CREATE TABLE` takes, so a column means the same thing. */
+  function addColumnFromDef(colDef: ColumnDef, tableName: string): boolean {
+    const table = findTable(tableName)
+    if (table === undefined) return false
+
+    const {
+      column: [name, column],
+      constraints: columnConstraints,
+      errors: columnErrors,
+    } = processColumnDef(colDef, tableName)
+    if (name === '') return false
+
+    errors.push(...columnErrors)
+    table.columns[name] = column
+    for (const constraint of columnConstraints) {
+      table.constraints[constraint.name] = constraint
+    }
+
+    return true
+  }
+
+  /**
    * Process an ALTER TABLE command
    */
   function processAlterTableCommand(
@@ -1418,9 +1565,7 @@ export const convertToSchema = (
     const alterTableCmd = cmd.AlterTableCmd
 
     if (alterTableCmd.subtype !== 'AT_AddConstraint') {
-      // Everything else on this surface either leaves the diagram alone or
-      // changes it behind the reader's back. The second kind says so.
-      return isHarmlessAlterTableCmd(alterTableCmd.subtype)
+      return applyAlterTableCommand(alterTableCmd, foreignTableName)
     }
 
     const constraint = alterTableCmd.def
@@ -1524,18 +1669,81 @@ export const convertToSchema = (
   }
 
   /**
-   * Whether a statement the parser has no handler for left the diagram alone.
+   * The name an object is dropped under, which may be schema-qualified. The
+   * model files everything under its bare name, so the last part is the one.
    *
-   * A `DROP` or a `RENAME` of something drawn did not: the schema still holds
-   * whatever the earlier `CREATE` said, under the old name, with the dropped
-   * thing still in it. An `ALTER TYPE … ADD VALUE` is the same for an enum.
+   * `DROP TYPE` states its target as a `TypeName` where everything else uses a
+   * `List`; both come down to a run of strings.
    */
-  const leavesSchemaAlone = (stmt: Node): boolean => {
-    if ('DropStmt' in stmt)
-      return !DRAWN_OBJECTS.has(stmt.DropStmt.removeType ?? '')
-    if ('RenameStmt' in stmt)
-      return !DRAWN_OBJECTS.has(stmt.RenameStmt.renameType ?? '')
-    if ('AlterEnumStmt' in stmt) return false
+  const droppedName = (object: Node): string | undefined => {
+    const parts =
+      'List' in object
+        ? object.List.items
+        : 'TypeName' in object
+          ? object.TypeName.names
+          : undefined
+
+    return parts?.filter(isStringNode).at(-1)?.String.sval
+  }
+
+  const applyDropStmt = (drop: DropStmt): boolean => {
+    const apply = DROP_BY_OBJECT[drop.removeType ?? '']
+    if (apply === undefined) return true
+
+    // `IF EXISTS` is a migration saying it may have run before. Without it, a
+    // target that is not there means the schema is not the one this statement
+    // was written against, and the diagram should not pretend otherwise.
+    const mayBeGone = drop.missing_ok === true
+
+    for (const object of drop.objects ?? []) {
+      const name = droppedName(object)
+      if (name === undefined) return false
+      if (!apply(mainSchema, name) && !mayBeGone) return false
+    }
+
+    return true
+  }
+
+  const applyRenameStmt = (rename: RenameStmt): boolean => {
+    const apply = RENAME_BY_OBJECT[rename.renameType ?? '']
+    if (apply === undefined) return true
+
+    // `relation` is the table a column or constraint belongs to, and is the
+    // thing itself for a table or an index; `subname` is the old name in the
+    // first case and `relname` is in the second.
+    const owner = rename.relation?.relname
+    const from = rename.subname ?? owner
+    const to = rename.newname
+    if (owner === undefined || from === undefined || to === undefined)
+      return false
+
+    return apply(mainSchema, owner, from, to) || rename.missing_ok === true
+  }
+
+  const applyAlterEnumStmt = (alter: AlterEnumStmt): boolean => {
+    const name = (alter.typeName ?? []).filter(isStringNode).at(-1)?.String.sval
+    // `RENAME VALUE` carries `oldVal`; only `ADD VALUE` is applied here.
+    if (name === undefined || alter.newVal === undefined) return false
+    if (alter.oldVal !== undefined) return false
+
+    return addEnumValue(
+      mainSchema,
+      name,
+      alter.newVal,
+      alter.newValNeighbor,
+      alter.newValIsAfter ?? false,
+    )
+  }
+
+  /**
+   * A statement with no handler of its own. Most of what a dump holds is
+   * something this tool never drew; what is left changes the schema, and either
+   * applies or gets named.
+   */
+  const applyOtherStmt = (stmt: Node): boolean => {
+    if ('DropStmt' in stmt) return applyDropStmt(stmt.DropStmt)
+    if ('RenameStmt' in stmt) return applyRenameStmt(stmt.RenameStmt)
+    if ('AlterEnumStmt' in stmt) return applyAlterEnumStmt(stmt.AlterEnumStmt)
 
     return true
   }
@@ -1560,7 +1768,7 @@ export const convertToSchema = (
     } else if (isCreateExtensionStmt(stmt)) {
       handleCreateExtensionStmt(stmt.CreateExtensionStmt)
     } else {
-      applied = leavesSchemaAlone(stmt)
+      applied = applyOtherStmt(stmt)
     }
 
     if (applied) continue
@@ -1571,13 +1779,5 @@ export const convertToSchema = (
     if (raw) unparsed.push({ clause: 'STATEMENT', raw })
   }
 
-  return {
-    value: {
-      tables,
-      enums,
-      extensions,
-    },
-    errors,
-    unparsed,
-  }
+  return { value: mainSchema, errors, unparsed }
 }

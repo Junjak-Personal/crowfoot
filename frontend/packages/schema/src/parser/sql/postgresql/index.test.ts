@@ -312,47 +312,38 @@ describe(processor, () => {
         );
       `
 
-      it('names an ALTER TABLE command that changes a table it already read', async () => {
+      it('names a change to a table it never read', async () => {
         expect(
           await unappliedOf(`
             ${base}
-            ALTER TABLE users ADD COLUMN nickname TEXT;
-            ALTER TABLE users DROP COLUMN goner;
-            ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(320);
-            ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
-            ALTER TABLE users DROP CONSTRAINT users_pkey;
+            ALTER TABLE absent ADD COLUMN nickname TEXT;
+            ALTER TABLE absent DROP COLUMN goner;
           `),
         ).toEqual([
-          'ALTER TABLE users ADD COLUMN nickname TEXT',
-          'ALTER TABLE users DROP COLUMN goner',
-          'ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(320)',
-          'ALTER TABLE users ALTER COLUMN email DROP NOT NULL',
-          'ALTER TABLE users DROP CONSTRAINT users_pkey',
+          'ALTER TABLE absent ADD COLUMN nickname TEXT',
+          'ALTER TABLE absent DROP COLUMN goner',
         ])
       })
 
       /**
-       * `ALTER INDEX … RENAME TO` is its own statement, not an `ALTER TABLE`
-       * command — it reaches the parser by a different door and was missed by
-       * the same gap.
+       * Without `IF EXISTS`, a target that is not there means the schema is not
+       * the one this statement was written against — something earlier was
+       * missed, and the diagram should not pretend otherwise.
        */
-      it('names a DROP or RENAME of something it draws', async () => {
+      it('names a DROP or RENAME of something it never drew', async () => {
         expect(
           await unappliedOf(`
             ${base}
-            CREATE INDEX ix_users_email ON users (email);
-            ALTER TABLE users RENAME COLUMN email TO login;
-            ALTER TABLE users RENAME TO accounts;
-            ALTER INDEX ix_users_email RENAME TO ix_accounts_login;
-            DROP INDEX IF EXISTS ix_accounts_login;
-            DROP TABLE accounts;
+            DROP TABLE absent;
+            DROP INDEX ix_absent;
+            ALTER TABLE absent RENAME TO other;
+            ALTER TABLE users RENAME COLUMN absent TO other;
           `),
         ).toEqual([
-          'ALTER TABLE users RENAME COLUMN email TO login',
-          'ALTER TABLE users RENAME TO accounts',
-          'ALTER INDEX ix_users_email RENAME TO ix_accounts_login',
-          'DROP INDEX IF EXISTS ix_accounts_login',
-          'DROP TABLE accounts',
+          'DROP TABLE absent',
+          'DROP INDEX ix_absent',
+          'ALTER TABLE absent RENAME TO other',
+          'ALTER TABLE users RENAME COLUMN absent TO other',
         ])
       })
 
@@ -396,13 +387,13 @@ describe(processor, () => {
       it('quotes the statement without the comments in front of it', async () => {
         expect(
           await unappliedOf(`
-            -- 010_drop_mastered.sql
+            -- 010_drop_absent.sql
             -- Moved to user_word_state.
 
             /* one more, in the other shape */
-            DROP TABLE users;
+            DROP TABLE absent;
           `),
-        ).toEqual(['DROP TABLE users'])
+        ).toEqual(['DROP TABLE absent'])
       })
 
       it('says nothing about objects it never draws', async () => {
@@ -416,6 +407,240 @@ describe(processor, () => {
             DROP VIEW active_users;
           `),
         ).toEqual([])
+      })
+    })
+
+    /**
+     * A migration folder is a history, and most projects have no final-state
+     * file to offer instead — getting one means standing up a database, which
+     * is the thing this tool exists so you do not have to do.
+     *
+     * So the statements are applied in order rather than refused: not executed,
+     * which would need a database, but replayed against the schema being built.
+     * What cannot be applied is still named (see "unapplied changes") — the
+     * report is the backstop now, not the whole answer.
+     */
+    describe('replaying changes', () => {
+      const replay = async (sql: string) => {
+        const { value, unparsed } = await processor(sql)
+        return { schema: value, unapplied: unparsed.map((u) => u.raw) }
+      }
+
+      const users = /* sql */ `
+        CREATE TABLE users (
+          id BIGSERIAL PRIMARY KEY,
+          email TEXT NOT NULL UNIQUE,
+          goner TEXT
+        );
+      `
+
+      it('adds a column to a table an earlier statement created', async () => {
+        const { schema, unapplied } = await replay(`
+          ${users}
+          ALTER TABLE users ADD COLUMN nickname TEXT;
+        `)
+
+        expect(Object.keys(schema.tables['users']?.columns ?? {})).toContain(
+          'nickname',
+        )
+        expect(unapplied).toEqual([])
+      })
+
+      it('drops a column', async () => {
+        const { schema } = await replay(`
+          ${users}
+          ALTER TABLE users DROP COLUMN goner;
+        `)
+
+        expect(Object.keys(schema.tables['users']?.columns ?? {})).toEqual([
+          'id',
+          'email',
+        ])
+      })
+
+      /**
+       * Postgres drops whatever depends on the column, and an index over two
+       * columns depends on both — it does not quietly become an index over the
+       * one that is left. Getting this wrong leaves an index in the diagram
+       * that the database does not have.
+       */
+      it('takes a multi-column index and constraint with the column they name', async () => {
+        const { schema } = await replay(`
+          CREATE TABLE words (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT,
+            mastered BOOLEAN
+          );
+          CREATE INDEX ix_words_mastered ON words (user_id, mastered);
+          CREATE INDEX ix_words_user ON words (user_id);
+          ALTER TABLE words ADD CONSTRAINT words_user_mastered_key UNIQUE (user_id, mastered);
+          ALTER TABLE words DROP COLUMN mastered;
+        `)
+
+        const table = schema.tables['words']
+        expect(Object.keys(table?.indexes ?? {})).toEqual(['ix_words_user'])
+        expect(Object.keys(table?.constraints ?? {})).toEqual(['words_pkey'])
+      })
+
+      it('follows a renamed column into the indexes and constraints naming it', async () => {
+        const { schema } = await replay(`
+          ${users}
+          CREATE INDEX ix_users_email ON users (email);
+          ALTER TABLE users RENAME COLUMN email TO login;
+        `)
+
+        const table = schema.tables['users']
+        expect(Object.keys(table?.columns ?? {})).toEqual([
+          'id',
+          'login',
+          'goner',
+        ])
+        expect(table?.columns['login']?.name).toBe('login')
+        expect(table?.indexes['ix_users_email']?.columns).toEqual(['login'])
+        const unique = table?.constraints['users_email_key']
+        expect(unique?.type).toBe('UNIQUE')
+        expect(unique && 'columnNames' in unique && unique.columnNames).toEqual(
+          ['login'],
+        )
+      })
+
+      it('follows a renamed column into another table pointing at it', async () => {
+        const { schema } = await replay(`
+          ${users}
+          CREATE TABLE posts (
+            id BIGSERIAL PRIMARY KEY,
+            author_id BIGINT REFERENCES users(id)
+          );
+          ALTER TABLE users RENAME COLUMN id TO user_id;
+        `)
+
+        const fk = Object.values(
+          schema.tables['posts']?.constraints ?? {},
+        ).find((c) => c.type === 'FOREIGN KEY')
+        expect(fk && 'targetColumnNames' in fk && fk.targetColumnNames).toEqual(
+          ['user_id'],
+        )
+      })
+
+      it('follows a renamed table into another table pointing at it', async () => {
+        const { schema } = await replay(`
+          ${users}
+          CREATE TABLE posts (
+            id BIGSERIAL PRIMARY KEY,
+            author_id BIGINT REFERENCES users(id)
+          );
+          ALTER TABLE users RENAME TO accounts;
+        `)
+
+        expect(Object.keys(schema.tables)).toEqual(['accounts', 'posts'])
+        expect(schema.tables['accounts']?.name).toBe('accounts')
+
+        const fk = Object.values(
+          schema.tables['posts']?.constraints ?? {},
+        ).find((c) => c.type === 'FOREIGN KEY')
+        expect(fk && 'targetTableName' in fk && fk.targetTableName).toBe(
+          'accounts',
+        )
+      })
+
+      it('drops a table', async () => {
+        const { schema } = await replay(`
+          ${users}
+          CREATE TABLE scratch (id BIGSERIAL PRIMARY KEY);
+          DROP TABLE scratch;
+        `)
+
+        expect(Object.keys(schema.tables)).toEqual(['users'])
+      })
+
+      it('drops and renames an index', async () => {
+        const { schema } = await replay(`
+          ${users}
+          CREATE INDEX ix_users_email ON users (email);
+          CREATE INDEX ix_users_goner ON users (goner);
+          ALTER INDEX ix_users_email RENAME TO ix_users_login;
+          DROP INDEX ix_users_goner;
+        `)
+
+        expect(Object.keys(schema.tables['users']?.indexes ?? {})).toEqual([
+          'ix_users_login',
+        ])
+        expect(schema.tables['users']?.indexes['ix_users_login']?.name).toBe(
+          'ix_users_login',
+        )
+      })
+
+      it('drops a constraint', async () => {
+        const { schema } = await replay(`
+          ${users}
+          ALTER TABLE users DROP CONSTRAINT users_email_key;
+        `)
+
+        expect(
+          Object.keys(schema.tables['users']?.constraints ?? {}),
+        ).not.toContain('users_email_key')
+      })
+
+      it('changes a column type, its nullability and its default', async () => {
+        const { schema } = await replay(`
+          ${users}
+          ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(320);
+          ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+          ALTER TABLE users ALTER COLUMN goner SET NOT NULL;
+          ALTER TABLE users ALTER COLUMN goner SET DEFAULT 'x';
+        `)
+
+        // `varchar`, not `varchar(320)`: the length goes the same way it does
+        // in a CREATE TABLE, and a column has to mean the same thing however it
+        // got its type.
+        const columns = schema.tables['users']?.columns
+        expect(columns?.['email']?.type).toBe('varchar')
+        expect(columns?.['email']?.notNull).toBe(false)
+        expect(columns?.['goner']?.notNull).toBe(true)
+        expect(columns?.['goner']?.default).toBe('x')
+      })
+
+      it('adds a value to an enum', async () => {
+        const { schema } = await replay(`
+          CREATE TYPE mood AS ENUM ('ok');
+          ALTER TYPE mood ADD VALUE 'sad';
+        `)
+
+        expect(schema.enums['mood']?.values).toEqual(['ok', 'sad'])
+      })
+
+      /** `IF EXISTS` is how a migration says "this may already be gone". */
+      it('passes over an IF EXISTS drop of something that is not there', async () => {
+        const { schema, unapplied } = await replay(`
+          ${users}
+          ALTER TABLE users DROP COLUMN IF EXISTS never_existed;
+          DROP INDEX IF EXISTS ix_nothing;
+          DROP TABLE IF EXISTS nothing;
+        `)
+
+        expect(Object.keys(schema.tables)).toEqual(['users'])
+        expect(unapplied).toEqual([])
+      })
+
+      /**
+       * The whole point, end to end: the schema a history leaves behind is the
+       * schema its final state describes.
+       */
+      it('ends where the history left the database', async () => {
+        const { schema, unapplied } = await replay(`
+          CREATE TABLE words (id BIGSERIAL PRIMARY KEY, term TEXT);
+          ALTER TABLE words ADD COLUMN mastered BOOLEAN NOT NULL DEFAULT FALSE;
+          ALTER TABLE words ADD COLUMN priority SMALLINT;
+          ALTER TABLE words DROP COLUMN IF EXISTS mastered;
+          ALTER TABLE words RENAME COLUMN term TO headword;
+        `)
+
+        expect(Object.keys(schema.tables['words']?.columns ?? {})).toEqual([
+          'id',
+          'headword',
+          'priority',
+        ])
+        expect(unapplied).toEqual([])
       })
     })
 

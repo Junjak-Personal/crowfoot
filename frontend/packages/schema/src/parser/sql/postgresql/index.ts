@@ -6,7 +6,6 @@ import { schemaSchema } from '../../../schema/index.js'
 import { type ProcessError, UnexpectedTokenWarningError } from '../../errors.js'
 import type { Processor, Unparsed } from '../../types.js'
 import { convertToSchema } from './converter.js'
-import { mergeSchemas } from './mergeSchemas.js'
 import { parse } from './parser.js'
 import { processSQLInChunks } from './processSqlInChunks.js'
 
@@ -99,26 +98,21 @@ function processChunk(
       ] satisfies SQLCallbackResult)
     }
 
-    const {
-      value: convertedSchema,
-      errors: conversionErrors,
-      unparsed: chunkUnparsed,
-    } = convertToSchema(
-      isLastStatementComplete
-        ? parse_tree.stmts
-        : parse_tree.stmts.slice(0, -1),
-      rawSql,
-      schema,
-      chunkOffset,
-      chunk,
-    )
+    const { errors: conversionErrors, unparsed: chunkUnparsed } =
+      convertToSchema(
+        isLastStatementComplete
+          ? parse_tree.stmts
+          : parse_tree.stmts.slice(0, -1),
+        rawSql,
+        schema,
+        chunkOffset,
+        chunk,
+      )
 
     if (conversionErrors !== null) {
       parseErrors.push(...conversionErrors)
     }
     unparsed.push(...chunkUnparsed)
-
-    mergeSchemas(schema, convertedSchema)
 
     return okAsync([
       retryOffset,
