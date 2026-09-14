@@ -13,6 +13,43 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.9.0
+
+### Added
+
+- **A folder of migrations builds the schema it ends at.** The files are read in
+  order and each statement is applied to the schema the ones before it built, so
+  a column added in one file, renamed in another and dropped in a third finishes
+  where the last one left it. `ADD`/`DROP`/`RENAME` of a column, table, index,
+  constraint and enum value, `ALTER COLUMN`'s type, nullability and default.
+  - Applied, not executed: there is no database here, and needing one to draw a
+    diagram is what this avoids. What still needs one stays out of reach — DDL
+    inside a `DO $$ … $$` block, DDL a function or dynamic SQL runs, anything
+    conditional on the data — and is listed under `unparsed` as before.
+  - A rename follows the name everywhere it is written down: the column's key
+    and its own `name`, the `columnNames` of every key and unique constraint over
+    it, the `columns` of every index on it, and the `targetColumnNames` of every
+    foreign key in another table pointing at it. A CHECK constraint's text is
+    left alone — rewriting an identifier inside an arbitrary expression would
+    corrupt the condition rather than lose it.
+  - `IF EXISTS` is honoured as what it means. A drop of something already gone
+    passes quietly; without it, a missing target means the schema is not the one
+    the statement was written against, and it is reported.
+  - 0.8.0 reported these statements and stopped. That was the right answer for
+    anyone holding a `pg_dump` and no answer at all for the projects whose only
+    record of the schema *is* the migration folder. Both now work, and the report
+    is the backstop rather than the whole of it.
+
+### Changed
+
+- **`erd build --strict` no longer fails on a migration folder** whose changes it
+  can now apply — the same input that exited 1 in 0.8.0 builds, and builds the
+  right diagram. Anything it still cannot apply keeps exiting 1.
+- The demo keeps both inputs. `demo/schema.sql` builds it; `demo/migrations/`
+  builds the same thing, and the two are compared as a check on the replay. That
+  comparison caught a real bug before release: `DROP COLUMN` was narrowing a
+  two-column index to one column instead of dropping it, the way postgres does.
+
 ## 0.8.0
 
 ### Breaking
