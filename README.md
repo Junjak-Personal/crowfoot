@@ -72,6 +72,28 @@ carries the compiled viewer and therefore the license travels with it.
 | `--input <path\|url>` | Schema file to read. A local path (glob patterns supported) or a URL. |
 | `--format <format>` | Overrides format auto-detection. |
 | `--output-dir <path>` | Output directory. Defaults to `dist`. |
+| `--json` | Print what was read as JSON on stdout. |
+| `--strict` | Exit 1 if anything was read and not represented. |
+
+#### Give it a schema, not a history
+
+The input is read as a *description* of the database, not replayed as a sequence of
+changes: only `CREATE` and `ADD CONSTRAINT` reach the diagram. A migration that
+`ALTER`s, `DROP`s or `RENAME`s something an earlier file created is reported under
+`unparsed` and not applied — so pointing `--input` at a folder of migrations draws
+the schema as it stood *before* those changes, with the right table count and the
+wrong tables.
+
+Point it at the final state instead. `pg_dump --schema-only --no-owner
+--no-privileges` is the usual way to get one:
+
+```bash
+pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > schema.sql
+npx crowfoot erd build --input schema.sql --format postgres --strict
+```
+
+`--strict` is what makes this safe to automate: it exits 1 rather than quietly
+drawing a database that no longer exists. Run it in CI on whatever you feed in.
 
 A remote schema works the same way:
 

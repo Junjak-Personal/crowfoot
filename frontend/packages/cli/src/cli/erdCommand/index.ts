@@ -50,8 +50,16 @@ Examples:
 --json writes the report to stdout and everything else to stderr, so
 redirecting it gives a file rather than a transcript. It counts tables,
 columns, constraints, indexes, enums and extensions, and lists \`unparsed\`:
-clauses that were read and could not be represented, by table and column.
---strict turns a non-empty \`unparsed\` into exit 1.
+what was read and could not be represented. --strict turns a non-empty
+\`unparsed\` into exit 1.
+
+Give it a schema, not a history. The input is read as a description of the
+database, so only CREATE and ADD CONSTRAINT reach the diagram: a migration
+that ALTERs, DROPs or RENAMEs something an earlier file created is reported
+under \`unparsed\` and not applied. Feeding a folder of migrations therefore
+draws the schema as it stood before the changes. Point it at the final state —
+\`pg_dump --schema-only\` is the usual way to get one — and use --strict to
+refuse the build if anything was passed over.
 
 The output is a static site — serve it over HTTP, \`file://\` will not work.
 \`schema.json\` records what it was built from: \`jq .meta\` on it names every
