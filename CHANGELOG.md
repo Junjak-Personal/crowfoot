@@ -13,6 +13,8 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.8.0
+
 ### Breaking
 
 - **`erd build` now reports the changes a migration makes and the parser does
