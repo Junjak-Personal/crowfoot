@@ -1,7 +1,7 @@
 [
   {
     "id": "d0000000-0000-4000-8000-000000000001",
-    "text": "crowfoot — a demo\n\nThis is the database behind nivoca, a Japanese vocabulary app.\nThe version drawn here is its legacy build: Next.js + Supabase, shipped as a PWA.\nThe app has since been rebuilt on Flutter with a Kotlin/Spring backend, and this\nearlier codebase was opened as github.com/Junjak-Personal/nivoca-legacy.\n\n23 tables · 27 foreign keys, parsed straight from 37 Supabase migration files:\n    npx crowfoot erd build --input 'migrations/*.sql' --format postgres",
+    "text": "crowfoot — a demo\n\nThis is the database behind nivoca, a Japanese vocabulary app.\nThe version drawn here is its legacy build: Next.js + Supabase, shipped as a PWA.\nThe app has since been rebuilt on Flutter with a Kotlin/Spring backend, and this\nearlier codebase was opened as github.com/Junjak-Personal/nivoca-legacy.\n\n23 tables · 29 foreign keys · 225 columns, read from a pg_dump of the final\nschema. Not from the 37 migration files that produced it: crowfoot reads a\nschema rather than replaying one, so a history loses every later ALTER.\n    npx crowfoot erd build --input schema.sql --format postgres --strict",
     "x": 1680,
     "y": -1320,
     "width": 3240,

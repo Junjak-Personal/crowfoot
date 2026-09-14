@@ -5,11 +5,11 @@
   },
   "wordbooks": {
     "x": 0,
-    "y": 466
+    "y": 500
   },
   "wordbook_subscriptions": {
     "x": 0,
-    "y": 762
+    "y": 932
   },
   "word_examples": {
     "x": 380,
@@ -37,7 +37,7 @@
   },
   "ai_tool_executions": {
     "x": 1740,
-    "y": 500
+    "y": 602
   },
   "ai_messages": {
     "x": 2120,
@@ -45,7 +45,7 @@
   },
   "ai_telemetry": {
     "x": 2120,
-    "y": 602
+    "y": 636
   },
   "quiz_settings": {
     "x": 2800,
@@ -53,7 +53,7 @@
   },
   "daily_stats": {
     "x": 2800,
-    "y": 398
+    "y": 602
   },
   "study_progress": {
     "x": 3180,
@@ -61,7 +61,7 @@
   },
   "achievements": {
     "x": 3180,
-    "y": 364
+    "y": 636
   },
   "user_settings": {
     "x": 3860,
@@ -69,7 +69,7 @@
   },
   "user_subscription": {
     "x": 3860,
-    "y": 296
+    "y": 432
   },
   "push_tokens": {
     "x": 4540,

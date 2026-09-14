@@ -13,6 +13,51 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Breaking
+
+- **`erd build` now reports the changes a migration makes and the parser does
+  not apply**, which means `--strict` exits 1 on input it used to pass. If you
+  feed it a folder of migrations, expect it to start failing — that is the
+  point, and the diagram it drew before was wrong. Feed the final state
+  instead; see "Give it a schema, not a history" in the README.
+- **`Unparsed` is a discriminated union** (`clause: 'DEFAULT' | 'STATEMENT'`).
+  `table` and `column` are only on the `DEFAULT` arm, so a consumer reading
+  them has to narrow first. The entries in `--json`'s `unparsed` changed shape
+  to match.
+
+### Fixed
+
+- **A migration's `ALTER`, `DROP` and `RENAME` were passed over in silence.**
+  The parser reads a schema rather than replaying one, so only `CREATE` and
+  `ADD CONSTRAINT` ever reached the diagram: a column added to an earlier
+  table was missing, a dropped one was still drawn, a renamed one kept its old
+  name, and a `DROP NOT NULL` left the column marked `NOT NULL`. Nothing said
+  so — the table count was right and every column listed was real, which is
+  the one failure a count is blind to. They are named in `unparsed` now.
+  - The two surfaces are classified the opposite way round, for opposite
+    reasons. Every `ALTER TABLE` subtype acts on a table, so anything not
+    applied and not on a list of known no-ops is reported — postgres adds
+    subtypes with each release, and an unknown one there is far more likely to
+    be a change than a no-op. At the top level most of what a dump contains is
+    something this tool never drew, so only a `DROP`/`RENAME` of a table,
+    column, index, constraint, type or extension is reported. A check that
+    fires on a plain `pg_dump` gets switched off, and a check nobody runs
+    catches nothing.
+  - Still not caught: DDL inside a `DO $$ … $$` block, whose body is an opaque
+    string to the parser.
+- **A plain `pg_dump` could fail `--strict` on a default it had read
+  correctly.** `DEFAULT ARRAY[]::uuid[]` — how pg_dump writes an empty array —
+  was reported as unrepresentable. It reads as the `{}` literal now, the same
+  value `DEFAULT '{}'` already gave, so the two spellings of one default no
+  longer produce two different schemas.
+
+### Changed
+
+- **The demo is built from a `pg_dump` of the final schema** instead of the 37
+  migrations behind it. Built the old way it had been drawing 45 columns that
+  no longer existed or never appeared, 3 that had been dropped, 3 dropped
+  indexes and no enum — with the table count correct at 23 throughout.
+
 ## 0.7.3
 
 ### Fixed

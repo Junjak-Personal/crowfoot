@@ -14,23 +14,71 @@ shipped as a PWA, since rebuilt on Flutter with a Kotlin/Spring backend. That ea
 codebase is public at
 [Junjak-Personal/nivoca-legacy](https://github.com/Junjak-Personal/nivoca-legacy).
 
-Its Supabase migrations are vendored in `migrations/`, which crowfoot parses
-directly. They were an external path until 0.7.1; a demo that cannot be rebuilt
-from this repository alone is one nobody can check.
+The input is `schema.sql`, a `pg_dump --schema-only` of the final state:
 
 ```bash
-npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres --output-dir dist
+npx crowfoot erd build --input demo/schema.sql --format postgres --output-dir dist
 ```
 
-23 tables, 27 foreign keys, 37 migration files — the table count matches
-`CREATE TABLE` in the migrations exactly, which is worth asserting after any parser
-change. `--json` reports all of it, and `--strict` fails the build on anything the
-parser read and could not represent.
+23 tables, 29 foreign keys, 225 columns, 31 indexes, 1 enum, 2 extensions, and
+`unparsed` empty. `--json --strict` reports all of it and fails on anything read
+and not represented.
+
+### Why not the migrations
+
+`migrations/` holds the 37 Supabase migrations this was derived from, vendored
+since 0.7.1 so the demo can be rebuilt from this repository alone. They are the
+*provenance* of `schema.sql`, not the input to the build — and they are kept
+partly as the worked example of why:
+
+```bash
+npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres --json --strict
+# exit 1 — 38 statement(s) read but not applied
+```
+
+crowfoot reads a schema rather than replaying one, so every `ALTER`/`DROP` across
+those files was passed over. Building the demo that way for its whole life gave
+**45 missing columns, 3 columns that had been dropped, 3 dropped indexes still
+drawn, and a missing enum** — while the table count stayed at exactly 23 the
+entire time, which is why nobody caught it. See the root README's "Give it a
+schema, not a history".
+
+The enum is the one loss `--strict` still cannot name: `kanji_reading_type` is
+created inside a `DO $$ … $$` block in `020_kanji.sql`, and a `DO` body is an
+opaque string to the parser. Another reason the answer is a dump, not a history.
 
 The migrations carry no credentials: what looks like one is a column name
-(`encrypted_api_key`), a comment describing how to create a vault secret, or a
-lookup by name. They do name the deprecated project's Supabase URL, which is
-public in the legacy repository too.
+(`encrypted_api_key`, since dropped), a comment describing how to create a vault
+secret, or a lookup by name. They do name the deprecated project's Supabase URL,
+which is public in the legacy repository too.
+
+### Regenerating `schema.sql`
+
+The live Supabase project is deprecated, so the dump is taken from a throwaway
+local Postgres instead. `supabase-stub.sql` is the minimum of Supabase — the
+`auth`, `storage`, `vault`, `cron` and `net` objects the migrations reference —
+needed to make them apply; none of it reaches the dump, which takes `public` only.
+
+```bash
+initdb -U postgres "$PGDATA" && pg_ctl -D "$PGDATA" -o '-p 5459' start
+psql -p 5459 -U postgres -c 'CREATE DATABASE nivoca'
+psql -p 5459 -U postgres -c 'CREATE ROLE authenticated'
+psql -p 5459 -U postgres -d nivoca -v ON_ERROR_STOP=1 -f demo/supabase-stub.sql
+
+for f in $(ls demo/migrations/*.sql | sort -V); do
+  # pg_cron and pg_net have no binaries locally; supabase-stub.sql fakes their objects
+  sed -E 's/^[[:space:]]*CREATE EXTENSION[^;]*pg_(cron|net)[^;]*;/-- &/I' "$f" |
+    psql -p 5459 -U postgres -d nivoca -v ON_ERROR_STOP=1 || break
+done
+
+pg_dump -p 5459 -U postgres -d nivoca \
+  --schema-only --no-owner --no-privileges --schema=public > demo/schema.sql
+```
+
+Then put the two `CREATE EXTENSION` lines back by hand, under the
+`COMMENT ON SCHEMA public` line. The live database has `pg_cron` and `pg_net`
+enabled; the local one has neither binary, so a dump of it would say the schema
+has no extensions when it has two.
 
 ## Rebuilding
 
@@ -49,7 +97,7 @@ group membership, so adding a table to a group is a one-line change and re-run.
 Build it, refuse it if it is wrong, then copy it:
 
 ```bash
-npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres \
+npx crowfoot erd build --input demo/schema.sql --format postgres \
   --output-dir dist --json --strict
 cp demo/{layout,groups,memos}.json dist/
 npx crowfoot erd arrange --input dist/schema.json --check --output-dir dist

@@ -110,8 +110,10 @@ const memos = [
       'The version drawn here is its legacy build: Next.js + Supabase, shipped as a PWA.\n' +
       'The app has since been rebuilt on Flutter with a Kotlin/Spring backend, and this\n' +
       'earlier codebase was opened as github.com/Junjak-Personal/nivoca-legacy.\n\n' +
-      '23 tables · 27 foreign keys, parsed straight from 37 Supabase migration files:\n' +
-      "    npx crowfoot erd build --input 'migrations/*.sql' --format postgres",
+      '23 tables · 29 foreign keys · 225 columns, read from a pg_dump of the final\n' +
+      'schema. Not from the 37 migration files that produced it: crowfoot reads a\n' +
+      'schema rather than replaying one, so a history loses every later ALTER.\n' +
+      '    npx crowfoot erd build --input schema.sql --format postgres --strict',
     col(1), -1320, CARD_W * 2 + CARD_GAP, 620, 'vermilion', 40),
 
   memo(
