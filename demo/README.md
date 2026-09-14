@@ -24,28 +24,33 @@ npx crowfoot erd build --input demo/schema.sql --format postgres --output-dir di
 `unparsed` empty. `--json --strict` reports all of it and fails on anything read
 and not represented.
 
-### Why not the migrations
+### The migrations are the cross-check
 
-`migrations/` holds the 37 Supabase migrations this was derived from, vendored
-since 0.7.1 so the demo can be rebuilt from this repository alone. They are the
-*provenance* of `schema.sql`, not the input to the build — and they are kept
-partly as the worked example of why:
+`migrations/` holds the 37 Supabase migrations `schema.sql` was derived from,
+vendored since 0.7.1 so the demo can be rebuilt from this repository alone. Since
+0.9.0 they also build on their own — statements are replayed in order — which
+makes the pair the sharpest test this repository has of that replay:
+
+> Two inputs describing the same database must produce the same `schema.json`.
 
 ```bash
-npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres --json --strict
-# exit 1 — 38 statement(s) read but not applied
+npx crowfoot erd build --input 'demo/migrations/*.sql' --format postgres --output-dir a
+npx crowfoot erd build --input demo/schema.sql          --format postgres --output-dir b
+# a/schema.json and b/schema.json should agree
 ```
 
-crowfoot reads a schema rather than replaying one, so every `ALTER`/`DROP` across
-those files was passed over. Building the demo that way for its whole life gave
-**45 missing columns, 3 columns that had been dropped, 3 dropped indexes still
-drawn, and a missing enum** — while the table count stayed at exactly 23 the
-entire time, which is why nobody caught it. See the root README's "Give it a
-schema, not a history".
+They agree on tables, columns and indexes exactly. What still differs is worth
+knowing, and none of it is a replay bug:
 
-The enum is the one loss `--strict` still cannot name: `kanji_reading_type` is
-created inside a `DO $$ … $$` block in `020_kanji.sql`, and a `DO` body is an
-opaque string to the parser. Another reason the answer is a dump, not a history.
+| | |
+|---|---|
+| `feedback_survey` primary key, 2 CHECK constraints, the `kanji_reading_type` enum | Created inside `DO $$ … $$` blocks (`020`, `037`). A `DO` body is an opaque string to the parser — the one gap replay does not close. |
+| Foreign key and CHECK constraint **names** | An inline `REFERENCES` has no name, so one is synthesised; pg_dump writes the name postgres gave it. Same constraints, different labels. |
+| CHECK constraint **text** | `role in ('user', …)` as written, against `(role = ANY (ARRAY['user'::text, …]))` as postgres normalises it. |
+
+This is not a hypothetical: the comparison caught a real bug during 0.9.0 —
+`DROP COLUMN` was narrowing a two-column index to one column instead of dropping
+it, which no unit test had noticed.
 
 The migrations carry no credentials: what looks like one is a column name
 (`encrypted_api_key`, since dropped), a comment describing how to create a vault

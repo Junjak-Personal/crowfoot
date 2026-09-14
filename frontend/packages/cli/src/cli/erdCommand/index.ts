@@ -53,13 +53,17 @@ columns, constraints, indexes, enums and extensions, and lists \`unparsed\`:
 what was read and could not be represented. --strict turns a non-empty
 \`unparsed\` into exit 1.
 
-Give it a schema, not a history. The input is read as a description of the
-database, so only CREATE and ADD CONSTRAINT reach the diagram: a migration
-that ALTERs, DROPs or RENAMEs something an earlier file created is reported
-under \`unparsed\` and not applied. Feeding a folder of migrations therefore
-draws the schema as it stood before the changes. Point it at the final state —
-\`pg_dump --schema-only\` is the usual way to get one — and use --strict to
-refuse the build if anything was passed over.
+A folder of migrations works: the files are read in order and each statement
+is applied to the schema the ones before it built, so a column added, renamed
+and dropped across three files ends where the last one left it. Not executed —
+there is no database here — so what needs one is still out of reach: DDL inside
+a \`DO $$ ... $$\` block, DDL a function or dynamic SQL runs, anything
+conditional on the data. Those are listed under \`unparsed\`, and --strict
+turns the list into exit 1.
+
+A final-state file (\`pg_dump --schema-only\`) has none of those gaps and is
+the better input when you have one — and the way to check a replay, since the
+two should describe the same database.
 
 The output is a static site — serve it over HTTP, \`file://\` will not work.
 \`schema.json\` records what it was built from: \`jq .meta\` on it names every

@@ -75,25 +75,32 @@ carries the compiled viewer and therefore the license travels with it.
 | `--json` | Print what was read as JSON on stdout. |
 | `--strict` | Exit 1 if anything was read and not represented. |
 
-#### Give it a schema, not a history
+#### A folder of migrations works
 
-The input is read as a *description* of the database, not replayed as a sequence of
-changes: only `CREATE` and `ADD CONSTRAINT` reach the diagram. A migration that
-`ALTER`s, `DROP`s or `RENAME`s something an earlier file created is reported under
-`unparsed` and not applied — so pointing `--input` at a folder of migrations draws
-the schema as it stood *before* those changes, with the right table count and the
-wrong tables.
-
-Point it at the final state instead. `pg_dump --schema-only --no-owner
---no-privileges` is the usual way to get one:
+Point `--input` at a glob and the files are read in order, each statement applied to
+the schema the ones before it built — so a column added in `V3`, renamed in `V11`
+and dropped in `V13` ends up where `V13` left it. Not executed: there is no database
+here, and needing one to draw a diagram is the thing this avoids. The statements are
+replayed against the schema being built.
 
 ```bash
-pg_dump --schema-only --no-owner --no-privileges "$DATABASE_URL" > schema.sql
-npx crowfoot erd build --input schema.sql --format postgres --strict
+npx crowfoot erd build --input 'db/migrations/*.sql' --format postgres --strict
 ```
 
-`--strict` is what makes this safe to automate: it exits 1 rather than quietly
-drawing a database that no longer exists. Run it in CI on whatever you feed in.
+`ADD`/`DROP`/`RENAME` of a column, table, index, constraint or enum value is applied.
+What is left is what needs a database to know:
+
+- DDL inside a `DO $$ … $$` block, whose body is an opaque string
+- DDL a function or dynamic SQL executes
+- anything conditional on the data
+
+A final-state file — `pg_dump --schema-only --no-owner --no-privileges` — works the
+same way and has none of those gaps, so it is still the better input when you have
+one. It is also the way to check a replay: the two should describe the same database.
+
+`--strict` is what makes either safe to automate. Anything read and not applied is
+listed under `unparsed`, and `--strict` turns that into exit 1 rather than a diagram
+that is quietly missing a change. Run it in CI on whatever you feed in.
 
 A remote schema works the same way:
 
