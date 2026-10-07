@@ -13,6 +13,15 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 0.9.1
+
+### Fixed
+
+- **Relationship lines stay behind group labels, including highlighted and
+  elevated edges.** The node and edge containers now have explicit stacking
+  layers, so an edge's own z-index cannot draw it over a group's name. Labels
+  keep their opaque background and existing selection and drag behavior.
+
 ## 0.9.0
 
 ### Added

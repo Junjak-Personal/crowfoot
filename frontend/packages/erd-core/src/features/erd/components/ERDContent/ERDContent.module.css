@@ -10,6 +10,15 @@
   background-color: var(--global-background);
 }
 
+/* Keep elevated edges below group labels as well as table surfaces. */
+.wrapper :global(.react-flow__edges) {
+  z-index: 0;
+}
+
+.wrapper :global(.react-flow__nodes) {
+  z-index: 1;
+}
+
 .loading {
   position: absolute;
   top: 50%;
