@@ -395,6 +395,38 @@ describe(processor, () => {
         ).toEqual(['DROP TABLE absent'])
       })
 
+      /**
+       * A `DO` body is a string to the parser — the statements inside it are
+       * never seen, so DDL in there is applied to a database and not to this
+       * schema. The demo hid an enum in one for its whole life.
+       *
+       * Reported on what the body says, which is a guess: a block that only
+       * moves data around is the common case and saying so every time is the
+       * noise that gets a check switched off.
+       */
+      it('names a DO block that mentions DDL it cannot see inside', async () => {
+        expect(
+          await unappliedOf(`
+            ${base}
+            DO $$
+            BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'mood') THEN
+                CREATE TYPE mood AS ENUM ('ok');
+              END IF;
+            END $$;
+          `),
+        ).toEqual([expect.stringContaining('CREATE TYPE mood AS ENUM')])
+      })
+
+      it('says nothing about a DO block that only moves data', async () => {
+        expect(
+          await unappliedOf(`
+            ${base}
+            DO $$ BEGIN UPDATE users SET email = lower(email); END $$;
+          `),
+        ).toEqual([])
+      })
+
       it('says nothing about objects it never draws', async () => {
         expect(
           await unappliedOf(`

@@ -87,6 +87,29 @@ describe('splitStatements', () => {
     expect(textsOf(sql)[1]).toBe('SELECT 2;')
   })
 
+  /**
+   * `$` is legal inside an identifier, so `a$b$c` is one name and not the
+   * start of a quoted body. Reading it as one swallows the rest of the file.
+   */
+  it('does not open a dollar quote in the middle of an identifier', () => {
+    expect(textsOf('SELECT a$b$c FROM t; SELECT 2;')).toEqual([
+      'SELECT a$b$c FROM t;',
+      'SELECT 2;',
+    ])
+  })
+
+  /**
+   * Only a standalone `E` makes the next string an escape string. A keyword
+   * that happens to end in one — `LIKE'x'` — does not, and treating it that
+   * way makes a trailing backslash swallow the statement after it.
+   */
+  it('does not read a word ending in E as an escape-string prefix', () => {
+    expect(textsOf("SELECT 1 WHERE x LIKE'a\\'; SELECT 2;")).toEqual([
+      "SELECT 1 WHERE x LIKE'a\\';",
+      'SELECT 2;',
+    ])
+  })
+
   it('ignores a semicolon in a line comment, and leaves the comment behind', () => {
     expect(textsOf('SELECT 1; -- and; then\nSELECT 2;')).toEqual([
       'SELECT 1;',

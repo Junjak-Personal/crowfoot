@@ -6,6 +6,7 @@ import type {
   CreateEnumStmt,
   CreateExtensionStmt,
   CreateStmt,
+  DoStmt,
   DropStmt,
   FuncCall,
   IndexStmt,
@@ -330,6 +331,14 @@ const stripLeadingComments = (text: string): string => {
 
   return rest
 }
+
+/**
+ * DDL for something the diagram draws, as it looks inside a `DO` body. A few
+ * words are allowed between the verb and the object so that `CREATE UNIQUE
+ * INDEX` and `DROP TABLE IF EXISTS` both read.
+ */
+const DDL_IN_BODY =
+  /\b(?:CREATE|ALTER|DROP)\s+(?:\w+\s+){0,3}?(?:TABLE|INDEX|TYPE|CONSTRAINT|COLUMN|EXTENSION)\b/i
 
 /**
  * The source text of a whole statement.
@@ -1720,6 +1729,27 @@ export const convertToSchema = (
     return apply(mainSchema, owner, from, to) || rename.missing_ok === true
   }
 
+  /**
+   * A `DO` body reaches the parser as one string — the statements inside it are
+   * never seen, so DDL in there changes a database and not this schema. The
+   * demo hid an enum in one of these for its whole life, and nothing said so.
+   *
+   * Read off the text, which is a guess and the only one available: the body is
+   * plpgsql, not SQL this parser can take apart. A block that only moves data
+   * around is the common case, and naming every one of them is the noise that
+   * gets a check switched off — so only a body that mentions DDL for something
+   * the diagram draws is reported.
+   */
+  const applyDoStmt = (doStmt: DoStmt): boolean => {
+    const body = (doStmt.args ?? [])
+      .flatMap((arg) => ('DefElem' in arg ? [arg.DefElem.arg] : []))
+      .flatMap((arg) => (arg !== undefined && isStringNode(arg) ? [arg] : []))
+      .map((arg) => arg.String.sval ?? '')
+      .join('\n')
+
+    return !DDL_IN_BODY.test(body)
+  }
+
   const applyAlterEnumStmt = (alter: AlterEnumStmt): boolean => {
     const name = (alter.typeName ?? []).filter(isStringNode).at(-1)?.String.sval
     // `RENAME VALUE` carries `oldVal`; only `ADD VALUE` is applied here.
@@ -1744,6 +1774,7 @@ export const convertToSchema = (
     if ('DropStmt' in stmt) return applyDropStmt(stmt.DropStmt)
     if ('RenameStmt' in stmt) return applyRenameStmt(stmt.RenameStmt)
     if ('AlterEnumStmt' in stmt) return applyAlterEnumStmt(stmt.AlterEnumStmt)
+    if ('DoStmt' in stmt) return applyDoStmt(stmt.DoStmt)
 
     return true
   }

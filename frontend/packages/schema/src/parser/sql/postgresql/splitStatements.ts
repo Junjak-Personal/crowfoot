@@ -10,6 +10,12 @@ export type SqlStatement = {
 
 const DOLLAR_TAG = /^\$([A-Za-z_][A-Za-z0-9_]*)?\$/
 
+/**
+ * What can appear inside a name. `$` is one of them, which is why a dollar
+ * quote only opens where a name is not already being spelled.
+ */
+const IDENTIFIER_CHAR = /[A-Za-z0-9_$]/
+
 /** The index just past the single-quoted string starting at `i`. */
 const endOfString = (sql: string, i: number, escapes: boolean): number => {
   for (let j = i + 1; j < sql.length; j++) {
@@ -108,8 +114,14 @@ const endOfOpaque = (sql: string, i: number): number | null => {
   const char = sql[i]
 
   if (char === "'") {
+    // Only a standalone `E` makes this an escape string. A keyword that ends
+    // in one — `LIKE'x'` — does not, and reading it as one lets a trailing
+    // backslash swallow the statement after it.
     const previous = sql[i - 1]
-    return endOfString(sql, i, previous === 'E' || previous === 'e')
+    const prefixed = previous === 'E' || previous === 'e'
+    const standalone = !IDENTIFIER_CHAR.test(sql[i - 2] ?? '')
+
+    return endOfString(sql, i, prefixed && standalone)
   }
 
   if (char === '"') return endOfIdentifier(sql, i)
@@ -120,7 +132,11 @@ const endOfOpaque = (sql: string, i: number): number | null => {
   }
 
   if (char === '/' && sql[i + 1] === '*') return endOfBlockComment(sql, i)
-  if (char === '$') return endOfDollarQuote(sql, i)
+  // `a$b$c` is one identifier, not a name followed by a quoted body. Opening
+  // a quote there runs to the end of the file.
+  if (char === '$' && !IDENTIFIER_CHAR.test(sql[i - 1] ?? '')) {
+    return endOfDollarQuote(sql, i)
+  }
 
   return null
 }
