@@ -107,7 +107,7 @@ Invalid type: Expected ("schemarb" | "postgres" | "prisma" | "drizzle" | "tbls" 
     expect(outputFilePath).toBeNull()
     expect(errors).toEqual([
       new WarningProcessingError(
-        'Error during parsing schema file: syntax error at or near "invalid"',
+        'Error during parsing schema file: Nothing in this file could be read. First statement: invalid;',
       ),
     ])
   })

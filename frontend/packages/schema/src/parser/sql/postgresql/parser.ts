@@ -3,14 +3,23 @@ import type { RawStmt } from '@pgsql/types'
 // @ts-expect-error
 import Module from 'pg-query-emscripten'
 
-// pg_dump 16.10+ emits meta-commands like "\restrict"/"\unrestrict" that
-// are not valid SQL. We blank them out with spaces (instead of deleting them)
-// so downstream byte offsets reported by the parser remain unchanged.
+/**
+ * Blanks psql's own directives, which are not SQL and which the parser rejects.
+ *
+ * Any line whose first character is a backslash: pg_dump 16.10+ writes
+ * `\restrict`/`\unrestrict`, and a migration meant to be run through psql
+ * often opens with `\set ON_ERROR_STOP on`. None of them end in a semicolon,
+ * so a line left in place does not merely fail on its own — it runs into the
+ * statement below and takes that down with it.
+ *
+ * Blanked with spaces rather than deleted so every offset the parser reports
+ * still lines up with the original text.
+ */
 export const sanitizePgDumpMetaCommands = (sql: string): string =>
   sql
     .split('\n')
     .map((line) => {
-      if (!line.startsWith('\\restrict') && !line.startsWith('\\unrestrict')) {
+      if (!line.startsWith('\\')) {
         return line
       }
 

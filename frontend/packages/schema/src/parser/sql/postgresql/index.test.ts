@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { Table } from '../../../schema/index.js'
 import { aColumn, aSchema, aTable } from '../../../schema/index.js'
 import { createParserTestCases } from '../../__tests__/index.js'
-import { UnexpectedTokenWarningError } from '../../errors.js'
 import { processor } from './index.js'
 
 describe(processor, () => {
@@ -1151,17 +1150,23 @@ describe(processor, () => {
   })
 
   describe('abnormal cases', () => {
-    it('show error if the syntax is broken', async () => {
-      const result = await processor(/* sql */ `
+    /**
+     * Named rather than fatal. The reader works a statement at a time, so a
+     * broken one is known exactly and costs only itself — the rest of the file
+     * still draws. `--strict` is where that becomes a refusal, which is the
+     * same bargain every other unrepresentable thing gets.
+     */
+    it('names a statement it cannot parse instead of failing the file', async () => {
+      const { value, errors, unparsed } = await processor(/* sql */ `
         CREATEe TABLE posts ();
+        CREATE TABLE users (id BIGSERIAL PRIMARY KEY);
       `)
 
-      const value = { tables: {}, enums: {}, extensions: {} }
-      const errors = [
-        new UnexpectedTokenWarningError('syntax error at or near "CREATEe"'),
-      ]
-
-      expect(result).toEqual({ value, errors, unparsed: [] })
+      expect(Object.keys(value.tables)).toEqual(['users'])
+      expect(errors).toEqual([])
+      expect(unparsed).toEqual([
+        { clause: 'STATEMENT', raw: 'CREATEe TABLE posts ();' },
+      ])
     })
 
     it('should ignore \\restrict and \\unrestrict lines from PostgreSQL 16.10+', async () => {
