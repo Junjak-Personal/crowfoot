@@ -13,6 +13,41 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 1.0.0
+
+### Breaking
+
+- **The PostgreSQL reader cuts the input into statements instead of reading it
+  in windows of N lines.** `processor`'s second argument is now a budget in
+  characters for how much SQL to hand the parser at once, not a line count.
+  Nothing in this repository passed it; if you did, the number means something
+  else now.
+- **A statement the parser rejects is reported in `unparsed` rather than
+  failing the build.** It is identified exactly — the rest of the file still
+  draws, and `--strict` refuses it. A file where *nothing* parsed and no table
+  came out is still an error: that is the wrong file or the wrong `--format`,
+  not one odd statement.
+
+### Fixed
+
+- **A large schema silently lost tables.** The reader took N lines at a time
+  with no idea where a statement began or ended; when one straddled the edge of
+  a window it went looking for a window size that happened to parse. On a
+  10,000-line schema of 102 tables that returned 97 — and 11 at a different
+  window size — reporting nothing either time and exiting 0. The same file now
+  reads all 102 in under a second.
+  - The window approach could also abandon the rest of a file after one
+    statement longer than the window, and could loop forever on a position it
+    gave up on. Both are gone with it.
+- **A psql directive took the statement under it down too.** `\set
+  ON_ERROR_STOP on` at the top of a migration carries no semicolon, so it ran
+  into the first `CREATE TABLE` and the pair failed together. Every line
+  starting with a backslash is now blanked before the input is cut, which is
+  what was already being done for pg_dump's `\restrict`.
+- Statements are never split mid-string, mid-comment or mid-`$$ … $$`, so a
+  function body full of semicolons stays one statement.
+
+
 ## 0.9.1
 
 ### Fixed
