@@ -13,6 +13,27 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 1.0.1
+
+### Fixed
+
+- **A `DO $$ … $$` block that hides DDL is named.** Its body reaches the parser
+  as one string, so a `CREATE TYPE` or an `ALTER TABLE` inside it changes a
+  database and never this schema — the demo hid an enum in one for its whole
+  life and nothing said so. Reported on what the body says, which is a guess
+  and the only one available: a block that only moves data around stays quiet,
+  because naming every one of those is the noise that gets a check switched
+  off. On the demo's migrations that is 4 statements, and they are exactly the
+  4 differences against the same database's `pg_dump`.
+- **`a$b$c` was read as the start of a dollar-quoted body.** `$` is legal
+  inside a name, so one identifier was taken for a name followed by a quote
+  that never closed, swallowing the rest of the file. A quote now opens only
+  where a name is not already being spelled.
+- **`LIKE'a\'` swallowed the statement after it.** Only a standalone `E`
+  makes the next string an escape string; a keyword ending in one does not, and
+  reading it that way let a trailing backslash run past the closing quote.
+
+
 ## 1.0.0
 
 ### Breaking
