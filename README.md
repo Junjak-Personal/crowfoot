@@ -90,17 +90,25 @@ npx crowfoot erd build --input 'db/migrations/*.sql' --format postgres --strict
 `ADD`/`DROP`/`RENAME` of a column, table, index, constraint or enum value is applied.
 What is left is what needs a database to know:
 
-- DDL inside a `DO $$ … $$` block, whose body is an opaque string
+- DDL inside a `DO $$ … $$` block, whose body reaches the parser as one string
 - DDL a function or dynamic SQL executes
 - anything conditional on the data
+
+The first of those is reported rather than skipped in silence: a `DO` block whose
+body looks like it holds DDL is listed in `unparsed`, so `--strict` refuses it. The
+judgement is made on the body's text, which is a guess and the only one available —
+a block that only moves data around stays quiet, because naming every one of those
+is the noise that gets a check switched off.
 
 A final-state file — `pg_dump --schema-only --no-owner --no-privileges` — works the
 same way and has none of those gaps, so it is still the better input when you have
 one. It is also the way to check a replay: the two should describe the same database.
 
-`--strict` is what makes either safe to automate. Anything read and not applied is
-listed under `unparsed`, and `--strict` turns that into exit 1 rather than a diagram
-that is quietly missing a change. Run it in CI on whatever you feed in.
+`--strict` is what makes either safe to automate. `unparsed` names both things that
+can go wrong — a clause read and not represented, and a statement the parser would
+not take at all — and `--strict` turns either into exit 1 rather than a diagram that
+is quietly missing a change. One statement it cannot read costs only itself: the rest
+of the file still draws. Run `--strict` in CI on whatever you feed in.
 
 A remote schema works the same way:
 
