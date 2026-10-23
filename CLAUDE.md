@@ -2,50 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Essential Commands
-
-- pnpm dev - Start dev servers
-- pnpm --filter crowfoot dev - Start dev server for the CLI/viewer specifically
-- pnpm build - Build all packages
-- pnpm lint - Run linting and formatting
-- pnpm test - Run tests
-- pnpm fmt - Run format code
-
-### Package-specific Commands
-
-```bash
-# Run the CLI/viewer dev server
-pnpm --filter crowfoot dev
-
-# Format code
-pnpm --filter @crowfoot/erd-core fmt
-
-# Test
-pnpm --filter @crowfoot/erd-core test
-```
-
-## Architecture
-
-### Monorepo Structure
-
-#### Public Packages
-- **frontend/packages/cli** - Command-line tool (`crowfoot`)
-- **frontend/packages/erd-core** - Core ERD visualization (`@crowfoot/erd-core`)
-- **frontend/packages/schema** - Database schema parser (`@crowfoot/schema`)
-- **frontend/packages/ui** - UI component library (`@crowfoot/ui`)
-
-#### Internal Packages
-- **frontend/internal-packages/configs** - Shared biome/tsconfig/eslint presets (`@crowfoot/configs`)
-- **frontend/internal-packages/neverthrow** - Result-type helpers (`@crowfoot/neverthrow`)
-
-### Key Technologies
-
-- **Frontend**: React 19, TypeScript
-- **Styling**: CSS Modules with typed definitions
-- **Visualization**: @xyflow/react (React Flow)
-- **Validation**: Valibot for runtime type validation
-- **Build**: Turborepo, pnpm workspaces, Vite/Rollup (static SPA — no framework at the fork's work surface)
-
 ## Development Guidelines
 
 ### Core Principle: **Less is more**
@@ -88,21 +44,13 @@ function saveUser(data: UserData, userId: string) {
 
 ### File Organization
 
-- Don't code directly in `page.tsx` - create separate page components
 - Follow existing import patterns and tsconfig paths
 - Use consts instead of functions: `const toggle = () => {}`
-
-### Data Fetching
-
-- Server Components for server-side data fetching
-- Client-side fetching only when necessary
-- Align data fetching responsibilities with component roles
-- Use Server Actions for all data mutations (create, update, delete operations)
 
 ### CSS
 
 - Use CSS Variables from `@crowfoot/ui` package
-- Generate CSS type definitions with `pnpm gen:css`
+- Generate CSS type definitions with `pnpm gen:css` (per package — `tcm src`, not a root script)
 - Use CSS variables according to their intended purpose. Spacing variables should be used exclusively for margins and padding, while height and width specifications should use appropriate units (rem, px, etc.)
 
 ### Testing
