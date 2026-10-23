@@ -513,6 +513,65 @@ describe(processor, () => {
         expect(Object.keys(table?.constraints ?? {})).toEqual(['words_pkey'])
       })
 
+      /**
+       * A CHECK depends on the column its expression names, and postgres drops
+       * it with the column. It has no column list — the expression is all
+       * there is — so a drop that only clears constraints by their columns
+       * leaves a CHECK on a column that is gone.
+       */
+      it('takes a CHECK naming the column with it', async () => {
+        const { schema } = await replay(`
+          CREATE TABLE words (
+            id BIGSERIAL PRIMARY KEY,
+            priority SMALLINT CONSTRAINT priority_check CHECK (priority BETWEEN 1 AND 3),
+            term TEXT CONSTRAINT term_check CHECK (char_length(term) <= 200)
+          );
+          ALTER TABLE words DROP COLUMN priority;
+        `)
+
+        expect(Object.keys(schema.tables['words']?.constraints ?? {})).toEqual([
+          'words_pkey',
+          'term_check',
+        ])
+      })
+
+      /**
+       * `priority` is not `priority_filter`. Matching the name anywhere in the
+       * text would take the second CHECK down with the first.
+       */
+      it('keeps a CHECK on a column whose name merely starts the same', async () => {
+        const { schema } = await replay(`
+          CREATE TABLE quiz (
+            id BIGSERIAL PRIMARY KEY,
+            priority SMALLINT CONSTRAINT priority_check CHECK (priority > 0),
+            priority_filter SMALLINT CONSTRAINT filter_check CHECK (priority_filter > 0)
+          );
+          ALTER TABLE quiz DROP COLUMN priority;
+        `)
+
+        expect(Object.keys(schema.tables['quiz']?.constraints ?? {})).toEqual([
+          'quiz_pkey',
+          'filter_check',
+        ])
+      })
+
+      /** A column name inside a string literal is text, not a reference. */
+      it('keeps a CHECK that only names the column inside a literal', async () => {
+        const { schema } = await replay(`
+          CREATE TABLE jobs (
+            id BIGSERIAL PRIMARY KEY,
+            priority SMALLINT,
+            state TEXT CONSTRAINT state_check CHECK (state <> 'priority')
+          );
+          ALTER TABLE jobs DROP COLUMN priority;
+        `)
+
+        expect(Object.keys(schema.tables['jobs']?.constraints ?? {})).toEqual([
+          'jobs_pkey',
+          'state_check',
+        ])
+      })
+
       it('follows a renamed column into the indexes and constraints naming it', async () => {
         const { schema } = await replay(`
           ${users}

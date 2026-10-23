@@ -14,9 +14,12 @@ import type { Constraint, Schema, Table } from '../../../schema/index.js'
  * that is not there — which draws, and draws wrong. Each function here is
  * responsible for the whole set.
  *
- * A CHECK constraint's `detail` is free text and is left alone. Rewriting an
- * identifier inside an arbitrary expression means parsing the expression, and
- * being wrong there would corrupt the condition rather than lose it.
+ * A CHECK constraint's `detail` is free text, and a rename leaves it alone:
+ * rewriting an identifier inside an arbitrary expression means parsing the
+ * expression, and being wrong there would corrupt the condition rather than
+ * lose it. A drop is the other way round — nothing is rewritten, the whole
+ * constraint goes, which is what postgres does with it — so there a CHECK
+ * naming the column has to be found. See `mentionsColumn`.
  */
 
 /**
@@ -45,6 +48,56 @@ const hasColumnNames = (
   constraint: Constraint,
 ): constraint is Extract<Constraint, { columnNames: string[] }> =>
   constraint.type !== 'CHECK'
+
+/** What can appear inside a name, and therefore what does not end one. */
+const IDENTIFIER_CHAR = /[A-Za-z0-9_$]/
+
+/** The index just past the single-quoted literal starting at `i`. */
+const endOfLiteral = (detail: string, i: number): number => {
+  for (let j = i + 1; j < detail.length; j++) {
+    if (detail[j] !== "'") continue
+    // '' is an escaped quote, not the end.
+    if (detail[j + 1] === "'") j++
+    else return j + 1
+  }
+
+  return detail.length
+}
+
+/**
+ * Whether a CHECK's expression names this column.
+ *
+ * Read as text, because text is what the expression is: postgres tracks the
+ * real dependency and what reaches here is the condition as written. Two
+ * things keep that honest. A match has to stand alone as a name, so dropping
+ * `priority` leaves a CHECK over `priority_filter` where it is; and quoted
+ * literals are skipped, so `state <> 'priority'` is not a use of the column.
+ */
+const mentionsColumn = (detail: string, column: string): boolean => {
+  const haystack = detail.toLowerCase()
+  const needle = column.toLowerCase()
+
+  for (let i = 0; i < haystack.length; i++) {
+    if (haystack[i] === "'") {
+      i = endOfLiteral(haystack, i) - 1
+      continue
+    }
+
+    if (!haystack.startsWith(needle, i)) continue
+    if (IDENTIFIER_CHAR.test(haystack[i - 1] ?? '')) continue
+    if (IDENTIFIER_CHAR.test(haystack[i + needle.length] ?? '')) continue
+
+    return true
+  }
+
+  return false
+}
+
+/** What postgres would drop along with the column. */
+const dependsOnColumn = (constraint: Constraint, column: string): boolean =>
+  hasColumnNames(constraint)
+    ? constraint.columnNames.includes(column)
+    : mentionsColumn(constraint.detail, column)
 
 const foreignKeysOf = (table: Table) =>
   Object.values(table.constraints).filter(
@@ -140,8 +193,7 @@ export const dropColumn = (
   delete table.columns[name]
 
   for (const constraint of Object.values(table.constraints)) {
-    if (!hasColumnNames(constraint)) continue
-    if (constraint.columnNames.includes(name)) {
+    if (dependsOnColumn(constraint, name)) {
       delete table.constraints[constraint.name]
     }
   }

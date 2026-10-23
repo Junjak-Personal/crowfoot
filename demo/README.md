@@ -39,18 +39,30 @@ npx crowfoot erd build --input demo/schema.sql          --format postgres --outp
 # a/schema.json and b/schema.json should agree
 ```
 
-They agree on tables, columns and indexes exactly. What still differs is worth
-knowing, and none of it is a replay bug:
+They agree on tables, columns and indexes exactly. Add `--strict` and the migrations
+exit 1 while the dump exits 0: since 1.0.1 a `DO $$ … $$` block whose body looks like
+it holds DDL is named in `unparsed` instead of being skipped in silence, and there
+are 4 of them. That is the check working — the 4 are exactly the first row below.
+(The migrations hold 7 `DO` blocks; the other 3 only move data around and stay quiet.)
+
+What differs:
 
 | | |
 |---|---|
-| `feedback_survey` primary key, 2 CHECK constraints, the `kanji_reading_type` enum | Created inside `DO $$ … $$` blocks (`020`, `037`). A `DO` body is an opaque string to the parser — the one gap replay does not close. |
+| `feedback_survey` primary key, 3 CHECK constraints, the `kanji_reading_type` enum | Created inside `DO $$ … $$` blocks (`020`, `037`). A `DO` body reaches the parser as one string — the one gap replay does not close, now at least a reported one. |
 | Foreign key and CHECK constraint **names** | An inline `REFERENCES` has no name, so one is synthesised; pg_dump writes the name postgres gave it. Same constraints, different labels. |
 | CHECK constraint **text** | `role in ('user', …)` as written, against `(role = ANY (ARRAY['user'::text, …]))` as postgres normalises it. |
 
-This is not a hypothetical: the comparison caught a real bug during 0.9.0 —
-`DROP COLUMN` was narrowing a two-column index to one column instead of dropping
-it, which no unit test had noticed.
+None of that is a replay bug. Twice now it has found one, though, and both times
+no unit test had noticed:
+
+- **0.9.0** — `DROP COLUMN` was narrowing a two-column index to one column
+  instead of dropping it.
+- **1.0.2** — `DROP COLUMN` was leaving behind a CHECK over the column it
+  dropped. `words.priority_check` outlived `words.priority` by 4 migrations.
+
+Both are the same mistake in different clothes: postgres drops everything that
+depends on the column, and the replay was only clearing what listed it by name.
 
 The migrations carry no credentials: what looks like one is a column name
 (`encrypted_api_key`, since dropped), a comment describing how to create a vault
