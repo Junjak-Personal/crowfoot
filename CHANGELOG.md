@@ -13,6 +13,27 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+## 1.0.2
+
+### Fixed
+
+- **`DROP COLUMN` left behind a CHECK over the column it dropped.** Postgres
+  drops everything that depends on a column, and a CHECK that names it
+  depends on it — the replay was clearing constraints by their column list,
+  and a CHECK has no column list. Its expression is all there is. The result
+  was a diagram showing a condition on a column that is not there: in the
+  demo's own migrations, `words.priority_check` outlived `words.priority` by
+  4 migrations. Present since replay shipped in 0.9.0; only a replay of
+  migrations is affected, never a final-state file like a `pg_dump`.
+  - The expression is matched as text, because text is all that survives of
+    it. A match has to stand alone as a name, so dropping `priority` leaves a
+    CHECK over `priority_filter` where it is, and quoted literals are skipped,
+    so `state <> 'priority'` is not a use of the column.
+  - A rename still leaves a CHECK's text alone, and that is deliberate:
+    rewriting an identifier inside an arbitrary expression would risk
+    corrupting the condition rather than losing it. Dropping rewrites nothing.
+
+
 ## 1.0.1
 
 ### Fixed
