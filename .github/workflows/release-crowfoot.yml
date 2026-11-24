@@ -33,11 +33,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      # Node 22.21 ships npm 10.9, which predates trusted publishing and would
-      # fall back to looking for a token. 11.5.1 is the first version that
-      # performs the OIDC exchange.
-      - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@^11.5.1
+      # Node 24.22.2 bundles npm 11.19.1, which supports OIDC trusted publishing.
 
       # A tag that disagrees with package.json means someone tagged without
       # bumping (or bumped without tagging). Fail here, before the registry

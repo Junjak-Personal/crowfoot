@@ -13,6 +13,18 @@ is where a breaking change may appear.
 
 ## Unreleased
 
+### Breaking
+
+- **Node.js 24.22.2 or newer is required.** Development and CI use the pinned
+  Node 24 release, and the CLI declares the same minimum runtime version.
+
+### Security
+
+- Refresh runtime and build dependencies, including React, Prisma, SWC, glob,
+  Vite, Rollup and Zod. Update Vitest and Happy DOM to releases that include
+  their recent security fixes, refresh transitive dependencies, and keep
+  targeted resolutions in the workspace configuration.
+
 ## 1.0.2
 
 ### Fixed

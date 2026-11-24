@@ -26,7 +26,6 @@ export default defineConfig({
         '**/*.test.*',
         '**/*.spec.*',
       ],
-      all: true,
     },
   },
 })

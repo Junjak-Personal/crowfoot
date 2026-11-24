@@ -8,11 +8,7 @@
   // Files to ignore when analyzing
   "ignore": [
     // - Newly added enum schema definitions (will be used in future implementations)
-    "frontend/packages/schema/src/schema/schema.ts",
-    "frontend/packages/schema/src/schema/index.ts",
-    // - Temporarily unused CommandPalette components (will be used in the future release)
-    "frontend/packages/erd-core/src/features/erd/components/ERDRenderer/CommandPalette/CommandPaletteOptions/CommandOptions.tsx",
-    "frontend/packages/erd-core/src/features/erd/components/ERDRenderer/CommandPalette/CommandPaletteOptions/index.ts"
+    "frontend/packages/schema/src/schema/schema.ts"
   ],
 
 
@@ -37,7 +33,7 @@
       "entry": ["demo/build-demo.mjs"]
     },
     "frontend/packages/cli": {
-      "entry": ["bin/cli.ts", "src/main.tsx"]
+      "entry": ["bin/cli.ts"]
     },
   }
 }

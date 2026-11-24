@@ -264,6 +264,9 @@ still does what you expect.
 
 ## Development
 
+Use Node.js 24.22.2 or newer (`.node-version` pins the CI version) and
+pnpm 10.34.9, as declared in `package.json`.
+
 ```bash
 pnpm install
 pnpm exec turbo build --filter=@crowfoot/schema --filter=@crowfoot/ui   # required first

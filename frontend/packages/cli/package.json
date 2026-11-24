@@ -24,16 +24,16 @@
     "crowfoot": "dist-cli/bin/cli.js"
   },
   "dependencies": {
-    "@prisma/internals": "6.8.2",
-    "@swc/core": "1.12.11",
+    "@prisma/internals": "6.12.0",
+    "@swc/core": "1.16.21",
     "commander": "13.1.0",
-    "glob": "11.1.0",
+    "glob": "14.0.3",
     "ink": "6.0.1",
-    "inquirer": "12.6.3",
+    "inquirer": "12.11.1",
     "neverthrow": "8.2.0",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "valibot": "1.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "valibot": "1.5.0",
     "yoctocolors": "2.1.2"
   },
   "devDependencies": {
@@ -43,21 +43,21 @@
     "@crowfoot/schema": "workspace:*",
     "@rollup/plugin-commonjs": "28.0.9",
     "@rollup/plugin-node-resolve": "16.0.3",
-    "@rollup/plugin-typescript": "12.3.0",
+    "@rollup/plugin-typescript": "12.3.1",
     "@testing-library/react": "16.3.0",
-    "@types/node": "22.18.11",
-    "@types/react": "19.2.2",
-    "@types/react-dom": "19.2.2",
-    "@vitejs/plugin-react": "4.6.0",
-    "eslint": "9.38.0",
-    "happy-dom": "20.0.0",
-    "rollup": "4.52.5",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "4.7.0",
+    "eslint": "9.39.5",
+    "happy-dom": "21.0.4",
+    "rollup": "4.67.4",
     "rollup-plugin-execute": "1.1.1",
     "typed-css-modules": "0.9.1",
     "typescript": "5.9.3",
-    "vite": "6.4.1",
+    "vite": "6.4.5",
     "vite-tsconfig-paths": "5.1.4",
-    "vitest": "3.2.4"
+    "vitest": "4.1.12"
   },
   "scripts": {
     "build": "concurrently \"pnpm:build:*\"",
@@ -85,5 +85,8 @@
     "dist-cli/**/*",
     "LICENSE",
     "NOTICE"
-  ]
+  ],
+  "engines": {
+    "node": ">=24.22.2"
+  }
 }
