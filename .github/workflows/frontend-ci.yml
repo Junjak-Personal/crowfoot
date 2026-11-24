@@ -30,6 +30,8 @@ jobs:
               - '.github/actions/pnpm-setup/**'
               - './frontend/**'
               - '.syncpackrc'
+              - '.node-version'
+              - '.npmrc'
               - 'biome.jsonc'
               - 'package.json'
               - 'pnpm-lock.yaml'

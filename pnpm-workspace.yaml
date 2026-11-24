@@ -2,3 +2,17 @@ packages:
   - "frontend/packages/*"
   - "frontend/internal-packages/*"
 minimumReleaseAge: 2880 # 2 days
+overrides:
+  "@radix-ui/react-dialog": "1.1.15"
+  cookie: "^0.7.0"
+  esbuild: "0.25.11"
+  path-to-regexp: "8.4.2"
+  prismjs: "1.30.0"
+  undici: "7.30.1"
+  "@eslint/plugin-kit@<0.3.4": "0.3.5"
+  "nuqs>next": "15.5.28"
+  "next>postcss": "8.5.32"
+  "next>sharp": "0.35.5"
+  "syncpack>minimatch": "11.0.3"
+  "typed-css-modules>glob": "14.0.3"
+  "@typescript-eslint/typescript-estree>minimatch": "11.0.3"

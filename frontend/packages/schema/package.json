@@ -15,27 +15,27 @@
   },
   "dependencies": {
     "@crowfoot/neverthrow": "workspace:*",
-    "@prisma/internals": "6.8.2",
+    "@prisma/internals": "6.12.0",
     "@ruby/prism": "1.5.2",
-    "@swc/core": "1.12.11",
+    "@swc/core": "1.16.21",
     "fast-json-patch": "3.1.1",
     "neverthrow": "8.2.0",
     "pg-query-emscripten": "5.1.0",
-    "valibot": "1.4.2",
-    "yaml": "2.8.1",
-    "zod": "4.0.0"
+    "valibot": "1.5.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.6",
     "@crowfoot/configs": "workspace:*",
-    "@pgsql/types": "15.1.1",
-    "@prisma/generator-helper": "6.8.2",
-    "@types/node": "22.18.11",
-    "eslint": "9.38.0",
+    "@pgsql/types": "15.1.2",
+    "@prisma/generator-helper": "6.12.0",
+    "@types/node": "24.19.2",
+    "eslint": "9.39.5",
     "json-refs": "3.0.15",
     "json-schema-to-zod": "2.6.1",
     "typescript": "5.9.3",
-    "vitest": "3.2.4"
+    "vitest": "4.1.12"
   },
   "scripts": {
     "build": "tsc && pnpm run cp:prism",

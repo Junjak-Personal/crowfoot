@@ -14,14 +14,14 @@
   },
   "dependencies": {
     "neverthrow": "8.2.0",
-    "valibot": "1.4.2"
+    "valibot": "1.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.6",
     "@crowfoot/configs": "workspace:*",
-    "@types/node": "22.18.11",
-    "concurrently": "9.2.1",
-    "eslint": "9.38.0",
+    "@types/node": "24.19.2",
+    "concurrently": "9.2.5",
+    "eslint": "9.39.5",
     "typescript": "5.9.3"
   },
   "scripts": {

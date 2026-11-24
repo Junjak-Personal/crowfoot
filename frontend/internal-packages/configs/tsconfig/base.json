@@ -3,7 +3,7 @@
   "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
     "jsx": "preserve",
-    "lib": ["dom", "es2019"],
+    "lib": ["dom", "es2022"],
     "resolveJsonModule": true,
     "erasableSyntaxOnly": true,
     "esModuleInterop": true,
